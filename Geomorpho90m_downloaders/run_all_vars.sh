@@ -13,7 +13,7 @@ shopt -s nullglob
 
 for VAR in ${VARS}; do
   echo "=== ${VAR} ==="
-  tif_glob=("${ROOT_DIR}/Geomorpho90m_downloaders/90m/${VAR}/${VAR}_90M_"*.tif)
+  tif_glob=("/network/rit/lab/basulab/RAW_DATA/Geomorpho90m/90m/${VAR}/${VAR}_90M_"*.tif)
   if (( ${#tif_glob[@]} == 0 )); then
     echo "WARN: No TIFs found for ${VAR}; skipping."
     continue
