@@ -1,0 +1,4 @@
+*.nc filter=lfs diff=lfs merge=lfs -text
+*.grb filter=lfs diff=lfs merge=lfs -text
+*.grb2_wexp filter=lfs diff=lfs merge=lfs -text
+GFS0p25/gfs.t00z.pgrb2.0p25.f000 filter=lfs diff=lfs merge=lfs -text
