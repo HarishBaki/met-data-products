@@ -1,0 +1,7 @@
+slurmout
+**/slurmout
+**/__pycache__
+GFS0p25/gfs_lists
+Geomorpho90m_downloaders/90m
+Geomorpho90m_downloaders/*/*.vrt
+Geomorpho90m_downloaders/*/geomorpho90m_**.nc

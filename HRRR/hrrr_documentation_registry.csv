@@ -1,0 +1,338 @@
+doc_id,documented_long_name,documented_level,normalized_level,level_alias_applied,source_var,documented_units,first_version_available,analysis_or_forecast,run_type,documentation_notes,matched_source_registry_rows,matched_families,matched_registry_levels,matched_registry_long_names
+1,Hail,0.1_sigma_layer,0.1_sigma_level,1,HAIL_max_fcst,m,V4,anl,anl,,2,"prs,sfc",0.1_sigma_level,0.1_sigma_level/HAIL_max_fcst
+2,Hail,0.1_sigma_layer,0.1_sigma_level,1,HAIL_1hr_max_fcst,m,V4,fcst,fcst,,1,sfc,0.1_sigma_level,0.1_sigma_level/HAIL_1hr_max_fcst
+3,Vertical Velocity,0.5_0.8_sigma_layer,0.5_0.8_sigma_layer,0,DZDT_ave_fcst,m/s,V3,anl,anl,,2,"prs,sfc",0.5_0.8_sigma_layer,0.5_0.8_sigma_layer/DZDT_ave_fcst
+4,Vertical Velocity,0.5_0.8_sigma_layer,0.5_0.8_sigma_layer,0,DZDT_1hr_ave_fcst,m/s,V3,fcst,fcst,,1,sfc,0.5_0.8_sigma_layer,0.5_0.8_sigma_layer/DZDT_1hr_ave_fcst
+5,U-Component Vertical Wind Shear,0_1000m_above_ground,0_1000m_above_ground,0,VUCSH,1/s,V3,both,anl,,2,"prs,sfc",0_1000m_above_ground,0_1000m_above_ground/VUCSH
+5,U-Component Vertical Wind Shear,0_1000m_above_ground,0_1000m_above_ground,0,VUCSH,1/s,V3,both,fcst,,1,sfc,0_1000m_above_ground,0_1000m_above_ground/VUCSH
+6,V-Component Vertical Wind Shear,0_1000m_above_ground,0_1000m_above_ground,0,VVCSH,1/s,V3,both,anl,,2,"prs,sfc",0_1000m_above_ground,0_1000m_above_ground/VVCSH
+6,V-Component Vertical Wind Shear,0_1000m_above_ground,0_1000m_above_ground,0,VVCSH,1/s,V3,both,fcst,,1,sfc,0_1000m_above_ground,0_1000m_above_ground/VVCSH
+7,Convective Available Potential Energy,0_3000m_above_ground,0_3000m_above_ground,0,CAPE,J/kg,V4,both,anl,,2,"prs,sfc",0_3000m_above_ground,0_3000m_above_ground/CAPE
+7,Convective Available Potential Energy,0_3000m_above_ground,0_3000m_above_ground,0,CAPE,J/kg,V4,both,fcst,,1,sfc,0_3000m_above_ground,0_3000m_above_ground/CAPE
+8,U-Component Storm Motion,0_6000m_above_ground,0_6000m_above_ground,0,USTM,m/s,V3,both,anl,,2,"prs,sfc",0_6000m_above_ground,0_6000m_above_ground/USTM
+8,U-Component Storm Motion,0_6000m_above_ground,0_6000m_above_ground,0,USTM,m/s,V3,both,fcst,,1,sfc,0_6000m_above_ground,0_6000m_above_ground/USTM
+9,V-Component Storm Motion,0_6000m_above_ground,0_6000m_above_ground,0,VSTM,m/s,V3,both,anl,,2,"prs,sfc",0_6000m_above_ground,0_6000m_above_ground/VSTM
+9,V-Component Storm Motion,0_6000m_above_ground,0_6000m_above_ground,0,VSTM,m/s,V3,both,fcst,,1,sfc,0_6000m_above_ground,0_6000m_above_ground/VSTM
+10,U-Component Vertical Wind Shear,0_6000m_above_ground,0_6000m_above_ground,0,VUCSH,1/s,V3,both,anl,,2,"prs,sfc",0_6000m_above_ground,0_6000m_above_ground/VUCSH
+10,U-Component Vertical Wind Shear,0_6000m_above_ground,0_6000m_above_ground,0,VUCSH,1/s,V3,both,fcst,,1,sfc,0_6000m_above_ground,0_6000m_above_ground/VUCSH
+11,V-Component Vertical Wind Shear,0_6000m_above_ground,0_6000m_above_ground,0,VVCSH,1/s,V3,both,anl,,2,"prs,sfc",0_6000m_above_ground,0_6000m_above_ground/VVCSH
+11,V-Component Vertical Wind Shear,0_6000m_above_ground,0_6000m_above_ground,0,VVCSH,1/s,V3,both,fcst,,1,sfc,0_6000m_above_ground,0_6000m_above_ground/VVCSH
+12,Height of the 0°C isotherm,0C_isotherm,0C_isotherm,0,HGT,m,V3,both,anl,,2,"prs,sfc",0C_isotherm,0C_isotherm/HGT
+12,Height of the 0°C isotherm,0C_isotherm,0C_isotherm,0,HGT,m,V3,both,fcst,,1,sfc,0C_isotherm,0C_isotherm/HGT
+13,Pressure at the 0°C isotherm,0C_isotherm,0C_isotherm,0,PRES,Pa,V3,both,anl,,2,"prs,sfc",0C_isotherm,0C_isotherm/PRES
+13,Pressure at the 0°C isotherm,0C_isotherm,0C_isotherm,0,PRES,Pa,V3,both,fcst,,1,sfc,0C_isotherm,0C_isotherm/PRES
+14,Relative Humidity at the 0°C isotherm,0C_isotherm,0C_isotherm,0,RH,%,V3,both,anl,,2,"prs,sfc",0C_isotherm,0C_isotherm/RH
+14,Relative Humidity at the 0°C isotherm,0C_isotherm,0C_isotherm,0,RH,%,V3,both,fcst,,1,sfc,0C_isotherm,0C_isotherm/RH
+15,Moisture Availability,0m_underground,0m_underground,0,MSTAV,%,V3,both,anl,,2,"prs,sfc",0m_underground,0m_underground/MSTAV
+15,Moisture Availability,0m_underground,0m_underground,0,MSTAV,%,V3,both,fcst,,1,sfc,0m_underground,0m_underground/MSTAV
+16,Hourly Maximum of Upward Vertical Velocity,100_1000mb_above_ground,100_1000mb_above_ground,0,MAXUVV_max_fcst,m/s,V3,anl,anl,,2,"prs,sfc",100_1000mb_above_ground,100_1000mb_above_ground/MAXUVV_max_fcst
+17,Hourly Maximum of Downward Vertical Velocity,100_1000mb_above_ground,100_1000mb_above_ground,0,MAXDVV_max_fcst,m/s,V3,anl,anl,,2,"prs,sfc",100_1000mb_above_ground,100_1000mb_above_ground/MAXDVV_max_fcst
+18,Hourly Maximum of Upward Vertical Velocity,100_1000mb_above_ground,100_1000mb_above_ground,0,MAXUVV_1hr_max_fcst,m/s,V3,fcst,fcst,,1,sfc,100_1000mb_above_ground,100_1000mb_above_ground/MAXUVV_1hr_max_fcst
+19,Hourly Maximum of Downward Vertical Velocity,100_1000mb_above_ground,100_1000mb_above_ground,0,MAXDVV_1hr_max_fcst,m/s,V3,fcst,fcst,,1,sfc,100_1000mb_above_ground,100_1000mb_above_ground/MAXDVV_1hr_max_fcst
+20,Relative Vorticity,1000_0m_above_ground,1000_0m_above_ground,0,RELV_max_fcst,1/s,V4,anl,anl,,2,"prs,sfc",1000_0m_above_ground,1000_0m_above_ground/RELV_max_fcst
+21,Relative Vorticity,1000_0m_above_ground,1000_0m_above_ground,0,RELV_1hr_max_fcst,1/s,V4,fcst,fcst,,1,sfc,1000_0m_above_ground,1000_0m_above_ground/RELV_1hr_max_fcst
+22,Storm Relative Helicity,1000_0m_above_ground,1000_0m_above_ground,0,HLCY,m<sup>2</sup>/s<sup>2</sup>,V3,both,anl,,2,"prs,sfc",1000_0m_above_ground,1000_0m_above_ground/HLCY
+22,Storm Relative Helicity,1000_0m_above_ground,1000_0m_above_ground,0,HLCY,m<sup>2</sup>/s<sup>2</sup>,V3,both,fcst,,1,sfc,1000_0m_above_ground,1000_0m_above_ground/HLCY
+23,Reflectivity,1000m_above_ground,1000m_above_ground,0,REFD,dB,V3,both,anl,,2,"prs,sfc",1000m_above_ground,1000m_above_ground/REFD
+23,Reflectivity,1000m_above_ground,1000m_above_ground,0,REFD,dB,V3,both,fcst,,1,sfc,1000m_above_ground,1000m_above_ground/REFD
+24,Hourly Maximum of Simulated Reflectivity at 1 km AGL,1000m_above_ground,1000m_above_ground,0,MAXREF_max_fcst,dB,V3,both,anl,,2,"prs,sfc",1000m_above_ground,1000m_above_ground/MAXREF_max_fcst
+24,Hourly Maximum of Simulated Reflectivity at 1 km AGL,1000m_above_ground,1000m_above_ground,0,MAXREF_max_fcst,dB,V3,both,fcst,,0,,,
+25,Hourly Maximum of Simulated Reflectivity at 1 km AGL,1000m_above_ground,1000m_above_ground,0,MAXREF_1hr_max_fcst,dB,V3,both,anl,,0,,,
+25,Hourly Maximum of Simulated Reflectivity at 1 km AGL,1000m_above_ground,1000m_above_ground,0,MAXREF_1hr_max_fcst,dB,V3,both,fcst,,1,sfc,1000m_above_ground,1000m_above_ground/MAXREF_1hr_max_fcst
+26,Temperature,1000mb,1000mb,0,TMP,K,V3,both,anl,,2,"prs,sfc",1000mb,1000mb/TMP
+26,Temperature,1000mb,1000mb,0,TMP,K,V3,both,fcst,,1,sfc,1000mb,1000mb/TMP
+27,DewPoint Temperature,1000mb,1000mb,0,DPT,K,V3,both,anl,,2,"prs,sfc",1000mb,1000mb/DPT
+27,DewPoint Temperature,1000mb,1000mb,0,DPT,K,V3,both,fcst,,1,sfc,1000mb,1000mb/DPT
+28,U-Component of Wind,1000mb,1000mb,0,UGRD,m/s,V3,both,anl,,2,"prs,sfc",1000mb,1000mb/UGRD
+28,U-Component of Wind,1000mb,1000mb,0,UGRD,m/s,V3,both,fcst,,1,sfc,1000mb,1000mb/UGRD
+29,V-Component of Wind,1000mb,1000mb,0,VGRD,m/s,V3,both,anl,,2,"prs,sfc",1000mb,1000mb/VGRD
+29,V-Component of Wind,1000mb,1000mb,0,VGRD,m/s,V3,both,fcst,,1,sfc,1000mb,1000mb/VGRD
+30,Geopotential Height,1000mb,1000mb,0,HGT,gpm,V3,both,anl,,2,"prs,sfc",1000mb,1000mb/HGT
+30,Geopotential Height,1000mb,1000mb,0,HGT,gpm,V3,both,fcst,,1,sfc,1000mb,1000mb/HGT
+31,U-Component of Wind,10m_above_ground,10m_above_ground,0,UGRD,m/s,V3,both,anl,,2,"prs,sfc",10m_above_ground,10m_above_ground/UGRD
+31,U-Component of Wind,10m_above_ground,10m_above_ground,0,UGRD,m/s,V3,both,fcst,,1,sfc,10m_above_ground,10m_above_ground/UGRD
+32,V-Component of Wind,10m_above_ground,10m_above_ground,0,VGRD,m/s,V3,both,anl,,2,"prs,sfc",10m_above_ground,10m_above_ground/VGRD
+32,V-Component of Wind,10m_above_ground,10m_above_ground,0,VGRD,m/s,V3,both,fcst,,1,sfc,10m_above_ground,10m_above_ground/VGRD
+33,Wind Speed,10m_above_ground,10m_above_ground,0,WIND_max_fcst,m/s,V3,anl,anl,,2,"prs,sfc",10m_above_ground,10m_above_ground/WIND_max_fcst
+34,Wind Speed,10m_above_ground,10m_above_ground,0,WIND_1hr_max_fcst,m/s,V3,fcst,fcst,,1,sfc,10m_above_ground,10m_above_ground/WIND_1hr_max_fcst
+35,U-Component of Hourly Maximum Wind,10m_above_ground,10m_above_ground,0,MAXUW_max_fcst,m/s,V3,anl,anl,,2,"prs,sfc",10m_above_ground,10m_above_ground/MAXUW_max_fcst
+36,U-Component of Hourly Maximum Wind,10m_above_ground,10m_above_ground,0,MAXUW_1hr_max_fcst,m/s,V3,fcst,fcst,,1,sfc,10m_above_ground,10m_above_ground/MAXUW_1hr_max_fcst
+37,V-Component of Hourly Maximum Wind,10m_above_ground,10m_above_ground,0,MAXVW_max_fcst,m/s,V3,anl,anl,,2,"prs,sfc",10m_above_ground,10m_above_ground/MAXVW_max_fcst
+38,V-Component of Hourly Maximum Wind,10m_above_ground,10m_above_ground,0,MAXVW_1hr_max_fcst,m/s,V3,fcst,fcst,,1,sfc,10m_above_ground,10m_above_ground/MAXVW_1hr_max_fcst
+39,Best (4 layer) Lifted Index,180_0mb_above_ground,180_0mb_above_ground,0,4LFTX,,V3,both,anl,,2,"prs,sfc",180_0mb_above_ground,180_0mb_above_ground/4LFTX
+39,Best (4 layer) Lifted Index,180_0mb_above_ground,180_0mb_above_ground,0,4LFTX,,V3,both,fcst,,1,sfc,180_0mb_above_ground,180_0mb_above_ground/4LFTX
+40,Convective Available Potential Energy,180_0mb_above_ground,180_0mb_above_ground,0,CAPE,,V3,both,anl,,2,"prs,sfc",180_0mb_above_ground,180_0mb_above_ground/CAPE
+40,Convective Available Potential Energy,180_0mb_above_ground,180_0mb_above_ground,0,CAPE,,V3,both,fcst,,1,sfc,180_0mb_above_ground,180_0mb_above_ground/CAPE
+41,Convective Inhibition,180_0mb_above_ground,180_0mb_above_ground,0,CIN,,V3,both,anl,,2,"prs,sfc",180_0mb_above_ground,180_0mb_above_ground/CIN
+41,Convective Inhibition,180_0mb_above_ground,180_0mb_above_ground,0,CIN,,V3,both,fcst,,1,sfc,180_0mb_above_ground,180_0mb_above_ground/CIN
+42,Lightning Potential Index,1m_above_ground,1m_above_ground,0,LTPINX,J/kg,V4,both,anl,,0,,,
+42,Lightning Potential Index,1m_above_ground,1m_above_ground,0,LTPINX,J/kg,V4,both,fcst,,0,,,
+43,Hourly Maximum of Updraft Helicity,2000_0m_above_ground,2000_0m_above_ground,0,MXUPHL_max_fcst,m<sup>2</sup>/s<sup>2</sup>,V3,anl,anl,,2,"prs,sfc",2000_0m_above_ground,2000_0m_above_ground/MXUPHL_max_fcst
+44,Hourly Maximum of Updraft Helicity,2000_0m_above_ground,2000_0m_above_ground,0,MXUPHL_1hr_max_fcst,m<sup>2</sup>/s<sup>2</sup>,V3,fcst,fcst,,1,sfc,2000_0m_above_ground,2000_0m_above_ground/MXUPHL_1hr_max_fcst
+45,Hourly Minimum of Updraft Helicity,2000_0m_above_ground,2000_0m_above_ground,0,MNUPHL_min_fcst,m<sup>2</sup>/s<sup>2</sup>,V3,anl,anl,,2,"prs,sfc",2000_0m_above_ground,2000_0m_above_ground/MNUPHL_min_fcst
+46,Hourly Minimum of Updraft Helicity,2000_0m_above_ground,2000_0m_above_ground,0,MNUPHL_1hr_min_fcst,m<sup>2</sup>/s<sup>2</sup>,V3,fcst,fcst,,1,sfc,2000_0m_above_ground,2000_0m_above_ground/MNUPHL_1hr_min_fcst
+47,Relative Vorticity,2000_0m_above_ground,2000_0m_above_ground,0,RELV_max_fcst,1/s,V4,anl,anl,,2,"prs,sfc",2000_0m_above_ground,2000_0m_above_ground/RELV_max_fcst
+48,Relative Vorticity,2000_0m_above_ground,2000_0m_above_ground,0,RELV_1hr_max_fcst,1/s,V4,fcst,fcst,,1,sfc,2000_0m_above_ground,2000_0m_above_ground/RELV_1hr_max_fcst
+49,U-Component of Wind,250mb,250mb,0,UGRD,m/s,V3,both,anl,,2,"prs,sfc",250mb,250mb/UGRD
+49,U-Component of Wind,250mb,250mb,0,UGRD,m/s,V3,both,fcst,,1,sfc,250mb,250mb/UGRD
+50,V-Component of Wind,250mb,250mb,0,VGRD,m/s,V3,both,anl,,2,"prs,sfc",250mb,250mb/VGRD
+50,V-Component of Wind,250mb,250mb,0,VGRD,m/s,V3,both,fcst,,1,sfc,250mb,250mb/VGRD
+51,Height at the 253 K,253K_level,253K_level,0,HGT,m,V3,both,anl,,2,"prs,sfc",253K_level,253K_level/HGT
+51,Height at the 253 K,253K_level,253K_level,0,HGT,m,V3,both,fcst,,1,sfc,253K_level,253K_level/HGT
+52,Convective Available Potential Energy,255_0mb_above_ground,255_0mb_above_ground,0,CAPE,J/kg,V3,both,anl,,2,"prs,sfc",255_0mb_above_ground,255_0mb_above_ground/CAPE
+52,Convective Available Potential Energy,255_0mb_above_ground,255_0mb_above_ground,0,CAPE,J/kg,V3,both,fcst,,1,sfc,255_0mb_above_ground,255_0mb_above_ground/CAPE
+53,Convective Inhibition,255_0mb_above_ground,255_0mb_above_ground,0,CIN,J/kg,V3,both,anl,,2,"prs,sfc",255_0mb_above_ground,255_0mb_above_ground/CIN
+53,Convective Inhibition,255_0mb_above_ground,255_0mb_above_ground,0,CIN,J/kg,V3,both,fcst,,1,sfc,255_0mb_above_ground,255_0mb_above_ground/CIN
+54,Pressure of Level From Which Parcel Was Lifted,255_0mb_above_ground,255_0mb_above_ground,0,PLPL,Pa,V3,both,anl,,2,"prs,sfc",255_0mb_above_ground,255_0mb_above_ground/PLPL
+54,Pressure of Level From Which Parcel Was Lifted,255_0mb_above_ground,255_0mb_above_ground,0,PLPL,Pa,V3,both,fcst,,1,sfc,255_0mb_above_ground,255_0mb_above_ground/PLPL
+55,Depth of Layer Supporting Dendritic Growth,261K_level___256K_level,261K_level___256K_level,0,LAYTH,m,V4,both,anl,,2,"prs,sfc",261K_level___256K_level,261K_level___256K_level/LAYTH
+55,Depth of Layer Supporting Dendritic Growth,261K_level___256K_level,261K_level___256K_level,0,LAYTH,m,V4,both,fcst,,1,sfc,261K_level___256K_level,261K_level___256K_level/LAYTH
+56,Height at the 263 K,263K_level,263K_level,0,HGT,m,V3,both,anl,,2,"prs,sfc",263K_level,263K_level/HGT
+56,Height at the 263 K,263K_level,263K_level,0,HGT,m,V3,both,fcst,,1,sfc,263K_level,263K_level/HGT
+57,Reflectivity,263K_level,263K_level,0,REFD,dB,V4,both,anl,,2,"prs,sfc",263K_level,263K_level/REFD
+57,Reflectivity,263K_level,263K_level,0,REFD,dB,V4,both,fcst,,1,sfc,263K_level,263K_level/REFD
+58,Reflectivity,263K_level,263K_level,0,REFD_max_fcst,dB,V4,anl,anl,,2,"prs,sfc",263K_level,263K_level/REFD_max_fcst
+59,Reflectivity,263K_level,263K_level,0,REFD_1hr_max_fcst,dB,V4,fcst,fcst,,1,sfc,263K_level,263K_level/REFD_1hr_max_fcst
+60,Lightning Potential Index,2m_above_ground,2m_above_ground,0,LTPINX,J/kg,V4,both,anl,,0,,,
+60,Lightning Potential Index,2m_above_ground,2m_above_ground,0,LTPINX,J/kg,V4,both,fcst,,0,,,
+61,Temperature,2m_above_ground,2m_above_ground,0,TMP,K,V3,both,anl,,2,"prs,sfc",2m_above_ground,2m_above_ground/TMP
+61,Temperature,2m_above_ground,2m_above_ground,0,TMP,K,V3,both,fcst,,1,sfc,2m_above_ground,2m_above_ground/TMP
+62,Potential Temperature,2m_above_ground,2m_above_ground,0,POT,K,V3,both,anl,,2,"prs,sfc",2m_above_ground,2m_above_ground/POT
+62,Potential Temperature,2m_above_ground,2m_above_ground,0,POT,K,V3,both,fcst,,1,sfc,2m_above_ground,2m_above_ground/POT
+63,Specific Humidity,2m_above_ground,2m_above_ground,0,SPFH,kg/kg,V3,both,anl,,2,"prs,sfc",2m_above_ground,2m_above_ground/SPFH
+63,Specific Humidity,2m_above_ground,2m_above_ground,0,SPFH,kg/kg,V3,both,fcst,,1,sfc,2m_above_ground,2m_above_ground/SPFH
+64,Dew Point Temperature,2m_above_ground,2m_above_ground,0,DPT,K,V3,both,anl,,2,"prs,sfc",2m_above_ground,2m_above_ground/DPT
+64,Dew Point Temperature,2m_above_ground,2m_above_ground,0,DPT,K,V3,both,fcst,,1,sfc,2m_above_ground,2m_above_ground/DPT
+65,Relative Humidity,2m_above_ground,2m_above_ground,0,RH,kg/kg,V3,both,anl,,2,"prs,sfc",2m_above_ground,2m_above_ground/RH
+65,Relative Humidity,2m_above_ground,2m_above_ground,0,RH,kg/kg,V3,both,fcst,,1,sfc,2m_above_ground,2m_above_ground/RH
+66,Hourly Maximum of Updraft Helicity,3000_0m_above_ground,3000_0m_above_ground,0,MXUPHL_max_fcst,m<sup>2</sup>/s<sup>2</sup>,V3,anl,anl,,2,"prs,sfc",3000_0m_above_ground,3000_0m_above_ground/MXUPHL_max_fcst
+67,Hourly Maximum of Updraft Helicity,3000_0m_above_ground,3000_0m_above_ground,0,MXUPHL_1hr_max_fcst,m<sup>2</sup>/s<sup>2</sup>,V3,fcst,fcst,,1,sfc,3000_0m_above_ground,3000_0m_above_ground/MXUPHL_1hr_max_fcst
+68,Hourly Minimum of Updraft Helicity,3000_0m_above_ground,3000_0m_above_ground,0,MNUPHL_min_fcst,m<sup>2</sup>/s<sup>2</sup>,V3,anl,anl,,2,"prs,sfc",3000_0m_above_ground,3000_0m_above_ground/MNUPHL_min_fcst
+69,Hourly Minimum of Updraft Helicity,3000_0m_above_ground,3000_0m_above_ground,0,MNUPHL_1hr_min_fcst,m<sup>2</sup>/s<sup>2</sup>,V3,fcst,fcst,,1,sfc,3000_0m_above_ground,3000_0m_above_ground/MNUPHL_1hr_min_fcst
+70,Storm Relative Helicity,3000_0m_above_ground,3000_0m_above_ground,0,HLCY,m<sup>2</sup>/s<sup>2</sup>,V3,both,anl,,2,"prs,sfc",3000_0m_above_ground,3000_0m_above_ground/HLCY
+70,Storm Relative Helicity,3000_0m_above_ground,3000_0m_above_ground,0,HLCY,m<sup>2</sup>/s<sup>2</sup>,V3,both,fcst,,1,sfc,3000_0m_above_ground,3000_0m_above_ground/HLCY
+71,U-Component of Wind,300mb,300mb,0,UGRD,m/s,V4,both,anl,,2,"prs,sfc",300mb,300mb/UGRD
+71,U-Component of Wind,300mb,300mb,0,UGRD,m/s,V4,both,fcst,,1,sfc,300mb,300mb/UGRD
+72,V-Component of Wind,300mb,300mb,0,VGRD,m/s,V4,both,anl,,2,"prs,sfc",300mb,300mb/VGRD
+72,V-Component of Wind,300mb,300mb,0,VGRD,m/s,V4,both,fcst,,1,sfc,300mb,300mb/VGRD
+73,Reflectivity,4000m_Above_Ground,4000m_above_ground,1,REFD,dB,V3,both,anl,,2,"prs,sfc",4000m_above_ground,4000m_above_ground/REFD
+73,Reflectivity,4000m_Above_Ground,4000m_above_ground,1,REFD,dB,V3,both,fcst,,1,sfc,4000m_above_ground,4000m_above_ground/REFD
+74,Surface Lifted Index,500_1000mb,500_1000mb,0,LFTX,K,V3,both,anl,,2,"prs,sfc",500_1000mb,500_1000mb/LFTX
+74,Surface Lifted Index,500_1000mb,500_1000mb,0,LFTX,K,V3,both,fcst,,1,sfc,500_1000mb,500_1000mb/LFTX
+75,Hourly Maximum of Updraft Helicity,5000_2000m_above_ground,5000_2000m_above_ground,0,MXUPHL_max_fcst,m<sup>2</sup>/s<sup>2</sup>,V3,anl,anl,,2,"prs,sfc",5000_2000m_above_ground,5000_2000m_above_ground/MXUPHL_max_fcst
+76,Hourly Maximum of Updraft Helicity,5000_2000m_above_ground,5000_2000m_above_ground,0,MXUPHL_1hr_max_fcst,m<sup>2</sup>/s<sup>2</sup>,V3,fcst,fcst,,1,sfc,5000_2000m_above_ground,5000_2000m_above_ground/MXUPHL_1hr_max_fcst
+77,Hourly Minimum of Updraft Helicity,5000_2000m_above_ground,5000_2000m_above_ground,0,MNUPHL_min_fcst,m<sup>2</sup>/s<sup>2</sup>,V3,anl,anl,,2,"prs,sfc",5000_2000m_above_ground,5000_2000m_above_ground/MNUPHL_min_fcst
+78,Hourly Minimum of Updraft Helicity,5000_2000m_above_ground,5000_2000m_above_ground,0,MNUPHL_1hr_min_fcst,m<sup>2</sup>/s<sup>2</sup>,V3,fcst,fcst,,1,sfc,5000_2000m_above_ground,5000_2000m_above_ground/MNUPHL_1hr_min_fcst
+79,Geopotential Height,500mb,500mb,0,HGT,gpm,V3,both,anl,,2,"prs,sfc",500mb,500mb/HGT
+79,Geopotential Height,500mb,500mb,0,HGT,gpm,V3,both,fcst,,1,sfc,500mb,500mb/HGT
+80,Temperature,500mb,500mb,0,TMP,K,V3,both,anl,,2,"prs,sfc",500mb,500mb/TMP
+80,Temperature,500mb,500mb,0,TMP,K,V3,both,fcst,,1,sfc,500mb,500mb/TMP
+81,Dew Point Temperature,500mb,500mb,0,DPT,K,V3,both,anl,,2,"prs,sfc",500mb,500mb/DPT
+81,Dew Point Temperature,500mb,500mb,0,DPT,K,V3,both,fcst,,1,sfc,500mb,500mb/DPT
+82,U-Component of Wind,500mb,500mb,0,UGRD,m/s,V3,both,anl,,2,"prs,sfc",500mb,500mb/UGRD
+82,U-Component of Wind,500mb,500mb,0,UGRD,m/s,V3,both,fcst,,1,sfc,500mb,500mb/UGRD
+83,V-Component of Wind,500mb,500mb,0,VGRD,m/s,V3,both,anl,,2,"prs,sfc",500mb,500mb/VGRD
+83,V-Component of Wind,500mb,500mb,0,VGRD,m/s,V3,both,fcst,,1,sfc,500mb,500mb/VGRD
+84,Geopotential Height,700mb,700mb,0,HGT,gpm,V3,both,anl,,2,"prs,sfc",700mb,700mb/HGT
+84,Geopotential Height,700mb,700mb,0,HGT,gpm,V3,both,fcst,,1,sfc,700mb,700mb/HGT
+85,Temperature,700mb,700mb,0,TMP,K,V3,both,anl,,2,"prs,sfc",700mb,700mb/TMP
+85,Temperature,700mb,700mb,0,TMP,K,V3,both,fcst,,1,sfc,700mb,700mb/TMP
+86,Dew Point Temperature,700mb,700mb,0,DPT,K,V3,both,anl,,2,"prs,sfc",700mb,700mb/DPT
+86,Dew Point Temperature,700mb,700mb,0,DPT,K,V3,both,fcst,,1,sfc,700mb,700mb/DPT
+87,Vertical Velocity,700mb,700mb,0,DZDT,m/s,V4,both,anl,,1,sfc,700mb,700mb/DZDT
+87,Vertical Velocity,700mb,700mb,0,DZDT,m/s,V4,both,fcst,,1,sfc,700mb,700mb/DZDT
+88,U-Component of Wind,700mb,700mb,0,UGRD,m/s,V3,both,anl,,2,"prs,sfc",700mb,700mb/UGRD
+88,U-Component of Wind,700mb,700mb,0,UGRD,m/s,V3,both,fcst,,1,sfc,700mb,700mb/UGRD
+89,V-Component of Wind,700mb,700mb,0,VGRD,m/s,V3,both,anl,,2,"prs,sfc",700mb,700mb/VGRD
+89,V-Component of Wind,700mb,700mb,0,VGRD,m/s,V3,both,fcst,,1,sfc,700mb,700mb/VGRD
+90,U-Component of Wind,80m_above_ground,80m_above_ground,0,UGRD,m/s,V3,both,anl,,2,"prs,sfc",80m_above_ground,80m_above_ground/UGRD
+90,U-Component of Wind,80m_above_ground,80m_above_ground,0,UGRD,m/s,V3,both,fcst,,1,sfc,80m_above_ground,80m_above_ground/UGRD
+91,V-Component of Wind,80m_above_ground,80m_above_ground,0,VGRD,m/s,V3,both,anl,,2,"prs,sfc",80m_above_ground,80m_above_ground/VGRD
+91,V-Component of Wind,80m_above_ground,80m_above_ground,0,VGRD,m/s,V3,both,fcst,,1,sfc,80m_above_ground,80m_above_ground/VGRD
+92,Geopotential Height,850mb,850mb,0,HGT,gpm,V3,both,anl,,2,"prs,sfc",850mb,850mb/HGT
+92,Geopotential Height,850mb,850mb,0,HGT,gpm,V3,both,fcst,,1,sfc,850mb,850mb/HGT
+93,Temperature,850mb,850mb,0,TMP,K,V3,both,anl,,2,"prs,sfc",850mb,850mb/TMP
+93,Temperature,850mb,850mb,0,TMP,K,V3,both,fcst,,1,sfc,850mb,850mb/TMP
+94,Dew Point Temperature,850mb,850mb,0,DPT,K,V3,both,anl,,2,"prs,sfc",850mb,850mb/DPT
+94,Dew Point Temperature,850mb,850mb,0,DPT,K,V3,both,fcst,,1,sfc,850mb,850mb/DPT
+95,U-Component of Wind,850mb,850mb,0,UGRD,m/s,V3,both,anl,,2,"prs,sfc",850mb,850mb/UGRD
+95,U-Component of Wind,850mb,850mb,0,UGRD,m/s,V3,both,fcst,,1,sfc,850mb,850mb/UGRD
+96,V-Component of Wind,850mb,850mb,0,VGRD,m/s,V3,both,anl,,2,"prs,sfc",850mb,850mb/VGRD
+96,V-Component of Wind,850mb,850mb,0,VGRD,m/s,V3,both,fcst,,1,sfc,850mb,850mb/VGRD
+97,Mass Density,8m_above_ground,8m_above_ground,0,MASSDEN,Concentration (kg/m<sup>3</sup>),V4,both,anl,Near-surface smoke,2,"prs,sfc",8m_above_ground,8m_above_ground/MASSDEN
+97,Mass Density,8m_above_ground,8m_above_ground,0,MASSDEN,Concentration (kg/m<sup>3</sup>),V4,both,fcst,Near-surface smoke,1,sfc,8m_above_ground,8m_above_ground/MASSDEN
+98,Convective Available Potential Energy,90_0mb_above_ground,90_0mb_above_ground,0,CAPE,J/kg,V3,both,anl,,2,"prs,sfc",90_0mb_above_ground,90_0mb_above_ground/CAPE
+98,Convective Available Potential Energy,90_0mb_above_ground,90_0mb_above_ground,0,CAPE,J/kg,V3,both,fcst,,1,sfc,90_0mb_above_ground,90_0mb_above_ground/CAPE
+99,Convective Inhibition,90_0mb_above_ground,90_0mb_above_ground,0,CIN,J/kg,V3,both,anl,,2,"prs,sfc",90_0mb_above_ground,90_0mb_above_ground/CIN
+99,Convective Inhibition,90_0mb_above_ground,90_0mb_above_ground,0,CIN,J/kg,V3,both,fcst,,1,sfc,90_0mb_above_ground,90_0mb_above_ground/CIN
+100,Temperature,925mb,925mb,0,TMP,K,V3,both,anl,,2,"prs,sfc",925mb,925mb/TMP
+100,Temperature,925mb,925mb,0,TMP,K,V3,both,fcst,,1,sfc,925mb,925mb/TMP
+101,Dew Point Temperature,925mb,925mb,0,DPT,K,V3,both,anl,,2,"prs,sfc",925mb,925mb/DPT
+101,Dew Point Temperature,925mb,925mb,0,DPT,K,V3,both,fcst,,1,sfc,925mb,925mb/DPT
+102,U-Component of Wind,925mb,925mb,0,UGRD,m/s,V3,both,anl,,2,"prs,sfc",925mb,925mb/UGRD
+102,U-Component of Wind,925mb,925mb,0,UGRD,m/s,V3,both,fcst,,1,sfc,925mb,925mb/UGRD
+103,V-Component of Wind,925mb,925mb,0,VGRD,m/s,V3,both,anl,,2,"prs,sfc",925mb,925mb/VGRD
+103,V-Component of Wind,925mb,925mb,0,VGRD,m/s,V3,both,fcst,,1,sfc,925mb,925mb/VGRD
+104,Total Cloud Cover,boundary_layer_cloud_cover,boundary_layer_cloud_cover,0,TCDC,%,V4,both,anl,,0,,,
+104,Total Cloud Cover,boundary_layer_cloud_cover,boundary_layer_cloud_cover,0,TCDC,%,V4,both,fcst,,0,,,
+105,Geopotential Height,cloud_base,cloud_base,0,HGT,gpm,V3,both,anl,,2,"prs,sfc",cloud_base,cloud_base/HGT
+105,Geopotential Height,cloud_base,cloud_base,0,HGT,gpm,V3,both,fcst,,1,sfc,cloud_base,cloud_base/HGT
+106,Pressure,cloud_base,cloud_base,0,PRES,Pa,V3,both,anl,,2,"prs,sfc",cloud_base,cloud_base/PRES
+106,Pressure,cloud_base,cloud_base,0,PRES,Pa,V3,both,fcst,,1,sfc,cloud_base,cloud_base/PRES
+107,Geopotential Height,cloud_ceiling,cloud_ceiling,0,HGT,gpm,V3,both,anl,,2,"prs,sfc",cloud_ceiling,cloud_ceiling/HGT
+107,Geopotential Height,cloud_ceiling,cloud_ceiling,0,HGT,gpm,V3,both,fcst,,1,sfc,cloud_ceiling,cloud_ceiling/HGT
+108,Echo Top,cloud_top,cloud_top,0,RETOP,m,V3,both,anl,,2,"prs,sfc",cloud_top,cloud_top/RETOP
+108,Echo Top,cloud_top,cloud_top,0,RETOP,m,V3,both,fcst,,1,sfc,cloud_top,cloud_top/RETOP
+109,Pressure,cloud_top,cloud_top,0,PRES,Pa,V3,both,anl,,2,"prs,sfc",cloud_top,cloud_top/PRES
+109,Pressure,cloud_top,cloud_top,0,PRES,Pa,V3,both,fcst,,1,sfc,cloud_top,cloud_top/PRES
+110,Geopotential Height,cloud_top,cloud_top,0,HGT,gpm,V3,both,anl,,2,"prs,sfc",cloud_top,cloud_top/HGT
+110,Geopotential Height,cloud_top,cloud_top,0,HGT,gpm,V3,both,fcst,,1,sfc,cloud_top,cloud_top/HGT
+111,Composite Reflectivity,entire_atmosphere,entire_atmosphere,0,REFC,dB,V3,both,anl,,2,"prs,sfc",entire_atmosphere,entire_atmosphere/REFC
+111,Composite Reflectivity,entire_atmosphere,entire_atmosphere,0,REFC,dB,V3,both,fcst,,1,sfc,entire_atmosphere,entire_atmosphere/REFC
+112,Vertically Integrated Liquid,entire_atmosphere,entire_atmosphere,0,VIL,kg/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",entire_atmosphere,entire_atmosphere/VIL
+112,Vertically Integrated Liquid,entire_atmosphere,entire_atmosphere,0,VIL,kg/m<sup>2</sup>,V3,both,fcst,,1,sfc,entire_atmosphere,entire_atmosphere/VIL
+113,Relative Humidity with Respect to Precipitable Water,entire_atmosphere,entire_atmosphere,0,RHPW,%,V3,both,anl,,2,"prs,sfc",entire_atmosphere,entire_atmosphere/RHPW
+113,Relative Humidity with Respect to Precipitable Water,entire_atmosphere,entire_atmosphere,0,RHPW,%,V3,both,fcst,,1,sfc,entire_atmosphere,entire_atmosphere/RHPW
+114,Hail,entire_atmosphere,entire_atmosphere,0,HAIL_max_fcst,m,V4,anl,anl,,2,"prs,sfc",entire_atmosphere,entire_atmosphere/HAIL_max_fcst
+115,Hail,entire_atmosphere,entire_atmosphere,0,HAIL_1hr_max_fcst,m,V4,fcst,fcst,,1,sfc,entire_atmosphere,entire_atmosphere/HAIL_1hr_max_fcst
+116,Lightning,entire_atmosphere,entire_atmosphere,0,LTNG,Non-Dim,V3,both,anl,,2,"prs,sfc",entire_atmosphere,entire_atmosphere/LTNG
+116,Lightning,entire_atmosphere,entire_atmosphere,0,LTNG,Non-Dim,V3,both,fcst,,1,sfc,entire_atmosphere,entire_atmosphere/LTNG
+117,Total Cloud Cover,entire_atmosphere,entire_atmosphere,0,TCDC,%,V3,both,anl,,2,"prs,sfc",entire_atmosphere,entire_atmosphere/TCDC
+117,Total Cloud Cover,entire_atmosphere,entire_atmosphere,0,TCDC,%,V3,both,fcst,,1,sfc,entire_atmosphere,entire_atmosphere/TCDC
+118,Total Column Integrated Graupel,entire_atmosphere_single_layer,entire_atmosphere_single_layer,0,TCOLG_max_fcst,kg/m<sup>2</sup>,V3,anl,anl,,2,"prs,sfc",entire_atmosphere_single_layer,entire_atmosphere_single_layer/TCOLG_max_fcst
+119,Total Column Integrated Graupel,entire_atmosphere_single_layer,entire_atmosphere_single_layer,0,TCOLG_1hr_max_fcst,kg/m<sup>2</sup>,V3,fcst,fcst,,1,sfc,entire_atmosphere_single_layer,entire_atmosphere_single_layer/TCOLG_1hr_max_fcst
+120,Precipitable Water,entire_atmosphere_single_layer,entire_atmosphere_single_layer,0,PWAT,kg/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",entire_atmosphere_single_layer,entire_atmosphere_single_layer/PWAT
+120,Precipitable Water,entire_atmosphere_single_layer,entire_atmosphere_single_layer,0,PWAT,kg/m<sup>2</sup>,V3,both,fcst,,1,sfc,entire_atmosphere_single_layer,entire_atmosphere_single_layer/PWAT
+121,Aeorosol Optical Thickness,entire_atmosphere_single_layer,entire_atmosphere_single_layer,0,AOTK,,V4,both,anl,,2,"prs,sfc",entire_atmosphere_single_layer,entire_atmosphere_single_layer/AOTK
+121,Aeorosol Optical Thickness,entire_atmosphere_single_layer,entire_atmosphere_single_layer,0,AOTK,,V4,both,fcst,,1,sfc,entire_atmosphere_single_layer,entire_atmosphere_single_layer/AOTK
+122,Total Column-Integrated Mass Density,entire_atmosphere_single_layer,entire_atmosphere_single_layer,0,COLMD,kg/m<sup>2</sup>,V4,both,anl,Vertically-integrated smoke,2,"prs,sfc",entire_atmosphere_single_layer,entire_atmosphere_single_layer/COLMD
+122,Total Column-Integrated Mass Density,entire_atmosphere_single_layer,entire_atmosphere_single_layer,0,COLMD,kg/m<sup>2</sup>,V4,both,fcst,Vertically-integrated smoke,1,sfc,entire_atmosphere_single_layer,entire_atmosphere_single_layer/COLMD
+123,Total Column-Integrated Cloud Ice,entire_atmosphere_single_layer,entire_atmosphere_single_layer,0,TCOLWold,kg/m<sup>2</sup>,V4,both,anl,,0,,,
+123,Total Column-Integrated Cloud Ice,entire_atmosphere_single_layer,entire_atmosphere_single_layer,0,TCOLWold,kg/m<sup>2</sup>,V4,both,fcst,,0,,,
+124,Height of the Level of Equilibrium Level,equilibrium_level,equilibrium_level,0,HGT,gpm,V3,both,anl,,2,"prs,sfc",equilibrium_level,equilibrium_level/HGT
+124,Height of the Level of Equilibrium Level,equilibrium_level,equilibrium_level,0,HGT,gpm,V3,both,fcst,,1,sfc,equilibrium_level,equilibrium_level/HGT
+125,High Cloud Cover,high_cloud_layer,high_cloud_layer,0,HCDC,%,V3,both,anl,,2,"prs,sfc",high_cloud_layer,high_cloud_layer/HCDC
+125,High Cloud Cover,high_cloud_layer,high_cloud_layer,0,HCDC,%,V3,both,fcst,,1,sfc,high_cloud_layer,high_cloud_layer/HCDC
+126,Height of the highest tropospheric freezing level,highest_tropospheric_freezing_level,highest_tropospheric_freezing_level,0,HGT,m,V3,both,anl,,2,"prs,sfc",highest_tropospheric_freezing_level,highest_tropospheric_freezing_level/HGT
+126,Height of the highest tropospheric freezing level,highest_tropospheric_freezing_level,highest_tropospheric_freezing_level,0,HGT,m,V3,both,fcst,,1,sfc,highest_tropospheric_freezing_level,highest_tropospheric_freezing_level/HGT
+127,Pressure at the highest tropospheric freezing level,highest_tropospheric_freezing_level,highest_tropospheric_freezing_level,0,PRES,Pa,V3,both,anl,,2,"prs,sfc",highest_tropospheric_freezing_level,highest_tropospheric_freezing_level/PRES
+127,Pressure at the highest tropospheric freezing level,highest_tropospheric_freezing_level,highest_tropospheric_freezing_level,0,PRES,Pa,V3,both,fcst,,1,sfc,highest_tropospheric_freezing_level,highest_tropospheric_freezing_level/PRES
+128,Relative Humidity at the highest tropospheric freezing level,highest_tropospheric_freezing_level,highest_tropospheric_freezing_level,0,RH,%,V3,both,anl,,2,"prs,sfc",highest_tropospheric_freezing_level,highest_tropospheric_freezing_level/RH
+128,Relative Humidity at the highest tropospheric freezing level,highest_tropospheric_freezing_level,highest_tropospheric_freezing_level,0,RH,%,V3,both,fcst,,1,sfc,highest_tropospheric_freezing_level,highest_tropospheric_freezing_level/RH
+129,Geopotential Height,level_of_adiabatic_condensation_from_sfc,level_of_adiabatic_condensation_from_sfc,0,HGT,gpm,V3,both,anl,,2,"prs,sfc",level_of_adiabatic_condensation_from_sfc,level_of_adiabatic_condensation_from_sfc/HGT
+129,Geopotential Height,level_of_adiabatic_condensation_from_sfc,level_of_adiabatic_condensation_from_sfc,0,HGT,gpm,V3,both,fcst,,1,sfc,level_of_adiabatic_condensation_from_sfc,level_of_adiabatic_condensation_from_sfc/HGT
+130,Low Cloud Cover,low_cloud_layer,low_cloud_layer,0,LCDC,%,V3,both,anl,,2,"prs,sfc",low_cloud_layer,low_cloud_layer/LCDC
+130,Low Cloud Cover,low_cloud_layer,low_cloud_layer,0,LCDC,%,V3,both,fcst,,1,sfc,low_cloud_layer,low_cloud_layer/LCDC
+131,Mean Sea Level Pressure,mean_sea_level,mean_sea_level,0,MSLMA,Pa,V3,both,anl,,2,"prs,sfc",mean_sea_level,mean_sea_level/MSLMA
+131,Mean Sea Level Pressure,mean_sea_level,mean_sea_level,0,MSLMA,Pa,V3,both,fcst,,1,sfc,mean_sea_level,mean_sea_level/MSLMA
+132,Middle Cloud Cover,middle_cloud_layer,middle_cloud_layer,0,MCDC,%,V3,both,anl,,2,"prs,sfc",middle_cloud_layer,middle_cloud_layer/MCDC
+132,Middle Cloud Cover,middle_cloud_layer,middle_cloud_layer,0,MCDC,%,V3,both,fcst,,1,sfc,middle_cloud_layer,middle_cloud_layer/MCDC
+133,Height of the Level of Free Convection,no_level,no_level,0,HGT,m,V4,both,anl,,0,,,
+133,Height of the Level of Free Convection,no_level,no_level,0,HGT,m,V4,both,fcst,,0,,,
+134,Visibility,surface,surface,0,VIS,m,V3,both,anl,,2,"prs,sfc",surface,surface/VIS
+134,Visibility,surface,surface,0,VIS,m,V3,both,fcst,,1,sfc,surface,surface/VIS
+135,Wind Gust,surface,surface,0,GUST,m/s,V3,both,anl,,2,"prs,sfc",surface,surface/GUST
+135,Wind Gust,surface,surface,0,GUST,m/s,V3,both,fcst,,1,sfc,surface,surface/GUST
+136,Hail,surface,surface,0,HAIL_max_fcst,m,V4,anl,anl,,1,sfc,surface,surface/HAIL_max_fcst
+137,Hail,surface,surface,0,HAIL_1hr_max_fcst,m,V4,fcst,fcst,,1,sfc,surface,surface/HAIL_1hr_max_fcst
+138,Pressure,surface,surface,0,PRES,Pa,V3,both,anl,,2,"prs,sfc",surface,surface/PRES
+138,Pressure,surface,surface,0,PRES,Pa,V3,both,fcst,,1,sfc,surface,surface/PRES
+139,Geopotential Height,surface,surface,0,HGT,gpm,V3,both,anl,,2,"prs,sfc",surface,surface/HGT
+139,Geopotential Height,surface,surface,0,HGT,gpm,V3,both,fcst,,1,sfc,surface,surface/HGT
+140,Temperature,surface,surface,0,TMP,K,V3,both,anl,,2,"prs,sfc",surface,surface/TMP
+140,Temperature,surface,surface,0,TMP,K,V3,both,fcst,,1,sfc,surface,surface/TMP
+141,Total Snowfall,surface,surface,0,ASNOW_acc_fcst,m,V3,both,anl,,2,"prs,sfc",surface,surface/ASNOW_acc_fcst
+141,Total Snowfall,surface,surface,0,ASNOW_acc_fcst,m,V3,both,fcst,,1,sfc,surface,surface/ASNOW_acc_fcst
+142,Total Snowfall,surface,surface,0,ASNOW_1hr_acc_fcst,m,V3,fcst,fcst,,1,sfc,surface,surface/ASNOW_1hr_acc_fcst
+143,Plant Canopy Surface Water,surface,surface,0,CNWAT,kg/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",surface,surface/CNWAT
+143,Plant Canopy Surface Water,surface,surface,0,CNWAT,kg/m<sup>2</sup>,V3,both,fcst,,1,sfc,surface,surface/CNWAT
+144,Cloud Forcing Net Solar Flux,surface,surface,0,CFNSF,W/m<sup>2</sup>,V3,both,anl,Fire radiative power,2,"prs,sfc",surface,surface/CFNSF
+144,Cloud Forcing Net Solar Flux,surface,surface,0,CFNSF,W/m<sup>2</sup>,V3,both,fcst,Fire radiative power,1,sfc,surface,surface/CFNSF
+145,Water Equivalent of Accumulated Snow Depth,surface,surface,0,WEASD,kg/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",surface,surface/WEASD
+145,Water Equivalent of Accumulated Snow Depth,surface,surface,0,WEASD,kg/m<sup>2</sup>,V3,both,fcst,,1,sfc,surface,surface/WEASD
+146,Water Equivalent of Accumulated Snow Depth UTC Day,surface,surface,0,WEASD_acc_fcst,kg/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",surface,surface/WEASD_acc_fcst
+146,Water Equivalent of Accumulated Snow Depth UTC Day,surface,surface,0,WEASD_acc_fcst,kg/m<sup>2</sup>,V3,both,fcst,,1,sfc,surface,surface/WEASD_acc_fcst
+147,Water Equivalent of Accumulated Snow Depth UTC Day,surface,surface,0,WEASD_1hr_acc_fcst,kg/m<sup>2</sup>,V3,fcst,fcst,,1,sfc,surface,surface/WEASD_1hr_acc_fcst
+148,Snow Cover,surface,surface,0,SNOWC,%,V3,both,anl,,2,"prs,sfc",surface,surface/SNOWC
+148,Snow Cover,surface,surface,0,SNOWC,%,V3,both,fcst,,1,sfc,surface,surface/SNOWC
+149,Snow Depth,surface,surface,0,SNOD,m,V3,both,anl,,2,"prs,sfc",surface,surface/SNOD
+149,Snow Depth,surface,surface,0,SNOD,m,V3,both,fcst,,1,sfc,surface,surface/SNOD
+150,Percent Frozen Precipitation,surface,surface,0,CPOFP,%,V3,both,anl,,2,"prs,sfc",surface,surface/CPOFP
+150,Percent Frozen Precipitation,surface,surface,0,CPOFP,%,V3,both,fcst,,1,sfc,surface,surface/CPOFP
+151,Precipitation Rate,surface,surface,0,PRATE,kg/(m<sup>2</sup> s),V3,both,anl,,2,"prs,sfc",surface,surface/PRATE
+151,Precipitation Rate,surface,surface,0,PRATE,kg/(m<sup>2</sup> s),V3,both,fcst,,1,sfc,surface,surface/PRATE
+152,Total Precipitation UTC day,surface,surface,0,APCP_acc_fcst,kg/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",surface,surface/APCP_acc_fcst
+152,Total Precipitation UTC day,surface,surface,0,APCP_acc_fcst,kg/m<sup>2</sup>,V3,both,fcst,,1,sfc,surface,surface/APCP_acc_fcst
+153,Total Precipitation UTC day,surface,surface,0,APCP_1hr_acc_fcst,kg/m<sup>2</sup>,V3,fcst,fcst,,1,sfc,surface,surface/APCP_1hr_acc_fcst
+154,Frozen RainUTC day,surface,surface,0,FROZR_acc_fcst,kg/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",surface,surface/FROZR_acc_fcst
+154,Frozen RainUTC day,surface,surface,0,FROZR_acc_fcst,kg/m<sup>2</sup>,V3,both,fcst,,1,sfc,surface,surface/FROZR_acc_fcst
+155,Frozen RainUTC day,surface,surface,0,FROZR_1hr_acc_fcst,kg/m<sup>2</sup>,V3,fcst,fcst,,1,sfc,surface,surface/FROZR_1hr_acc_fcst
+156,Freezing Rain UTC day,surface,surface,0,FRZR_acc_fcst,kg/m<sup>2</sup>,V4,both,anl,,2,"prs,sfc",surface,surface/FRZR_acc_fcst
+156,Freezing Rain UTC day,surface,surface,0,FRZR_acc_fcst,kg/m<sup>2</sup>,V4,both,fcst,,1,sfc,surface,surface/FRZR_acc_fcst
+157,Freezing Rain UTC day,surface,surface,0,FRZR_1hr_acc_fcst,kg/m<sup>2</sup>,V4,fcst,fcst,,1,sfc,surface,surface/FRZR_1hr_acc_fcst
+158,Storm Surface Runoff,surface,surface,0,SSRUN_acc_fcst,kg/m<sup>2</sup>,V3,anl,anl,,2,"prs,sfc",surface,surface/SSRUN_acc_fcst
+159,Storm Surface Runoff,surface,surface,0,SSRUN_1hr_acc_fcst,kg/m<sup>2</sup>,V3,fcst,fcst,,1,sfc,surface,surface/SSRUN_1hr_acc_fcst
+160,Baseflow-Groundwater,surface,surface,0,BGRUN_acc_fcst,kg/m<sup>2</sup>,V3,anl,anl,,2,"prs,sfc",surface,surface/BGRUN_acc_fcst
+161,Baseflow-Groundwater,surface,surface,0,BGRUN_1hr_acc_fcst,kg/m<sup>2</sup>,V3,fcst,fcst,,1,sfc,surface,surface/BGRUN_1hr_acc_fcst
+162,Categorical Snow,surface,surface,0,CSNOW,,V3,both,anl,,2,"prs,sfc",surface,surface/CSNOW
+162,Categorical Snow,surface,surface,0,CSNOW,,V3,both,fcst,,1,sfc,surface,surface/CSNOW
+163,Categorical Ice Pellets,surface,surface,0,CICEP,,V3,both,anl,,2,"prs,sfc",surface,surface/CICEP
+163,Categorical Ice Pellets,surface,surface,0,CICEP,,V3,both,fcst,,1,sfc,surface,surface/CICEP
+164,Categorical Freezing Rain,surface,surface,0,CFRZR,,V3,both,anl,,2,"prs,sfc",surface,surface/CFRZR
+164,Categorical Freezing Rain,surface,surface,0,CFRZR,,V3,both,fcst,,1,sfc,surface,surface/CFRZR
+165,Categorical Rain,surface,surface,0,CRAIN,,V3,both,anl,,2,"prs,sfc",surface,surface/CRAIN
+165,Categorical Rain,surface,surface,0,CRAIN,,V3,both,fcst,,1,sfc,surface,surface/CRAIN
+166,Surface Roughness,surface,surface,0,SFCR,m,V3,both,anl,,2,"prs,sfc",surface,surface/SFCR
+166,Surface Roughness,surface,surface,0,SFCR,m,V3,both,fcst,,1,sfc,surface,surface/SFCR
+167,Frictional Velocity,surface,surface,0,FRICV,m/s,V3,both,anl,,2,"prs,sfc",surface,surface/FRICV
+167,Frictional Velocity,surface,surface,0,FRICV,m/s,V3,both,fcst,,1,sfc,surface,surface/FRICV
+168,Sensible Heat Net Flux,surface,surface,0,SHTFL,W/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",surface,surface/SHTFL
+168,Sensible Heat Net Flux,surface,surface,0,SHTFL,W/m<sup>2</sup>,V3,both,fcst,,1,sfc,surface,surface/SHTFL
+169,Latent Heat Net Flux,surface,surface,0,LHTFL,W/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",surface,surface/LHTFL
+169,Latent Heat Net Flux,surface,surface,0,LHTFL,W/m<sup>2</sup>,V3,both,fcst,,1,sfc,surface,surface/LHTFL
+170,Vegetation,surface,surface,0,VEG,%,V4,both,anl,,1,sfc,surface,surface/VEG
+170,Vegetation,surface,surface,0,VEG,%,V4,both,fcst,,1,sfc,surface,surface/VEG
+171,Annual Maximum Vegetation Fraction,surface,surface,0,MXVEG,,V4,both,anl,,0,,,
+171,Annual Maximum Vegetation Fraction,surface,surface,0,MXVEG,,V4,both,fcst,,0,,,
+172,Annual Minimum Vegetation Fraction,surface,surface,0,MNVEG,,V4,both,anl,,0,,,
+172,Annual Minimum Vegetation Fraction,surface,surface,0,MNVEG,,V4,both,fcst,,0,,,
+173,Leaf Area Index,surface,surface,0,LAI,,V4,both,anl,,1,sfc,surface,surface/LAI
+173,Leaf Area Index,surface,surface,0,LAI,,V4,both,fcst,,1,sfc,surface,surface/LAI
+174,Ground Heat Flux,surface,surface,0,GFLUX,W/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",surface,surface/GFLUX
+174,Ground Heat Flux,surface,surface,0,GFLUX,W/m<sup>2</sup>,V3,both,fcst,,1,sfc,surface,surface/GFLUX
+175,Vegetation Type,surface,surface,0,VGTYP,,V3,both,anl,,2,"prs,sfc",surface,surface/VGTYP
+175,Vegetation Type,surface,surface,0,VGTYP,,V3,both,fcst,,1,sfc,surface,surface/VGTYP
+176,Convective Available Potential Energy,surface,surface,0,CAPE,J/kg,V3,both,anl,,2,"prs,sfc",surface,surface/CAPE
+176,Convective Available Potential Energy,surface,surface,0,CAPE,J/kg,V3,both,fcst,,1,sfc,surface,surface/CAPE
+177,Convective Inhibition,surface,surface,0,CIN,J/kg,V3,both,anl,,2,"prs,sfc",surface,surface/CIN
+177,Convective Inhibition,surface,surface,0,CIN,J/kg,V3,both,fcst,,1,sfc,surface,surface/CIN
+178,Upward Long-Wave Rad. Flux,surface,surface,0,ULWRF,W/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",surface,surface/ULWRF
+178,Upward Long-Wave Rad. Flux,surface,surface,0,ULWRF,W/m<sup>2</sup>,V3,both,fcst,,1,sfc,surface,surface/ULWRF
+179,Upward Short-Wave Rad. Flux,surface,surface,0,USWRF,W/m<sup>2</sup>,V3,both,anl,fcst data empty due to iris-grib #265,2,"prs,sfc",surface,surface/USWRF
+179,Upward Short-Wave Rad. Flux,surface,surface,0,USWRF,W/m<sup>2</sup>,V3,both,fcst,fcst data empty due to iris-grib #265,1,sfc,surface,surface/USWRF
+180,Downward Long-Wave Rad. Flux,surface,surface,0,DLWRF,W/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",surface,surface/DLWRF
+180,Downward Long-Wave Rad. Flux,surface,surface,0,DLWRF,W/m<sup>2</sup>,V3,both,fcst,,1,sfc,surface,surface/DLWRF
+181,Downward Short-Wave Rad. Flux,surface,surface,0,DSWRF,W/m<sup>2</sup>,V3,both,anl,fcst data empty due to iris-grib #265,2,"prs,sfc",surface,surface/DSWRF
+181,Downward Short-Wave Rad. Flux,surface,surface,0,DSWRF,W/m<sup>2</sup>,V3,both,fcst,fcst data empty due to iris-grib #265,1,sfc,surface,surface/DSWRF
+182,Visible Beam Downward Solar Flux,surface,surface,0,VBDSF,W/m<sup>2</sup>,V3,both,anl,fcst data empty due to iris-grib #265,2,"prs,sfc",surface,surface/VBDSF
+182,Visible Beam Downward Solar Flux,surface,surface,0,VBDSF,W/m<sup>2</sup>,V3,both,fcst,fcst data empty due to iris-grib #265,1,sfc,surface,surface/VBDSF
+183,Visible Diffuse Downward Solar Flux,surface,surface,0,VDDSF,W/m<sup>2</sup>,V3,both,anl,fcst data empty due to iris-grib #265,2,"prs,sfc",surface,surface/VDDSF
+183,Visible Diffuse Downward Solar Flux,surface,surface,0,VDDSF,W/m<sup>2</sup>,V3,both,fcst,fcst data empty due to iris-grib #265,1,sfc,surface,surface/VDDSF
+184,Planetary Boundary Layer Height,surface,surface,0,HPBL,m,V3,both,anl,,2,"prs,sfc",surface,surface/HPBL
+184,Planetary Boundary Layer Height,surface,surface,0,HPBL,m,V3,both,fcst,,1,sfc,surface,surface/HPBL
+185,"Land Cover (0=sea, 1=land)",surface,surface,0,LAND,Proportion,V3,both,anl,,2,"prs,sfc",surface,surface/LAND
+185,"Land Cover (0=sea, 1=land)",surface,surface,0,LAND,Proportion,V3,both,fcst,,1,sfc,surface,surface/LAND
+186,Ice Cover,surface,surface,0,ICEC,Proportion,V3,both,anl,,2,"prs,sfc",surface,surface/ICEC
+186,Ice Cover,surface,surface,0,ICEC,Proportion,V3,both,fcst,,1,sfc,surface,surface/ICEC
+187,Upward Long-Wave Rad. Flux,top_of_atmosphere,top_of_atmosphere,0,ULWRF,W/m<sup>2</sup>,V3,both,anl,,2,"prs,sfc",top_of_atmosphere,top_of_atmosphere/ULWRF
+187,Upward Long-Wave Rad. Flux,top_of_atmosphere,top_of_atmosphere,0,ULWRF,W/m<sup>2</sup>,V3,both,fcst,,1,sfc,top_of_atmosphere,top_of_atmosphere/ULWRF
+188,Upward Short-Wave Rad. Flux,top_of_atmosphere,top_of_atmosphere,0,USWRF,W/m<sup>2</sup>,V3,both,anl,fcst data empty due to iris-grib #265,2,"prs,sfc",top_of_atmosphere,top_of_atmosphere/USWRF
+188,Upward Short-Wave Rad. Flux,top_of_atmosphere,top_of_atmosphere,0,USWRF,W/m<sup>2</sup>,V3,both,fcst,fcst data empty due to iris-grib #265,1,sfc,top_of_atmosphere,top_of_atmosphere/USWRF
+189,"Simulated Brightness Temperature for GOES 11, Channel 3",top_of_atmosphere,top_of_atmosphere,0,SBT113,K,V3,both,anl,,2,"prs,sfc",top_of_atmosphere,top_of_atmosphere/SBT113
+189,"Simulated Brightness Temperature for GOES 11, Channel 3",top_of_atmosphere,top_of_atmosphere,0,SBT113,K,V3,both,fcst,,1,sfc,top_of_atmosphere,top_of_atmosphere/SBT113
+190,"Simulated Brightness Temperature for GOES 11, Channel 4",top_of_atmosphere,top_of_atmosphere,0,SBT114,K,V3,both,anl,,2,"prs,sfc",top_of_atmosphere,top_of_atmosphere/SBT114
+190,"Simulated Brightness Temperature for GOES 11, Channel 4",top_of_atmosphere,top_of_atmosphere,0,SBT114,K,V3,both,fcst,,1,sfc,top_of_atmosphere,top_of_atmosphere/SBT114
+191,"Simulated Brightness Temperature for GOES 12, Channel 3",top_of_atmosphere,top_of_atmosphere,0,SBT123,K,V3,both,anl,,2,"prs,sfc",top_of_atmosphere,top_of_atmosphere/SBT123
+191,"Simulated Brightness Temperature for GOES 12, Channel 3",top_of_atmosphere,top_of_atmosphere,0,SBT123,K,V3,both,fcst,,1,sfc,top_of_atmosphere,top_of_atmosphere/SBT123
+192,"Simulated Brightness Temperature for GOES 12, Channel 4",top_of_atmosphere,top_of_atmosphere,0,SBT124,K,V3,both,anl,,2,"prs,sfc",top_of_atmosphere,top_of_atmosphere/SBT124
+192,"Simulated Brightness Temperature for GOES 12, Channel 4",top_of_atmosphere,top_of_atmosphere,0,SBT124,K,V3,both,fcst,,1,sfc,top_of_atmosphere,top_of_atmosphere/SBT124

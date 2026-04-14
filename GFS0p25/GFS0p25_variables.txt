@@ -1,0 +1,527 @@
+gfs.t00z.pgrb2.0p25.f000
+shortName    name         level        typeOfLevel  
+clwmr        Cloud mixing ratio  1            hybrid      
+icmr         Ice water mixing ratio  1            hybrid      
+rwmr         Rain mixing ratio  1            hybrid      
+snmr         Snow mixing ratio  1            hybrid      
+grle         Graupel (snow pellets)  1            hybrid      
+refc         Maximum/Composite radar reflectivity  0            atmosphere  
+vis          Visibility   0            surface     
+u            U component of wind  0            planetaryBoundaryLayer 
+v            V component of wind  0            planetaryBoundaryLayer 
+VRATE        Ventilation Rate  0            planetaryBoundaryLayer 
+gust         Wind speed (gust)  0            surface     
+gh           Geopotential height  40           isobaricInPa 
+t            Temperature  40           isobaricInPa 
+absv         Absolute vorticity  40           isobaricInPa 
+o3mr         Ozone mixing ratio  40           isobaricInPa 
+gh           Geopotential height  1            isobaricInhPa 
+t            Temperature  1            isobaricInhPa 
+r            Relative humidity  1            isobaricInhPa 
+u            U component of wind  1            isobaricInhPa 
+v            V component of wind  1            isobaricInhPa 
+o3mr         Ozone mixing ratio  1            isobaricInhPa 
+gh           Geopotential height  2            isobaricInhPa 
+t            Temperature  2            isobaricInhPa 
+r            Relative humidity  2            isobaricInhPa 
+u            U component of wind  2            isobaricInhPa 
+v            V component of wind  2            isobaricInhPa 
+o3mr         Ozone mixing ratio  2            isobaricInhPa 
+gh           Geopotential height  3            isobaricInhPa 
+t            Temperature  3            isobaricInhPa 
+r            Relative humidity  3            isobaricInhPa 
+u            U component of wind  3            isobaricInhPa 
+v            V component of wind  3            isobaricInhPa 
+o3mr         Ozone mixing ratio  3            isobaricInhPa 
+gh           Geopotential height  5            isobaricInhPa 
+t            Temperature  5            isobaricInhPa 
+r            Relative humidity  5            isobaricInhPa 
+u            U component of wind  5            isobaricInhPa 
+v            V component of wind  5            isobaricInhPa 
+o3mr         Ozone mixing ratio  5            isobaricInhPa 
+gh           Geopotential height  7            isobaricInhPa 
+t            Temperature  7            isobaricInhPa 
+r            Relative humidity  7            isobaricInhPa 
+u            U component of wind  7            isobaricInhPa 
+v            V component of wind  7            isobaricInhPa 
+o3mr         Ozone mixing ratio  7            isobaricInhPa 
+gh           Geopotential height  10           isobaricInhPa 
+t            Temperature  10           isobaricInhPa 
+r            Relative humidity  10           isobaricInhPa 
+u            U component of wind  10           isobaricInhPa 
+v            V component of wind  10           isobaricInhPa 
+absv         Absolute vorticity  10           isobaricInhPa 
+o3mr         Ozone mixing ratio  10           isobaricInhPa 
+gh           Geopotential height  15           isobaricInhPa 
+t            Temperature  15           isobaricInhPa 
+absv         Absolute vorticity  15           isobaricInhPa 
+o3mr         Ozone mixing ratio  15           isobaricInhPa 
+gh           Geopotential height  20           isobaricInhPa 
+t            Temperature  20           isobaricInhPa 
+r            Relative humidity  20           isobaricInhPa 
+u            U component of wind  20           isobaricInhPa 
+v            V component of wind  20           isobaricInhPa 
+absv         Absolute vorticity  20           isobaricInhPa 
+o3mr         Ozone mixing ratio  20           isobaricInhPa 
+gh           Geopotential height  30           isobaricInhPa 
+t            Temperature  30           isobaricInhPa 
+r            Relative humidity  30           isobaricInhPa 
+u            U component of wind  30           isobaricInhPa 
+v            V component of wind  30           isobaricInhPa 
+absv         Absolute vorticity  30           isobaricInhPa 
+o3mr         Ozone mixing ratio  30           isobaricInhPa 
+gh           Geopotential height  40           isobaricInhPa 
+t            Temperature  40           isobaricInhPa 
+absv         Absolute vorticity  40           isobaricInhPa 
+o3mr         Ozone mixing ratio  40           isobaricInhPa 
+gh           Geopotential height  50           isobaricInhPa 
+t            Temperature  50           isobaricInhPa 
+r            Relative humidity  50           isobaricInhPa 
+tcc          Total Cloud Cover  50           isobaricInhPa 
+u            U component of wind  50           isobaricInhPa 
+v            V component of wind  50           isobaricInhPa 
+absv         Absolute vorticity  50           isobaricInhPa 
+clwmr        Cloud mixing ratio  50           isobaricInhPa 
+icmr         Ice water mixing ratio  50           isobaricInhPa 
+rwmr         Rain mixing ratio  50           isobaricInhPa 
+snmr         Snow mixing ratio  50           isobaricInhPa 
+grle         Graupel (snow pellets)  50           isobaricInhPa 
+o3mr         Ozone mixing ratio  50           isobaricInhPa 
+gh           Geopotential height  70           isobaricInhPa 
+t            Temperature  70           isobaricInhPa 
+r            Relative humidity  70           isobaricInhPa 
+u            U component of wind  70           isobaricInhPa 
+v            V component of wind  70           isobaricInhPa 
+absv         Absolute vorticity  70           isobaricInhPa 
+o3mr         Ozone mixing ratio  70           isobaricInhPa 
+gh           Geopotential height  100          isobaricInhPa 
+t            Temperature  100          isobaricInhPa 
+r            Relative humidity  100          isobaricInhPa 
+tcc          Total Cloud Cover  100          isobaricInhPa 
+w            Vertical velocity  100          isobaricInhPa 
+wz           Geometric vertical velocity  100          isobaricInhPa 
+u            U component of wind  100          isobaricInhPa 
+v            V component of wind  100          isobaricInhPa 
+absv         Absolute vorticity  100          isobaricInhPa 
+clwmr        Cloud mixing ratio  100          isobaricInhPa 
+icmr         Ice water mixing ratio  100          isobaricInhPa 
+rwmr         Rain mixing ratio  100          isobaricInhPa 
+snmr         Snow mixing ratio  100          isobaricInhPa 
+grle         Graupel (snow pellets)  100          isobaricInhPa 
+o3mr         Ozone mixing ratio  100          isobaricInhPa 
+gh           Geopotential height  150          isobaricInhPa 
+t            Temperature  150          isobaricInhPa 
+r            Relative humidity  150          isobaricInhPa 
+tcc          Total Cloud Cover  150          isobaricInhPa 
+w            Vertical velocity  150          isobaricInhPa 
+wz           Geometric vertical velocity  150          isobaricInhPa 
+u            U component of wind  150          isobaricInhPa 
+v            V component of wind  150          isobaricInhPa 
+absv         Absolute vorticity  150          isobaricInhPa 
+clwmr        Cloud mixing ratio  150          isobaricInhPa 
+icmr         Ice water mixing ratio  150          isobaricInhPa 
+rwmr         Rain mixing ratio  150          isobaricInhPa 
+snmr         Snow mixing ratio  150          isobaricInhPa 
+grle         Graupel (snow pellets)  150          isobaricInhPa 
+o3mr         Ozone mixing ratio  150          isobaricInhPa 
+gh           Geopotential height  200          isobaricInhPa 
+t            Temperature  200          isobaricInhPa 
+r            Relative humidity  200          isobaricInhPa 
+tcc          Total Cloud Cover  200          isobaricInhPa 
+w            Vertical velocity  200          isobaricInhPa 
+wz           Geometric vertical velocity  200          isobaricInhPa 
+u            U component of wind  200          isobaricInhPa 
+v            V component of wind  200          isobaricInhPa 
+absv         Absolute vorticity  200          isobaricInhPa 
+clwmr        Cloud mixing ratio  200          isobaricInhPa 
+icmr         Ice water mixing ratio  200          isobaricInhPa 
+rwmr         Rain mixing ratio  200          isobaricInhPa 
+snmr         Snow mixing ratio  200          isobaricInhPa 
+grle         Graupel (snow pellets)  200          isobaricInhPa 
+o3mr         Ozone mixing ratio  200          isobaricInhPa 
+gh           Geopotential height  250          isobaricInhPa 
+t            Temperature  250          isobaricInhPa 
+r            Relative humidity  250          isobaricInhPa 
+tcc          Total Cloud Cover  250          isobaricInhPa 
+w            Vertical velocity  250          isobaricInhPa 
+wz           Geometric vertical velocity  250          isobaricInhPa 
+u            U component of wind  250          isobaricInhPa 
+v            V component of wind  250          isobaricInhPa 
+absv         Absolute vorticity  250          isobaricInhPa 
+clwmr        Cloud mixing ratio  250          isobaricInhPa 
+icmr         Ice water mixing ratio  250          isobaricInhPa 
+rwmr         Rain mixing ratio  250          isobaricInhPa 
+snmr         Snow mixing ratio  250          isobaricInhPa 
+grle         Graupel (snow pellets)  250          isobaricInhPa 
+o3mr         Ozone mixing ratio  250          isobaricInhPa 
+gh           Geopotential height  300          isobaricInhPa 
+t            Temperature  300          isobaricInhPa 
+r            Relative humidity  300          isobaricInhPa 
+tcc          Total Cloud Cover  300          isobaricInhPa 
+w            Vertical velocity  300          isobaricInhPa 
+wz           Geometric vertical velocity  300          isobaricInhPa 
+u            U component of wind  300          isobaricInhPa 
+v            V component of wind  300          isobaricInhPa 
+absv         Absolute vorticity  300          isobaricInhPa 
+clwmr        Cloud mixing ratio  300          isobaricInhPa 
+icmr         Ice water mixing ratio  300          isobaricInhPa 
+rwmr         Rain mixing ratio  300          isobaricInhPa 
+snmr         Snow mixing ratio  300          isobaricInhPa 
+grle         Graupel (snow pellets)  300          isobaricInhPa 
+o3mr         Ozone mixing ratio  300          isobaricInhPa 
+gh           Geopotential height  350          isobaricInhPa 
+t            Temperature  350          isobaricInhPa 
+r            Relative humidity  350          isobaricInhPa 
+tcc          Total Cloud Cover  350          isobaricInhPa 
+w            Vertical velocity  350          isobaricInhPa 
+wz           Geometric vertical velocity  350          isobaricInhPa 
+u            U component of wind  350          isobaricInhPa 
+v            V component of wind  350          isobaricInhPa 
+absv         Absolute vorticity  350          isobaricInhPa 
+clwmr        Cloud mixing ratio  350          isobaricInhPa 
+icmr         Ice water mixing ratio  350          isobaricInhPa 
+rwmr         Rain mixing ratio  350          isobaricInhPa 
+snmr         Snow mixing ratio  350          isobaricInhPa 
+grle         Graupel (snow pellets)  350          isobaricInhPa 
+o3mr         Ozone mixing ratio  350          isobaricInhPa 
+gh           Geopotential height  400          isobaricInhPa 
+t            Temperature  400          isobaricInhPa 
+r            Relative humidity  400          isobaricInhPa 
+tcc          Total Cloud Cover  400          isobaricInhPa 
+w            Vertical velocity  400          isobaricInhPa 
+wz           Geometric vertical velocity  400          isobaricInhPa 
+u            U component of wind  400          isobaricInhPa 
+v            V component of wind  400          isobaricInhPa 
+absv         Absolute vorticity  400          isobaricInhPa 
+clwmr        Cloud mixing ratio  400          isobaricInhPa 
+icmr         Ice water mixing ratio  400          isobaricInhPa 
+rwmr         Rain mixing ratio  400          isobaricInhPa 
+snmr         Snow mixing ratio  400          isobaricInhPa 
+grle         Graupel (snow pellets)  400          isobaricInhPa 
+o3mr         Ozone mixing ratio  400          isobaricInhPa 
+gh           Geopotential height  450          isobaricInhPa 
+t            Temperature  450          isobaricInhPa 
+r            Relative humidity  450          isobaricInhPa 
+tcc          Total Cloud Cover  450          isobaricInhPa 
+w            Vertical velocity  450          isobaricInhPa 
+wz           Geometric vertical velocity  450          isobaricInhPa 
+u            U component of wind  450          isobaricInhPa 
+v            V component of wind  450          isobaricInhPa 
+absv         Absolute vorticity  450          isobaricInhPa 
+clwmr        Cloud mixing ratio  450          isobaricInhPa 
+icmr         Ice water mixing ratio  450          isobaricInhPa 
+rwmr         Rain mixing ratio  450          isobaricInhPa 
+snmr         Snow mixing ratio  450          isobaricInhPa 
+grle         Graupel (snow pellets)  450          isobaricInhPa 
+gh           Geopotential height  500          isobaricInhPa 
+t            Temperature  500          isobaricInhPa 
+r            Relative humidity  500          isobaricInhPa 
+tcc          Total Cloud Cover  500          isobaricInhPa 
+w            Vertical velocity  500          isobaricInhPa 
+wz           Geometric vertical velocity  500          isobaricInhPa 
+u            U component of wind  500          isobaricInhPa 
+v            V component of wind  500          isobaricInhPa 
+absv         Absolute vorticity  500          isobaricInhPa 
+clwmr        Cloud mixing ratio  500          isobaricInhPa 
+icmr         Ice water mixing ratio  500          isobaricInhPa 
+rwmr         Rain mixing ratio  500          isobaricInhPa 
+snmr         Snow mixing ratio  500          isobaricInhPa 
+grle         Graupel (snow pellets)  500          isobaricInhPa 
+o3mr         Ozone mixing ratio  500          isobaricInhPa 
+gh           Geopotential height  550          isobaricInhPa 
+t            Temperature  550          isobaricInhPa 
+r            Relative humidity  550          isobaricInhPa 
+tcc          Total Cloud Cover  550          isobaricInhPa 
+w            Vertical velocity  550          isobaricInhPa 
+wz           Geometric vertical velocity  550          isobaricInhPa 
+u            U component of wind  550          isobaricInhPa 
+v            V component of wind  550          isobaricInhPa 
+absv         Absolute vorticity  550          isobaricInhPa 
+clwmr        Cloud mixing ratio  550          isobaricInhPa 
+icmr         Ice water mixing ratio  550          isobaricInhPa 
+rwmr         Rain mixing ratio  550          isobaricInhPa 
+snmr         Snow mixing ratio  550          isobaricInhPa 
+grle         Graupel (snow pellets)  550          isobaricInhPa 
+gh           Geopotential height  600          isobaricInhPa 
+t            Temperature  600          isobaricInhPa 
+r            Relative humidity  600          isobaricInhPa 
+tcc          Total Cloud Cover  600          isobaricInhPa 
+w            Vertical velocity  600          isobaricInhPa 
+wz           Geometric vertical velocity  600          isobaricInhPa 
+u            U component of wind  600          isobaricInhPa 
+v            V component of wind  600          isobaricInhPa 
+absv         Absolute vorticity  600          isobaricInhPa 
+clwmr        Cloud mixing ratio  600          isobaricInhPa 
+icmr         Ice water mixing ratio  600          isobaricInhPa 
+rwmr         Rain mixing ratio  600          isobaricInhPa 
+snmr         Snow mixing ratio  600          isobaricInhPa 
+grle         Graupel (snow pellets)  600          isobaricInhPa 
+gh           Geopotential height  650          isobaricInhPa 
+t            Temperature  650          isobaricInhPa 
+r            Relative humidity  650          isobaricInhPa 
+tcc          Total Cloud Cover  650          isobaricInhPa 
+w            Vertical velocity  650          isobaricInhPa 
+wz           Geometric vertical velocity  650          isobaricInhPa 
+u            U component of wind  650          isobaricInhPa 
+v            V component of wind  650          isobaricInhPa 
+absv         Absolute vorticity  650          isobaricInhPa 
+clwmr        Cloud mixing ratio  650          isobaricInhPa 
+icmr         Ice water mixing ratio  650          isobaricInhPa 
+rwmr         Rain mixing ratio  650          isobaricInhPa 
+snmr         Snow mixing ratio  650          isobaricInhPa 
+grle         Graupel (snow pellets)  650          isobaricInhPa 
+gh           Geopotential height  700          isobaricInhPa 
+t            Temperature  700          isobaricInhPa 
+r            Relative humidity  700          isobaricInhPa 
+tcc          Total Cloud Cover  700          isobaricInhPa 
+w            Vertical velocity  700          isobaricInhPa 
+wz           Geometric vertical velocity  700          isobaricInhPa 
+u            U component of wind  700          isobaricInhPa 
+v            V component of wind  700          isobaricInhPa 
+absv         Absolute vorticity  700          isobaricInhPa 
+clwmr        Cloud mixing ratio  700          isobaricInhPa 
+icmr         Ice water mixing ratio  700          isobaricInhPa 
+rwmr         Rain mixing ratio  700          isobaricInhPa 
+snmr         Snow mixing ratio  700          isobaricInhPa 
+grle         Graupel (snow pellets)  700          isobaricInhPa 
+o3mr         Ozone mixing ratio  700          isobaricInhPa 
+gh           Geopotential height  750          isobaricInhPa 
+t            Temperature  750          isobaricInhPa 
+r            Relative humidity  750          isobaricInhPa 
+tcc          Total Cloud Cover  750          isobaricInhPa 
+w            Vertical velocity  750          isobaricInhPa 
+wz           Geometric vertical velocity  750          isobaricInhPa 
+u            U component of wind  750          isobaricInhPa 
+v            V component of wind  750          isobaricInhPa 
+absv         Absolute vorticity  750          isobaricInhPa 
+clwmr        Cloud mixing ratio  750          isobaricInhPa 
+icmr         Ice water mixing ratio  750          isobaricInhPa 
+rwmr         Rain mixing ratio  750          isobaricInhPa 
+snmr         Snow mixing ratio  750          isobaricInhPa 
+grle         Graupel (snow pellets)  750          isobaricInhPa 
+gh           Geopotential height  800          isobaricInhPa 
+t            Temperature  800          isobaricInhPa 
+r            Relative humidity  800          isobaricInhPa 
+tcc          Total Cloud Cover  800          isobaricInhPa 
+w            Vertical velocity  800          isobaricInhPa 
+wz           Geometric vertical velocity  800          isobaricInhPa 
+u            U component of wind  800          isobaricInhPa 
+v            V component of wind  800          isobaricInhPa 
+absv         Absolute vorticity  800          isobaricInhPa 
+clwmr        Cloud mixing ratio  800          isobaricInhPa 
+icmr         Ice water mixing ratio  800          isobaricInhPa 
+rwmr         Rain mixing ratio  800          isobaricInhPa 
+snmr         Snow mixing ratio  800          isobaricInhPa 
+grle         Graupel (snow pellets)  800          isobaricInhPa 
+gh           Geopotential height  850          isobaricInhPa 
+t            Temperature  850          isobaricInhPa 
+r            Relative humidity  850          isobaricInhPa 
+tcc          Total Cloud Cover  850          isobaricInhPa 
+w            Vertical velocity  850          isobaricInhPa 
+wz           Geometric vertical velocity  850          isobaricInhPa 
+u            U component of wind  850          isobaricInhPa 
+v            V component of wind  850          isobaricInhPa 
+absv         Absolute vorticity  850          isobaricInhPa 
+clwmr        Cloud mixing ratio  850          isobaricInhPa 
+icmr         Ice water mixing ratio  850          isobaricInhPa 
+rwmr         Rain mixing ratio  850          isobaricInhPa 
+snmr         Snow mixing ratio  850          isobaricInhPa 
+grle         Graupel (snow pellets)  850          isobaricInhPa 
+o3mr         Ozone mixing ratio  850          isobaricInhPa 
+gh           Geopotential height  900          isobaricInhPa 
+t            Temperature  900          isobaricInhPa 
+r            Relative humidity  900          isobaricInhPa 
+tcc          Total Cloud Cover  900          isobaricInhPa 
+w            Vertical velocity  900          isobaricInhPa 
+wz           Geometric vertical velocity  900          isobaricInhPa 
+u            U component of wind  900          isobaricInhPa 
+v            V component of wind  900          isobaricInhPa 
+absv         Absolute vorticity  900          isobaricInhPa 
+clwmr        Cloud mixing ratio  900          isobaricInhPa 
+icmr         Ice water mixing ratio  900          isobaricInhPa 
+rwmr         Rain mixing ratio  900          isobaricInhPa 
+snmr         Snow mixing ratio  900          isobaricInhPa 
+grle         Graupel (snow pellets)  900          isobaricInhPa 
+gh           Geopotential height  925          isobaricInhPa 
+t            Temperature  925          isobaricInhPa 
+r            Relative humidity  925          isobaricInhPa 
+tcc          Total Cloud Cover  925          isobaricInhPa 
+w            Vertical velocity  925          isobaricInhPa 
+wz           Geometric vertical velocity  925          isobaricInhPa 
+u            U component of wind  925          isobaricInhPa 
+v            V component of wind  925          isobaricInhPa 
+absv         Absolute vorticity  925          isobaricInhPa 
+clwmr        Cloud mixing ratio  925          isobaricInhPa 
+icmr         Ice water mixing ratio  925          isobaricInhPa 
+rwmr         Rain mixing ratio  925          isobaricInhPa 
+snmr         Snow mixing ratio  925          isobaricInhPa 
+grle         Graupel (snow pellets)  925          isobaricInhPa 
+gh           Geopotential height  950          isobaricInhPa 
+t            Temperature  950          isobaricInhPa 
+r            Relative humidity  950          isobaricInhPa 
+tcc          Total Cloud Cover  950          isobaricInhPa 
+w            Vertical velocity  950          isobaricInhPa 
+wz           Geometric vertical velocity  950          isobaricInhPa 
+u            U component of wind  950          isobaricInhPa 
+v            V component of wind  950          isobaricInhPa 
+absv         Absolute vorticity  950          isobaricInhPa 
+clwmr        Cloud mixing ratio  950          isobaricInhPa 
+icmr         Ice water mixing ratio  950          isobaricInhPa 
+rwmr         Rain mixing ratio  950          isobaricInhPa 
+snmr         Snow mixing ratio  950          isobaricInhPa 
+grle         Graupel (snow pellets)  950          isobaricInhPa 
+hindex       Haines Index  0            surface     
+gh           Geopotential height  975          isobaricInhPa 
+t            Temperature  975          isobaricInhPa 
+r            Relative humidity  975          isobaricInhPa 
+tcc          Total Cloud Cover  975          isobaricInhPa 
+w            Vertical velocity  975          isobaricInhPa 
+wz           Geometric vertical velocity  975          isobaricInhPa 
+u            U component of wind  975          isobaricInhPa 
+v            V component of wind  975          isobaricInhPa 
+absv         Absolute vorticity  975          isobaricInhPa 
+clwmr        Cloud mixing ratio  975          isobaricInhPa 
+icmr         Ice water mixing ratio  975          isobaricInhPa 
+rwmr         Rain mixing ratio  975          isobaricInhPa 
+snmr         Snow mixing ratio  975          isobaricInhPa 
+grle         Graupel (snow pellets)  975          isobaricInhPa 
+t            Temperature  1000         isobaricInhPa 
+r            Relative humidity  1000         isobaricInhPa 
+tcc          Total Cloud Cover  1000         isobaricInhPa 
+w            Vertical velocity  1000         isobaricInhPa 
+wz           Geometric vertical velocity  1000         isobaricInhPa 
+u            U component of wind  1000         isobaricInhPa 
+v            V component of wind  1000         isobaricInhPa 
+absv         Absolute vorticity  1000         isobaricInhPa 
+clwmr        Cloud mixing ratio  1000         isobaricInhPa 
+icmr         Ice water mixing ratio  1000         isobaricInhPa 
+rwmr         Rain mixing ratio  1000         isobaricInhPa 
+snmr         Snow mixing ratio  1000         isobaricInhPa 
+grle         Graupel (snow pellets)  1000         isobaricInhPa 
+o3mr         Ozone mixing ratio  1000         isobaricInhPa 
+mslet        MSLP (Eta model reduction)  0            meanSea     
+gh           Geopotential height  1000         isobaricInhPa 
+sp           Surface pressure  0            surface     
+orog         Orography    0            surface     
+t            Temperature  0            surface     
+st           Soil temperature  0            depthBelowLandLayer 
+soilw        Volumetric soil moisture content  0            depthBelowLandLayer 
+st           Soil temperature  0            depthBelowLandLayer 
+soilw        Volumetric soil moisture content  0            depthBelowLandLayer 
+st           Soil temperature  0            depthBelowLandLayer 
+soilw        Volumetric soil moisture content  0            depthBelowLandLayer 
+st           Soil temperature  1            depthBelowLandLayer 
+soilw        Volumetric soil moisture content  1            depthBelowLandLayer 
+sdwe         Water equivalent of accumulated snow depth (deprecated)  0            surface     
+sde          Snow depth   0            surface     
+2t           2 metre temperature  2            heightAboveGround 
+2sh          2 metre specific humidity  2            heightAboveGround 
+2d           2 metre dewpoint temperature  2            heightAboveGround 
+2r           2 metre relative humidity  2            heightAboveGround 
+aptmp        Apparent temperature  2            heightAboveGround 
+10u          10 metre U wind component  10           heightAboveGround 
+10v          10 metre V wind component  10           heightAboveGround 
+unknown      unknown      10           heightAboveSea 
+cpofp        Percent frozen precipitation  0            surface     
+prate        Precipitation rate  0            surface     
+csnow        Categorical snow  0            surface     
+cicep        Categorical ice pellets  0            surface     
+cfrzr        Categorical freezing rain  0            surface     
+crain        Categorical rain  0            surface     
+wilt         Wilting Point  0            surface     
+fldcp        Field Capacity  0            surface     
+SUNSD        Sunshine Duration  0            surface     
+lftx         Surface lifted index  0            surface     
+cape         Convective available potential energy  0            surface     
+cin          Convective inhibition  0            surface     
+pwat         Precipitable water  0            atmosphereSingleLayer 
+cwat         Cloud water  0            atmosphereSingleLayer 
+r            Relative humidity  0            atmosphereSingleLayer 
+tozne        Total ozone  0            atmosphereSingleLayer 
+hlcy         Storm relative helicity  3000         heightAboveGroundLayer 
+ustm         U-component storm motion  6000         heightAboveGroundLayer 
+vstm         V-component storm motion  6000         heightAboveGroundLayer 
+trpp         Tropopause pressure  0            tropopause  
+icaht        ICAO Standard Atmosphere reference height  0            tropopause  
+gh           Geopotential height  0            tropopause  
+t            Temperature  0            tropopause  
+u            U component of wind  0            tropopause  
+v            V component of wind  0            tropopause  
+vwsh         Vertical speed shear  0            tropopause  
+pres         Pressure     0            maxWind     
+icaht        ICAO Standard Atmosphere reference height  0            maxWind     
+gh           Geopotential height  0            maxWind     
+u            U component of wind  0            maxWind     
+v            V component of wind  0            maxWind     
+t            Temperature  0            maxWind     
+u            U component of wind  20           heightAboveGround 
+v            V component of wind  20           heightAboveGround 
+u            U component of wind  30           heightAboveGround 
+v            V component of wind  30           heightAboveGround 
+u            U component of wind  40           heightAboveGround 
+v            V component of wind  40           heightAboveGround 
+u            U component of wind  50           heightAboveGround 
+v            V component of wind  50           heightAboveGround 
+t            Temperature  80           heightAboveGround 
+q            Specific humidity  80           heightAboveGround 
+pres         Pressure     80           heightAboveGround 
+u            U component of wind  80           heightAboveGround 
+v            V component of wind  80           heightAboveGround 
+t            Temperature  100          heightAboveGround 
+100u         100 metre U wind component  100          heightAboveGround 
+100v         100 metre V wind component  100          heightAboveGround 
+t            Temperature  1829         heightAboveSea 
+u            U component of wind  1829         heightAboveSea 
+v            V component of wind  1829         heightAboveSea 
+t            Temperature  2743         heightAboveSea 
+u            U component of wind  2743         heightAboveSea 
+v            V component of wind  2743         heightAboveSea 
+t            Temperature  3658         heightAboveSea 
+u            U component of wind  3658         heightAboveSea 
+v            V component of wind  3658         heightAboveSea 
+gh           Geopotential height  0            isothermZero 
+r            Relative humidity  0            isothermZero 
+gh           Geopotential height  0            highestTroposphericFreezing 
+r            Relative humidity  0            highestTroposphericFreezing 
+t            Temperature  3000         pressureFromGroundLayer 
+r            Relative humidity  3000         pressureFromGroundLayer 
+q            Specific humidity  3000         pressureFromGroundLayer 
+u            U component of wind  3000         pressureFromGroundLayer 
+v            V component of wind  3000         pressureFromGroundLayer 
+4lftx        Best (4-layer) lifted index  0            surface     
+cape         Convective available potential energy  18000        pressureFromGroundLayer 
+cin          Convective inhibition  18000        pressureFromGroundLayer 
+unknown      unknown      0            surface     
+r            Relative humidity  0            sigmaLayer  
+r            Relative humidity  0            sigmaLayer  
+r            Relative humidity  1            sigmaLayer  
+r            Relative humidity  0            sigmaLayer  
+t            Temperature  1            sigma       
+pt           Potential temperature  1            sigma       
+r            Relative humidity  1            sigma       
+u            U component of wind  1            sigma       
+v            V component of wind  1            sigma       
+w            Vertical velocity  1            sigma       
+cape         Convective available potential energy  25500        pressureFromGroundLayer 
+cin          Convective inhibition  25500        pressureFromGroundLayer 
+plpl         Pressure of level from which parcel was lifted  25500        pressureFromGroundLayer 
+lsm          Land-sea mask  0            surface     
+ci           Sea ice area fraction  0            surface     
+u            U component of wind  2000         potentialVorticity 
+v            V component of wind  2000         potentialVorticity 
+t            Temperature  2000         potentialVorticity 
+gh           Geopotential height  2000         potentialVorticity 
+pres         Pressure     2000         potentialVorticity 
+vwsh         Vertical speed shear  2000         potentialVorticity 
+u            U component of wind  2147485648   potentialVorticity 
+v            V component of wind  2147485648   potentialVorticity 
+t            Temperature  2147485648   potentialVorticity 
+gh           Geopotential height  2147485648   potentialVorticity 
+pres         Pressure     2147485648   potentialVorticity 
+vwsh         Vertical speed shear  2147485648   potentialVorticity 
+prmsl        Pressure reduced to MSL  0            meanSea     
+5wavh        5-wave geopotential height  500          isobaricInhPa 
+landn        Land-sea coverage (nearest neighbor) [land=1,sea=0]  0            surface     
+522 of 522 messages in gfs.t00z.pgrb2.0p25.f000
+
+522 of 522 total messages in 1 files

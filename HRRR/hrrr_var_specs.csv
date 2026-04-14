@@ -1,0 +1,10 @@
+var_name,target_var,family,level,run_type,output_long_name,output_units,source_units_override,include_in_cli
+i10fg,GUST,sfc,surface,anl,10 m wind gust,m s-1,,1
+sp,PRES,sfc,surface,anl,surface pressure,Pa,,1
+orog,HGT,sfc,surface,anl,surface geopotential height,m,,0
+t2m,TMP,sfc,2m_above_ground,anl,2 m air temperature,K,,1
+d2m,DPT,sfc,2m_above_ground,anl,2 m dew point temperature,K,,1
+sh2,SPFH,sfc,2m_above_ground,anl,2 m specific humidity,kg kg-1,,1
+u10,UGRD,sfc,10m_above_ground,anl,10 m eastward wind,m s-1,,1
+v10,VGRD,sfc,10m_above_ground,anl,10 m northward wind,m s-1,,1
+tp,APCP_1hr_acc_fcst,sfc,surface,fcst,total precipitation,kg m-2,,1

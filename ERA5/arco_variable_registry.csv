@@ -1,0 +1,288 @@
+var_name,source_var,short_name,group,store,dims,dtype,long_name,units,level_dim,n_levels
+cc,fraction_of_cloud_cover,cc,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,Fraction of cloud cover,(0 - 1),hybrid,137
+ciwc,specific_cloud_ice_water_content,ciwc,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,Specific cloud ice water content,kg kg**-1,hybrid,137
+clwc,specific_cloud_liquid_water_content,clwc,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,Specific cloud liquid water content,kg kg**-1,hybrid,137
+crwc,specific_rain_water_content,crwc,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,Specific rain water content,kg kg**-1,hybrid,137
+cswc,specific_snow_water_content,cswc,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,Specific snow water content,kg kg**-1,hybrid,137
+d,divergence,d,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,Divergence,s**-1,hybrid,137
+geopotential,geopotential,,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,Geopotential,m**2 s**-2,hybrid,137
+o3,ozone_mass_mixing_ratio,o3,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,Ozone mass mixing ratio,kg kg**-1,hybrid,137
+q,specific_humidity,q,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,Specific humidity,kg kg**-1,hybrid,137
+t,temperature,t,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,Temperature,K,hybrid,137
+u_component_of_wind,u_component_of_wind,,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,U component of wind,m s**-1,hybrid,137
+v_component_of_wind,v_component_of_wind,,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,V component of wind,m s**-1,hybrid,137
+vo,vorticity,vo,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,Vorticity (relative),s**-1,hybrid,137
+w,vertical_velocity,w,ml,ar/model-level-1h-0p25deg.zarr-v1,"time,hybrid,latitude,longitude",float32,Vertical velocity,Pa s**-1,hybrid,137
+cc,fraction_of_cloud_cover,cc,pl,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,level,latitude,longitude",float32,Fraction of cloud cover,(0 - 1),level,37
+ciwc,specific_cloud_ice_water_content,ciwc,pl,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,level,latitude,longitude",float32,Specific cloud ice water content,kg kg**-1,level,37
+clwc,specific_cloud_liquid_water_content,clwc,pl,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,level,latitude,longitude",float32,Specific cloud liquid water content,kg kg**-1,level,37
+o3,ozone_mass_mixing_ratio,o3,pl,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,level,latitude,longitude",float32,Ozone mass mixing ratio,kg kg**-1,level,37
+pv,potential_vorticity,pv,pl,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,level,latitude,longitude",float32,Potential vorticity,K m**2 kg**-1 s**-1,level,37
+q,specific_humidity,q,pl,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,level,latitude,longitude",float32,Specific humidity,kg kg**-1,level,37
+t,temperature,t,pl,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,level,latitude,longitude",float32,Temperature,K,level,37
+u,u_component_of_wind,u,pl,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,level,latitude,longitude",float32,U component of wind,m s**-1,level,37
+v,v_component_of_wind,v,pl,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,level,latitude,longitude",float32,V component of wind,m s**-1,level,37
+w,vertical_velocity,w,pl,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,level,latitude,longitude",float32,Vertical velocity,Pa s**-1,level,37
+z,geopotential,z,pl,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,level,latitude,longitude",float32,Geopotential,m**2 s**-2,level,37
+alnid,near_ir_albedo_for_diffuse_radiation,alnid,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Near IR albedo for diffuse radiation,(0 - 1),,0
+alnip,near_ir_albedo_for_direct_radiation,alnip,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Near IR albedo for direct radiation,(0 - 1),,0
+aluvd,uv_visible_albedo_for_diffuse_radiation,aluvd,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,UV visible albedo for diffuse radiation,(0 - 1),,0
+aluvp,uv_visible_albedo_for_direct_radiation,aluvp,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,UV visible albedo for direct radiation,(0 - 1),,0
+anor,angle_of_sub_gridscale_orography,anor,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Angle of sub-gridscale orography,radians,,0
+asn,snow_albedo,asn,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Snow albedo,(0 - 1),,0
+bfi,benjamin_feir_index,bfi,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Benjamin-Feir index,dimensionless,,0
+bld,boundary_layer_dissipation,bld,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Boundary layer dissipation,J m**-2,,0
+blh,boundary_layer_height,blh,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Boundary layer height,m,,0
+cape,convective_available_potential_energy,cape,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Convective available potential energy,J kg**-1,,0
+cbh,cloud_base_height,cbh,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Cloud base height,m,,0
+cdir,clear_sky_direct_solar_radiation_at_surface,cdir,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Clear-sky direct solar radiation at surface,J m**-2,,0
+cdww,coefficient_of_drag_with_waves,cdww,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Coefficient of drag with waves,dimensionless,,0
+chnk,charnock,chnk,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Charnock,~,,0
+cin,convective_inhibition,cin,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Convective inhibition,J kg**-1,,0
+cl,lake_cover,cl,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Lake cover,(0 - 1),,0
+cp,convective_precipitation,cp,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Convective precipitation,m,,0
+crr,convective_rain_rate,crr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Convective rain rate,kg m**-2 s**-1,,0
+csf,convective_snowfall,csf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Convective snowfall,m of water equivalent,,0
+csfr,convective_snowfall_rate_water_equivalent,csfr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Convective snowfall rate water equivalent,kg m**-2 s**-1,,0
+cvh,high_vegetation_cover,cvh,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,High vegetation cover,(0 - 1),,0
+cvl,low_vegetation_cover,cvl,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Low vegetation cover,(0 - 1),,0
+d2m,2m_dewpoint_temperature,d2m,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,2 metre dewpoint temperature,K,,0
+dctb,duct_base_height,dctb,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Duct base height,m,,0
+deg0l,zero_degree_level,deg0l,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,0 degrees C isothermal level (atm),m,,0
+dl,lake_depth,dl,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Lake total depth,m,,0
+dndza,mean_vertical_gradient_of_refractivity_inside_trapping_layer,dndza,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean vertical gradient of refractivity inside trapping layer,m**-1,,0
+dndzn,minimum_vertical_gradient_of_refractivity_inside_trapping_layer,dndzn,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Minimum vertical gradient of refractivity inside trapping layer,m**-1,,0
+dwi,ocean_surface_stress_equivalent_10m_neutral_wind_direction,dwi,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,10 metre wind direction,degrees,,0
+dwps,wave_spectral_directional_width_for_swell,dwps,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Wave spectral directional width for swell,radians,,0
+dwww,wave_spectral_directional_width_for_wind_waves,dwww,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Wave spectral directional width for wind waves,radians,,0
+e,evaporation,e,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Evaporation,m of water equivalent,,0
+es,snow_evaporation,es,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Snow evaporation,m of water equivalent,,0
+ewss,eastward_turbulent_surface_stress,ewss,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Eastward turbulent surface stress,N m**-2 s,,0
+fal,forecast_albedo,fal,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Forecast albedo,(0 - 1),,0
+fdir,total_sky_direct_solar_radiation_at_surface,fdir,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Total sky direct solar radiation at surface,J m**-2,,0
+fg10,10m_wind_gust_since_previous_post_processing,fg10,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,10 metre wind gust since previous post-processing,m s**-1,,0
+flsr,forecast_logarithm_of_surface_roughness_for_heat,flsr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Forecast logarithm of surface roughness for heat,~,,0
+fsr,forecast_surface_roughness,fsr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Forecast surface roughness,m,,0
+gwd,gravity_wave_dissipation,gwd,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Gravity wave dissipation,J m**-2,,0
+hcc,high_cloud_cover,hcc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,High cloud cover,(0 - 1),,0
+hmax,maximum_individual_wave_height,hmax,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Maximum individual wave height,m,,0
+i10fg,instantaneous_10m_wind_gust,i10fg,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Instantaneous 10 metre wind gust,m s**-1,,0
+ie,instantaneous_moisture_flux,ie,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Instantaneous moisture flux,kg m**-2 s**-1,,0
+iews,instantaneous_eastward_turbulent_surface_stress,iews,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Instantaneous eastward turbulent surface stress,N m**-2,,0
+ilspf,instantaneous_large_scale_surface_precipitation_fraction,ilspf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Instantaneous large-scale surface precipitation fraction,(0 - 1),,0
+inss,instantaneous_northward_turbulent_surface_stress,inss,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Instantaneous northward turbulent surface stress,N m**-2,,0
+ishf,instantaneous_surface_sensible_heat_flux,ishf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Instantaneous surface sensible heat flux,W m**-2,,0
+isor,anisotropy_of_sub_gridscale_orography,isor,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Anisotropy of sub-gridscale orography,~,,0
+istl1,ice_temperature_layer_1,istl1,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Ice temperature layer 1,K,,0
+istl2,ice_temperature_layer_2,istl2,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Ice temperature layer 2,K,,0
+istl3,ice_temperature_layer_3,istl3,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Ice temperature layer 3,K,,0
+istl4,ice_temperature_layer_4,istl4,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Ice temperature layer 4,K,,0
+kx,k_index,kx,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,K index,K,,0
+lai_hv,leaf_area_index_high_vegetation,lai_hv,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Leaf area index, high vegetation",m**2 m**-2,,0
+lai_lv,leaf_area_index_low_vegetation,lai_lv,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Leaf area index, low vegetation",m**2 m**-2,,0
+lblt,lake_bottom_temperature,lblt,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Lake bottom temperature,K,,0
+lcc,low_cloud_cover,lcc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Low cloud cover,(0 - 1),,0
+lgws,eastward_gravity_wave_surface_stress,lgws,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Eastward gravity wave surface stress,N m**-2 s,,0
+licd,lake_ice_depth,licd,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Lake ice total depth,m,,0
+lict,lake_ice_temperature,lict,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Lake ice surface temperature,K,,0
+lmld,lake_mix_layer_depth,lmld,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Lake mix-layer depth,m,,0
+lmlt,lake_mix_layer_temperature,lmlt,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Lake mix-layer temperature,K,,0
+lsf,large_scale_snowfall,lsf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Large-scale snowfall,m of water equivalent,,0
+lshf,lake_shape_factor,lshf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Lake shape factor,dimensionless,,0
+lsm,land_sea_mask,lsm,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Land-sea mask,(0 - 1),,0
+lsp,large_scale_precipitation,lsp,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Large-scale precipitation,m,,0
+lspf,large_scale_precipitation_fraction,lspf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Large-scale precipitation fraction,s,,0
+lsrr,large_scale_rain_rate,lsrr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Large scale rain rate,kg m**-2 s**-1,,0
+lssfr,large_scale_snowfall_rate_water_equivalent,lssfr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Large scale snowfall rate water equivalent,kg m**-2 s**-1,,0
+ltlt,lake_total_layer_temperature,ltlt,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Lake total layer temperature,K,,0
+mbld,mean_boundary_layer_dissipation,mbld,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean boundary layer dissipation,W m**-2,,0
+mcc,medium_cloud_cover,mcc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Medium cloud cover,(0 - 1),,0
+mcpr,mean_convective_precipitation_rate,mcpr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean convective precipitation rate,kg m**-2 s**-1,,0
+mcsr,mean_convective_snowfall_rate,mcsr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean convective snowfall rate,kg m**-2 s**-1,,0
+mdts,mean_direction_of_total_swell,mdts,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean direction of total swell,degrees,,0
+mdww,mean_direction_of_wind_waves,mdww,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean direction of wind waves,degrees,,0
+megwss,mean_eastward_gravity_wave_surface_stress,megwss,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean eastward gravity wave surface stress,N m**-2,,0
+mer,mean_evaporation_rate,mer,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean evaporation rate,kg m**-2 s**-1,,0
+metss,mean_eastward_turbulent_surface_stress,metss,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean eastward turbulent surface stress,N m**-2,,0
+mgwd,mean_gravity_wave_dissipation,mgwd,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean gravity wave dissipation,W m**-2,,0
+mgws,northward_gravity_wave_surface_stress,mgws,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Northward gravity wave surface stress,N m**-2 s,,0
+mlspf,mean_large_scale_precipitation_fraction,mlspf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean large-scale precipitation fraction,Proportion,,0
+mlspr,mean_large_scale_precipitation_rate,mlspr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean large-scale precipitation rate,kg m**-2 s**-1,,0
+mlssr,mean_large_scale_snowfall_rate,mlssr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean large-scale snowfall rate,kg m**-2 s**-1,,0
+mn2t,minimum_2m_temperature_since_previous_post_processing,mn2t,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Minimum temperature at 2 metres since previous post-processing,K,,0
+mngwss,mean_northward_gravity_wave_surface_stress,mngwss,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean northward gravity wave surface stress,N m**-2,,0
+mntpr,minimum_total_precipitation_rate_since_previous_post_processing,mntpr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Minimum total precipitation rate since previous post-processing,kg m**-2 s**-1,,0
+mntss,mean_northward_turbulent_surface_stress,mntss,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean northward turbulent surface stress,N m**-2,,0
+mp1,mean_wave_period_based_on_first_moment,mp1,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave period based on first moment,s,,0
+mp2,mean_zero_crossing_wave_period,mp2,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean zero-crossing wave period,s,,0
+mper,mean_potential_evaporation_rate,mper,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean potential evaporation rate,kg m**-2 s**-1,,0
+mpts,mean_period_of_total_swell,mpts,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean period of total swell,s,,0
+mpww,mean_period_of_wind_waves,mpww,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean period of wind waves,s,,0
+mror,mean_runoff_rate,mror,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean runoff rate,kg m**-2 s**-1,,0
+msdrswrf,mean_surface_direct_short_wave_radiation_flux,msdrswrf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean surface direct short-wave radiation flux,W m**-2,,0
+msdrswrfcs,mean_surface_direct_short_wave_radiation_flux_clear_sky,msdrswrfcs,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Mean surface direct short-wave radiation flux, clear sky",W m**-2,,0
+msdwlwrf,mean_surface_downward_long_wave_radiation_flux,msdwlwrf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean surface downward long-wave radiation flux,W m**-2,,0
+msdwlwrfcs,mean_surface_downward_long_wave_radiation_flux_clear_sky,msdwlwrfcs,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Mean surface downward long-wave radiation flux, clear sky",W m**-2,,0
+msdwswrf,mean_surface_downward_short_wave_radiation_flux,msdwswrf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean surface downward short-wave radiation flux,W m**-2,,0
+msdwswrfcs,mean_surface_downward_short_wave_radiation_flux_clear_sky,msdwswrfcs,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Mean surface downward short-wave radiation flux, clear sky",W m**-2,,0
+msdwuvrf,mean_surface_downward_uv_radiation_flux,msdwuvrf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean surface downward UV radiation flux,W m**-2,,0
+mser,mean_snow_evaporation_rate,mser,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean snow evaporation rate,kg m**-2 s**-1,,0
+msl,mean_sea_level_pressure,msl,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean sea level pressure,Pa,,0
+mslhf,mean_surface_latent_heat_flux,mslhf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean surface latent heat flux,W m**-2,,0
+msmr,mean_snowmelt_rate,msmr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean snowmelt rate,kg m**-2 s**-1,,0
+msnlwrf,mean_surface_net_long_wave_radiation_flux,msnlwrf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean surface net long-wave radiation flux,W m**-2,,0
+msnlwrfcs,mean_surface_net_long_wave_radiation_flux_clear_sky,msnlwrfcs,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Mean surface net long-wave radiation flux, clear sky",W m**-2,,0
+msnswrf,mean_surface_net_short_wave_radiation_flux,msnswrf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean surface net short-wave radiation flux,W m**-2,,0
+msnswrfcs,mean_surface_net_short_wave_radiation_flux_clear_sky,msnswrfcs,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Mean surface net short-wave radiation flux, clear sky",W m**-2,,0
+msqs,mean_square_slope_of_waves,msqs,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean square slope of waves,dimensionless,,0
+msr,mean_snowfall_rate,msr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean snowfall rate,kg m**-2 s**-1,,0
+msror,mean_surface_runoff_rate,msror,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean surface runoff rate,kg m**-2 s**-1,,0
+msshf,mean_surface_sensible_heat_flux,msshf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean surface sensible heat flux,W m**-2,,0
+mssror,mean_sub_surface_runoff_rate,mssror,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean sub-surface runoff rate,kg m**-2 s**-1,,0
+mtdwswrf,mean_top_downward_short_wave_radiation_flux,mtdwswrf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean top downward short-wave radiation flux,W m**-2,,0
+mtnlwrf,mean_top_net_long_wave_radiation_flux,mtnlwrf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean top net long-wave radiation flux,W m**-2,,0
+mtnlwrfcs,mean_top_net_long_wave_radiation_flux_clear_sky,mtnlwrfcs,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Mean top net long-wave radiation flux, clear sky",W m**-2,,0
+mtnswrf,mean_top_net_short_wave_radiation_flux,mtnswrf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean top net short-wave radiation flux,W m**-2,,0
+mtnswrfcs,mean_top_net_short_wave_radiation_flux_clear_sky,mtnswrfcs,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Mean top net short-wave radiation flux, clear sky",W m**-2,,0
+mtpr,mean_total_precipitation_rate,mtpr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean total precipitation rate,kg m**-2 s**-1,,0
+mvimd,mean_vertically_integrated_moisture_divergence,mvimd,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean vertically integrated moisture divergence,kg m**-2 s**-1,,0
+mwd,mean_wave_direction,mwd,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave direction,Degree true,,0
+mwp,mean_wave_period,mwp,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave period,s,,0
+mx2t,maximum_2m_temperature_since_previous_post_processing,mx2t,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Maximum temperature at 2 metres since previous post-processing,K,,0
+mxtpr,maximum_total_precipitation_rate_since_previous_post_processing,mxtpr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Maximum total precipitation rate since previous post-processing,kg m**-2 s**-1,,0
+nsss,northward_turbulent_surface_stress,nsss,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Northward turbulent surface stress,N m**-2 s,,0
+p140121,significant_wave_height_of_first_swell_partition,p140121,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Significant wave height of first swell partition,m,,0
+p140122,mean_wave_direction_of_first_swell_partition,p140122,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave direction of first swell partition,degrees,,0
+p140123,mean_wave_period_of_first_swell_partition,p140123,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave period of first swell partition,s,,0
+p140124,significant_wave_height_of_second_swell_partition,p140124,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Significant wave height of second swell partition,m,,0
+p140125,mean_wave_direction_of_second_swell_partition,p140125,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave direction of second swell partition,degrees,,0
+p140126,mean_wave_period_of_second_swell_partition,p140126,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave period of second swell partition,s,,0
+p140127,significant_wave_height_of_third_swell_partition,p140127,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Significant wave height of third swell partition,m,,0
+p140128,mean_wave_direction_of_third_swell_partition,p140128,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave direction of third swell partition,degrees,,0
+p140129,mean_wave_period_of_third_swell_partition,p140129,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave period of third swell partition,s,,0
+p140208,free_convective_velocity_over_the_oceans,p140208,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Free convective velocity over the oceans,m s**-1,,0
+p140209,air_density_over_the_oceans,p140209,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Air density over the oceans,kg m**-3,,0
+p1ps,mean_wave_period_based_on_first_moment_for_swell,p1ps,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave period based on first moment for swell,s,,0
+p1ww,mean_wave_period_based_on_first_moment_for_wind_waves,p1ww,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave period based on first moment for wind waves,s,,0
+p2ps,mean_wave_period_based_on_second_moment_for_swell,p2ps,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave period based on second moment for swell,s,,0
+p2ww,mean_wave_period_based_on_second_moment_for_wind_waves,p2ww,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Mean wave period based on second moment for wind waves,s,,0
+p53.162,vertical_integral_of_mass_of_atmosphere,p53.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of mass of atmosphere,kg m**-2,,0
+p54.162,vertical_integral_of_temperature,p54.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of temperature,K kg m**-2,,0
+p59.162,vertical_integral_of_kinetic_energy,p59.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of kinetic energy,J m**-2,,0
+p60.162,vertical_integral_of_thermal_energy,p60.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of thermal energy,J m**-2,,0
+p61.162,vertical_integral_of_potential_and_internal_energy,p61.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of potential+internal energy,J m**-2,,0
+p62.162,vertical_integral_of_potential_internal_and_latent_energy,p62.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of potential+internal+latent energy,J m**-2,,0
+p63.162,vertical_integral_of_total_energy,p63.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of total energy,J m**-2,,0
+p64.162,vertical_integral_of_energy_conversion,p64.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of energy conversion,W m**-2,,0
+p65.162,vertical_integral_of_eastward_mass_flux,p65.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of eastward mass flux,kg m**-1 s**-1,,0
+p66.162,vertical_integral_of_northward_mass_flux,p66.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of northward mass flux,kg m**-1 s**-1,,0
+p67.162,vertical_integral_of_eastward_kinetic_energy_flux,p67.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of eastward kinetic energy flux,W m**-1,,0
+p68.162,vertical_integral_of_northward_kinetic_energy_flux,p68.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of northward kinetic energy flux,W m**-1,,0
+p69.162,vertical_integral_of_eastward_heat_flux,p69.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of eastward heat flux,W m**-1,,0
+p70.162,vertical_integral_of_northward_heat_flux,p70.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of northward heat flux,W m**-1,,0
+p71.162,vertical_integral_of_eastward_water_vapour_flux,p71.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of eastward water vapour flux,kg m**-1 s**-1,,0
+p72.162,vertical_integral_of_northward_water_vapour_flux,p72.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of northward water vapour flux,kg m**-1 s**-1,,0
+p73.162,vertical_integral_of_eastward_geopotential_flux,p73.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of eastward geopotential flux,W m**-1,,0
+p74.162,vertical_integral_of_northward_geopotential_flux,p74.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of northward geopotential flux,W m**-1,,0
+p75.162,vertical_integral_of_eastward_total_energy_flux,p75.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of eastward total energy flux,W m**-1,,0
+p76.162,vertical_integral_of_northward_total_energy_flux,p76.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of northward total energy flux,W m**-1,,0
+p77.162,vertical_integral_of_eastward_ozone_flux,p77.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of eastward ozone flux,kg m**-1 s**-1,,0
+p78.162,vertical_integral_of_northward_ozone_flux,p78.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of northward ozone flux,kg m**-1 s**-1,,0
+p79.162,vertical_integral_of_divergence_of_cloud_liquid_water_flux,p79.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of divergence of cloud liquid water flux,kg m**-2 s**-1,,0
+p80.162,vertical_integral_of_divergence_of_cloud_frozen_water_flux,p80.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of divergence of cloud frozen water flux,kg m**-2 s**-1,,0
+p81.162,vertical_integral_of_divergence_of_mass_flux,p81.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of divergence of mass flux,kg m**-2 s**-1,,0
+p82.162,vertical_integral_of_divergence_of_kinetic_energy_flux,p82.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of divergence of kinetic energy flux,W m**-2,,0
+p83.162,vertical_integral_of_divergence_of_thermal_energy_flux,p83.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of divergence of thermal energy flux,W m**-2,,0
+p84.162,vertical_integral_of_divergence_of_moisture_flux,p84.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of divergence of moisture flux,kg m**-2 s**-1,,0
+p85.162,vertical_integral_of_divergence_of_geopotential_flux,p85.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of divergence of geopotential flux,W m**-2,,0
+p86.162,vertical_integral_of_divergence_of_total_energy_flux,p86.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of divergence of total energy flux,W m**-2,,0
+p87.162,vertical_integral_of_divergence_of_ozone_flux,p87.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of divergence of ozone flux,kg m**-2 s**-1,,0
+p88.162,vertical_integral_of_eastward_cloud_liquid_water_flux,p88.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of eastward cloud liquid water flux,kg m**-1 s**-1,,0
+p89.162,vertical_integral_of_northward_cloud_liquid_water_flux,p89.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of northward cloud liquid water flux,kg m**-1 s**-1,,0
+p90.162,vertical_integral_of_eastward_cloud_frozen_water_flux,p90.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of eastward cloud frozen water flux,kg m**-1 s**-1,,0
+p91.162,vertical_integral_of_northward_cloud_frozen_water_flux,p91.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of northward cloud frozen water flux ,kg m**-1 s**-1,,0
+p92.162,vertical_integral_of_mass_tendency,p92.162,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertical integral of mass tendency,kg m**-2 s**-1,,0
+pev,potential_evaporation,pev,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Potential evaporation,m,,0
+phiaw,normalized_energy_flux_into_waves,phiaw,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Normalized energy flux into waves,dimensionless,,0
+phioc,normalized_energy_flux_into_ocean,phioc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Normalized energy flux into ocean,dimensionless,,0
+pp1d,peak_wave_period,pp1d,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Peak wave period,s,,0
+ptype,precipitation_type,ptype,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Precipitation type,code table (4.201),,0
+ro,runoff,ro,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Runoff,m,,0
+rsn,snow_density,rsn,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Snow density,kg m**-3,,0
+sd,snow_depth,sd,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Snow depth,m of water equivalent,,0
+sdfor,standard_deviation_of_filtered_subgrid_orography,sdfor,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Standard deviation of filtered subgrid orography,m,,0
+sdor,standard_deviation_of_orography,sdor,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Standard deviation of orography,m,,0
+sf,snowfall,sf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Snowfall,m of water equivalent,,0
+shts,significant_height_of_total_swell,shts,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Significant height of total swell,m,,0
+shww,significant_height_of_wind_waves,shww,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Significant height of wind waves,m,,0
+siconc,sea_ice_cover,siconc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Sea ice area fraction,(0 - 1),,0
+skt,skin_temperature,skt,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Skin temperature,K,,0
+slhf,surface_latent_heat_flux,slhf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Surface latent heat flux,J m**-2,,0
+slor,slope_of_sub_gridscale_orography,slor,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Slope of sub-gridscale orography,~,,0
+slt,soil_type,slt,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Soil type,~,,0
+smlt,snowmelt,smlt,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Snowmelt,m of water equivalent,,0
+sp,surface_pressure,sp,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Surface pressure,Pa,,0
+src,skin_reservoir_content,src,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Skin reservoir content,m of water equivalent,,0
+sro,surface_runoff,sro,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Surface runoff,m,,0
+sshf,surface_sensible_heat_flux,sshf,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Surface sensible heat flux,J m**-2,,0
+ssr,surface_net_solar_radiation,ssr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Surface net solar radiation,J m**-2,,0
+ssrc,surface_net_solar_radiation_clear_sky,ssrc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Surface net solar radiation, clear sky",J m**-2,,0
+ssrd,surface_solar_radiation_downwards,ssrd,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Surface solar radiation downwards,J m**-2,,0
+ssrdc,surface_solar_radiation_downward_clear_sky,ssrdc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Surface solar radiation downward clear-sky,J m**-2,,0
+ssro,sub_surface_runoff,ssro,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Sub-surface runoff,m,,0
+sst,sea_surface_temperature,sst,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Sea surface temperature,K,,0
+stl1,soil_temperature_level_1,stl1,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Soil temperature level 1,K,,0
+stl2,soil_temperature_level_2,stl2,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Soil temperature level 2,K,,0
+stl3,soil_temperature_level_3,stl3,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Soil temperature level 3,K,,0
+stl4,soil_temperature_level_4,stl4,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Soil temperature level 4,K,,0
+str,surface_net_thermal_radiation,str,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Surface net thermal radiation,J m**-2,,0
+strc,surface_net_thermal_radiation_clear_sky,strc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Surface net thermal radiation, clear sky",J m**-2,,0
+strd,surface_thermal_radiation_downwards,strd,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Surface thermal radiation downwards,J m**-2,,0
+strdc,surface_thermal_radiation_downward_clear_sky,strdc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Surface thermal radiation downward clear-sky,J m**-2,,0
+swh,significant_height_of_combined_wind_waves_and_swell,swh,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Significant height of combined wind waves and swell,m,,0
+swvl1,volumetric_soil_water_layer_1,swvl1,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Volumetric soil water layer 1,m**3 m**-3,,0
+swvl2,volumetric_soil_water_layer_2,swvl2,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Volumetric soil water layer 2,m**3 m**-3,,0
+swvl3,volumetric_soil_water_layer_3,swvl3,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Volumetric soil water layer 3,m**3 m**-3,,0
+swvl4,volumetric_soil_water_layer_4,swvl4,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Volumetric soil water layer 4,m**3 m**-3,,0
+t2m,2m_temperature,t2m,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,2 metre temperature,K,,0
+tauoc,normalized_stress_into_ocean,tauoc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Normalized stress into ocean,dimensionless,,0
+tcc,total_cloud_cover,tcc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Total cloud cover,(0 - 1),,0
+tciw,total_column_cloud_ice_water,tciw,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Total column cloud ice water,kg m**-2,,0
+tclw,total_column_cloud_liquid_water,tclw,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Total column cloud liquid water,kg m**-2,,0
+tco3,total_column_ozone,tco3,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Total column ozone,kg m**-2,,0
+tcrw,total_column_rain_water,tcrw,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Total column rain water,kg m**-2,,0
+tcslw,total_column_supercooled_liquid_water,tcslw,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Total column supercooled liquid water,kg m**-2,,0
+tcsw,total_column_snow_water,tcsw,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Total column snow water,kg m**-2,,0
+tcw,total_column_water,tcw,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Total column water,kg m**-2,,0
+tcwv,total_column_water_vapour,tcwv,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Total column vertically-integrated water vapour,kg m**-2,,0
+tisr,toa_incident_solar_radiation,tisr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,TOA incident solar radiation,J m**-2,,0
+tmax,period_corresponding_to_maximum_individual_wave_height,tmax,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Period corresponding to maximum individual wave height,s,,0
+totalx,total_totals_index,totalx,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Total totals index,K,,0
+tp,total_precipitation,tp,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Total precipitation,m,,0
+tplb,trapping_layer_base_height,tplb,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Trapping layer base height,m,,0
+tplt,trapping_layer_top_height,tplt,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Trapping layer top height,m,,0
+tsn,temperature_of_snow_layer,tsn,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Temperature of snow layer,K,,0
+tsr,top_net_solar_radiation,tsr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Top net solar radiation,J m**-2,,0
+tsrc,top_net_solar_radiation_clear_sky,tsrc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Top net solar radiation, clear sky",J m**-2,,0
+ttr,top_net_thermal_radiation,ttr,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Top net thermal radiation,J m**-2,,0
+ttrc,top_net_thermal_radiation_clear_sky,ttrc,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,"Top net thermal radiation, clear sky",J m**-2,,0
+tvh,type_of_high_vegetation,tvh,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Type of high vegetation,~,,0
+tvl,type_of_low_vegetation,tvl,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Type of low vegetation,~,,0
+u10,10m_u_component_of_wind,u10,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,10 metre U wind component,m s**-1,,0
+u100,100m_u_component_of_wind,u100,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,100 metre U wind component,m s**-1,,0
+u10n,10m_u_component_of_neutral_wind,u10n,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Neutral wind at 10 m u-component,m s**-1,,0
+ust,u_component_stokes_drift,ust,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,U-component stokes drift,m s**-1,,0
+uvb,downward_uv_radiation_at_the_surface,uvb,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Downward UV radiation at the surface,J m**-2,,0
+v10,10m_v_component_of_wind,v10,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,10 metre V wind component,m s**-1,,0
+v100,100m_v_component_of_wind,v100,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,100 metre V wind component,m s**-1,,0
+v10n,10m_v_component_of_neutral_wind,v10n,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Neutral wind at 10 m v-component,m s**-1,,0
+vimd,vertically_integrated_moisture_divergence,vimd,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Vertically integrated moisture divergence,kg m**-2,,0
+vst,v_component_stokes_drift,vst,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,V-component stokes drift,m s**-1,,0
+wdw,wave_spectral_directional_width,wdw,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Wave spectral directional width,radians,,0
+wind,ocean_surface_stress_equivalent_10m_neutral_wind_speed,wind,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,10 metre wind speed,m s**-1,,0
+wmb,model_bathymetry,wmb,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Model bathymetry,m,,0
+wsk,wave_spectral_kurtosis,wsk,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Wave spectral kurtosis,dimensionless,,0
+wsp,wave_spectral_peakedness,wsp,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Wave spectral peakedness,dimensionless,,0
+wss,wave_spectral_skewness,wss,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Wave Spectral Skewness,dimensionless,,0
+z,geopotential_at_surface,z,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Geopotential,m**2 s**-2,,0
+zust,friction_velocity,zust,sf,ar/full_37-1h-0p25deg-chunk-1.zarr-v3,"time,latitude,longitude",float32,Friction velocity,m s**-1,,0
