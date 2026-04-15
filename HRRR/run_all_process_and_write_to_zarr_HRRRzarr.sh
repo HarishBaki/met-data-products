@@ -2,8 +2,7 @@
 
 set -euo pipefail
 
-SOURCE_JOBSCRIPT="jobsub_process_and_write_to_zarr_HRRRzarr.slurm"
-DERIVED_JOBSCRIPT="jobsub_process_and_write_derived_to_zarr_HRRRzarr.slurm"
+JOBSCRIPT="jobsub_process_and_write_to_zarr_HRRRzarr.slurm"
 MAX_PARALLEL=7
 
 # Hard-define the variables you want to submit here.
@@ -17,7 +16,7 @@ VARS=(
   tp
   i10fg
 )
-derived_VARS=(
+DERIVED_VARS=(
   si10
   wdir10
 )
@@ -32,7 +31,7 @@ wait_for_slot() {
 }
 
 submit_job() {
-  local jobscript="$1"
+  local mode="$1"
   local var_name="$2"
   local dependency="${3:-}"
   local -a cmd=(sbatch --parsable)
@@ -41,14 +40,14 @@ submit_job() {
     cmd+=(--dependency "$dependency")
   fi
 
-  cmd+=("$jobscript" "$var_name")
+  cmd+=("$JOBSCRIPT" "$mode" "$var_name")
   "${cmd[@]}"
 }
 
 for VAR in "${VARS[@]}"; do
   wait_for_slot
   echo "Submitting HRRR source job for var_name=${VAR}"
-  JOB_IDS["$VAR"]="$(submit_job "${SOURCE_JOBSCRIPT}" "${VAR}")"
+  JOB_IDS["$VAR"]="$(submit_job source "${VAR}")"
   echo "Submitted job ${JOB_IDS[$VAR]} for ${VAR}"
   sleep 1
 done
@@ -58,10 +57,10 @@ if [ -n "${JOB_IDS[u10]:-}" ] && [ -n "${JOB_IDS[v10]:-}" ]; then
   DERIVED_DEPENDENCY="afterok:${JOB_IDS[u10]}:${JOB_IDS[v10]}"
 fi
 
-for VAR in "${derived_VARS[@]}"; do
+for VAR in "${DERIVED_VARS[@]}"; do
   wait_for_slot
   echo "Submitting HRRR derived job for var_name=${VAR}"
-  JOB_IDS["$VAR"]="$(submit_job "${DERIVED_JOBSCRIPT}" "${VAR}" "${DERIVED_DEPENDENCY}")"
+  JOB_IDS["$VAR"]="$(submit_job derived "${VAR}" "${DERIVED_DEPENDENCY}")"
   echo "Submitted job ${JOB_IDS[$VAR]} for ${VAR}"
   sleep 1
 done

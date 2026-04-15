@@ -18,10 +18,30 @@ mkdir -p slurmout
 #
 # Usage:
 # sbatch jobsub_process_and_write_to_zarr_HRRRzarr.slurm \
-#   <var_name> <process_start> <process_end> \
+#   [source|derived] <var_name> <process_start> <process_end> \
 #   [output_zarr] [full_start_year] [full_end_year] [orog_path] [time_chunk] [y_chunk] [x_chunk]
+#
+# Backward compatible source usage is still supported:
+# sbatch jobsub_process_and_write_to_zarr_HRRRzarr.slurm \
+#   <var_name> <process_start> <process_end>
 ############################################################
-VAR_NAME="${1:-i10fg}"
+MODE="source"
+if [ "${1:-}" = "source" ] || [ "${1:-}" = "derived" ]; then
+  MODE="$1"
+  shift
+fi
+
+if [ "${MODE}" = "derived" ]; then
+  DEFAULT_VAR_NAME="si10"
+  DEFAULT_Y_CHUNK=""
+  DEFAULT_X_CHUNK=""
+else
+  DEFAULT_VAR_NAME="i10fg"
+  DEFAULT_Y_CHUNK="128"
+  DEFAULT_X_CHUNK="144"
+fi
+
+VAR_NAME="${1:-${DEFAULT_VAR_NAME}}"
 PROCESS_START="${2:-2023-01-01T00}"
 PROCESS_END="${3:-2023-12-31T23}"
 OUTPUT_ZARR="${4:-/network/rit/lab/basulab/Projects/DFS/DATA/HRRR_NYS/HRRR_NYS.zarr}"
@@ -29,14 +49,14 @@ FULL_START_YEAR="${5:-2010}"
 FULL_END_YEAR="${6:-2040}"
 OROG_PATH="${7:-/network/rit/lab/basulab/Projects/DFS/DATA/HRRR_NYS/hrrr_orography_cropped_nys.nc}"
 TIME_CHUNK="${8:-24}"
-Y_CHUNK="${9:-128}"
-X_CHUNK="${10:-144}"
+Y_CHUNK="${9:-${DEFAULT_Y_CHUNK}}"
+X_CHUNK="${10:-${DEFAULT_X_CHUNK}}"
 
 if [ -z "${VAR_NAME}" ] || [ -z "${PROCESS_START}" ] || [ -z "${PROCESS_END}" ]; then
   echo "ERROR: Missing required args."
   echo "Usage:"
   echo "  sbatch jobsub_process_and_write_to_zarr_HRRRzarr.slurm \\"
-  echo "    <var_name> <process_start> <process_end> \\"
+  echo "    [source|derived] <var_name> <process_start> <process_end> \\"
   echo "    [output_zarr] [full_start_year] [full_end_year] [orog_path] [time_chunk] [y_chunk] [x_chunk]"
   exit 1
 fi
@@ -57,6 +77,7 @@ chgrp basulab "${OUTPUT_PARENT}" || true
 
 echo "=========================================================="
 echo "Running HRRR Utah Zarr processing"
+echo "mode           : ${MODE}"
 echo "var_name       : ${VAR_NAME}"
 echo "process_start  : ${PROCESS_START}"
 echo "process_end    : ${PROCESS_END}"
@@ -72,6 +93,7 @@ echo "=========================================================="
 
 cmd=(
   python "process_and_write_to_zarr_HRRRzarr.py"
+  "${MODE}"
   --var-name "${VAR_NAME}"
   --process-start "${PROCESS_START}"
   --process-end "${PROCESS_END}"
@@ -80,11 +102,17 @@ cmd=(
   --full-end-year "${FULL_END_YEAR}"
   --orog-path "${OROG_PATH}"
   --time-chunk "${TIME_CHUNK}"
-  --y-chunk "${Y_CHUNK}"
-  --x-chunk "${X_CHUNK}"
   --n-jobs "${N_JOBS}"
   --skip-complete-months
   --consolidate-metadata
 )
+
+if [ -n "${Y_CHUNK}" ]; then
+  cmd+=(--y-chunk "${Y_CHUNK}")
+fi
+
+if [ -n "${X_CHUNK}" ]; then
+  cmd+=(--x-chunk "${X_CHUNK}")
+fi
 
 "${cmd[@]}"

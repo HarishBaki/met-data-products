@@ -6,7 +6,8 @@ Process public Utah HRRR Zarr into an NYS-cropped local Zarr store.
 Design:
 - One variable per invocation.
 - Process a requested time range month-by-month.
-- Read directly from the public `hrrrzarr` S3 bucket.
+- Source mode reads directly from the public `hrrrzarr` S3 bucket.
+- Derived mode reads dependencies from the local Zarr store.
 - Write into a single local Zarr store with HRRR-style target names
   matching the existing GRIB-based pipeline.
 """
@@ -40,6 +41,7 @@ REGISTRY_PATH = Path(__file__).with_name("hrrr_variable_registry.csv")
 VAR_SPECS_PATH = Path(__file__).with_name("hrrr_var_specs.csv")
 
 MANUAL_DEFAULTS = {
+    "mode": "source",
     "var_name": "u10",
     "process_start": "2025-01-01T00",
     "process_end": "2025-01-31T23",
@@ -168,6 +170,33 @@ class VarSpec:
     output_units: str
     source_units_override: Optional[str] = None
     include_in_cli: bool = True
+
+
+@dataclass(frozen=True)
+class DerivedSpec:
+    var_name: str
+    dependencies: Tuple[str, ...]
+    long_name: str
+    units: str
+    description: str
+
+
+DERIVED_SPECS: Dict[str, DerivedSpec] = {
+    "si10": DerivedSpec(
+        var_name="si10",
+        dependencies=("u10", "v10"),
+        long_name="10 m wind speed",
+        units="m s-1",
+        description="Derived from 10 m eastward and northward wind components as sqrt(u10^2 + v10^2).",
+    ),
+    "wdir10": DerivedSpec(
+        var_name="wdir10",
+        dependencies=("u10", "v10"),
+        long_name="10 m wind direction",
+        units="degree",
+        description="Derived from 10 m wind components using meteorological convention: (270 - atan2(v10, u10) in degrees) mod 360.",
+    ),
+}
 
 
 def load_variable_registry(registry_path: Path) -> Dict[RegistryKey, RegistryEntry]:
@@ -576,6 +605,157 @@ def ensure_initialized(
         ds_meta.close()
 
 
+def infer_existing_chunk_size(ds: xr.Dataset, var_name: str, dim_name: str, fallback: int) -> int:
+    var = ds[var_name]
+    try:
+        dim_index = var.get_axis_num(dim_name)
+    except ValueError:
+        return fallback
+
+    data_chunks = getattr(var.data, "chunks", None)
+    if data_chunks and dim_index < len(data_chunks) and data_chunks[dim_index]:
+        return int(data_chunks[dim_index][0])
+
+    encoding_chunks = var.encoding.get("chunks")
+    if encoding_chunks and dim_index < len(encoding_chunks):
+        return int(encoding_chunks[dim_index])
+
+    return fallback
+
+
+def derive_source_attrs(ds: xr.Dataset, dependencies: Tuple[str, ...]) -> Dict[str, str]:
+    keys = ("family", "target_var", "level", "run_type")
+    resolved: Dict[str, str] = {}
+    for key in keys:
+        values = []
+        for dep in dependencies:
+            value = str(ds[dep].attrs.get(key, "")).strip()
+            if value:
+                values.append(value)
+        if not values:
+            continue
+        unique_values = sorted(set(values))
+        if len(unique_values) != 1:
+            if key == "target_var":
+                resolved[key] = ", ".join(unique_values)
+                continue
+            raise ValueError(
+                f"Inconsistent source attribute '{key}' across dependencies {dependencies}: {unique_values}"
+            )
+        resolved[key] = unique_values[0]
+    return resolved
+
+
+def derived_attrs(spec: DerivedSpec, source_attrs: Dict[str, str]) -> Dict[str, object]:
+    return {
+        "long_name": spec.long_name,
+        "units": spec.units,
+        "description": spec.description,
+        "dependencies": ", ".join(spec.dependencies),
+        "family": source_attrs.get("family", ""),
+        "target_var": source_attrs.get("target_var", ""),
+        "level": source_attrs.get("level", ""),
+        "run_type": source_attrs.get("run_type", ""),
+        "source_attribute_note": (
+            "family, level, and run_type correspond to shared source metadata on the dependency variables; "
+            "target_var lists the source target vars when dependencies differ"
+        ),
+        "_FillValue": np.nan,
+        "missing_value": np.nan,
+    }
+
+
+def init_derived_var(
+    zarr_store: str,
+    var_name: str,
+    spec: DerivedSpec,
+    ds_meta: xr.Dataset,
+    template_orog: xr.DataArray,
+    time_chunk: int,
+    y_chunk: int,
+    x_chunk: int,
+) -> None:
+    if var_name in ds_meta.data_vars:
+        print(f"[var] exists; creation skipped for {var_name}")
+        return
+
+    y_size = ds_meta.sizes["y"]
+    x_size = ds_meta.sizes["x"]
+    data = da.full(
+        (ds_meta.sizes["time"], y_size, x_size),
+        np.nan,
+        chunks=(time_chunk, y_chunk, x_chunk),
+        dtype="float32",
+    )
+    ds_init = xr.Dataset(
+        {
+            var_name: xr.DataArray(
+                data,
+                dims=("time", "y", "x"),
+                coords={
+                    "time": ds_meta.time,
+                    "latitude": template_orog.latitude,
+                    "longitude": template_orog.longitude,
+                },
+            )
+        }
+    )
+    source_attrs = derive_source_attrs(ds_meta, spec.dependencies)
+    ds_init[var_name].attrs = derived_attrs(spec, source_attrs)
+    print(f"[init] store exists; adding missing derived variable {var_name}")
+    ds_init.to_zarr(zarr_store, mode="a", compute=False, consolidated=False, zarr_format=2)
+    print(f"[var] created: {var_name}")
+
+
+def compute_derived_month(
+    ds_src: xr.Dataset,
+    spec: DerivedSpec,
+    month_times: pd.DatetimeIndex,
+    template_orog: xr.DataArray,
+) -> xr.Dataset:
+    sub = ds_src[list(spec.dependencies)].sel(time=month_times)
+    source_attrs = derive_source_attrs(ds_src, spec.dependencies)
+
+    if spec.var_name == "si10":
+        da_out = np.sqrt(sub["u10"] ** 2 + sub["v10"] ** 2)
+    elif spec.var_name == "wdir10":
+        da_out = ((270 - np.rad2deg(np.arctan2(sub["v10"], sub["u10"]))) % 360).where(
+            sub["u10"].notnull() & sub["v10"].notnull()
+        )
+    else:
+        raise ValueError(f"Unsupported derived variable: {spec.var_name}")
+
+    da_out = da_out.astype(np.float32).rename(spec.var_name)
+    da_out.attrs = derived_attrs(spec, source_attrs)
+    return da_out.assign_coords(latitude=template_orog.latitude, longitude=template_orog.longitude).to_dataset()
+
+
+def write_derived_month(
+    ds_month: xr.Dataset,
+    zarr_store: str,
+    full_dates: pd.DatetimeIndex,
+    time_chunk: int,
+    y_chunk: int,
+    x_chunk: int,
+) -> None:
+    ds_month = ds_month.chunk(
+        {
+            "time": min(time_chunk, ds_month.sizes["time"]),
+            "y": min(y_chunk, ds_month.sizes["y"]),
+            "x": min(x_chunk, ds_month.sizes["x"]),
+        }
+    )
+    start_idx = int(np.searchsorted(full_dates.values, ds_month.time.values[0]))
+    end_idx = start_idx + ds_month.sizes["time"]
+    region = {"time": slice(start_idx, end_idx)}
+    write_ds = ds_month.drop_vars(["latitude", "longitude"], errors="ignore").assign_coords(time=ds_month.time)
+    for name in write_ds.data_vars:
+        write_ds[name].attrs.pop("_FillValue", None)
+        write_ds[name].attrs.pop("missing_value", None)
+    write_ds.to_zarr(zarr_store, mode="a", region=region, consolidated=False, zarr_format=2)
+    print(f"[write] {pd.Timestamp(ds_month.time.values[0]).strftime('%Y-%m')} -> region {region}")
+
+
 def time_block_has_complete_data(zarr_store: str, block_times: pd.DatetimeIndex, var_name: str) -> bool:
     ds = open_local_zarr_with_retry(zarr_store)
     try:
@@ -735,7 +915,10 @@ def process_one_month(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Process Utah HRRR Zarr into a NYS-cropped Zarr store.")
-    cli_vars = sorted(name for name, spec in VAR_SPECS.items() if spec.include_in_cli)
+    source_cli_vars = sorted(name for name, spec in VAR_SPECS.items() if spec.include_in_cli)
+    derived_cli_vars = sorted(DERIVED_SPECS)
+    cli_vars = sorted(set(source_cli_vars).union(derived_cli_vars))
+    parser.add_argument("--mode", choices=("source", "derived"), default="source")
     parser.add_argument("--var-name", choices=cli_vars)
     parser.add_argument("--process-start", help="Inclusive start time, e.g. 2025-01-01T00")
     parser.add_argument("--process-end", help="Inclusive end time, e.g. 2025-01-31T23")
@@ -760,6 +943,9 @@ def parse_args() -> argparse.Namespace:
         cleaned_argv.append(token)
         i += 1
 
+    if cleaned_argv and cleaned_argv[0] in {"source", "derived"}:
+        cleaned_argv = ["--mode", cleaned_argv[0], *cleaned_argv[1:]]
+
     args = parser.parse_args(cleaned_argv)
     required = (args.var_name, args.process_start, args.process_end)
     if not cleaned_argv and any(value is None for value in required):
@@ -775,16 +961,14 @@ def parse_args() -> argparse.Namespace:
         missing.append("--process-end")
     if missing:
         parser.error(f"the following arguments are required: {', '.join(missing)}")
+    if args.mode == "source" and args.var_name not in source_cli_vars:
+        parser.error(f"--var-name '{args.var_name}' is not a source variable. Use --mode derived for derived variables.")
+    if args.mode == "derived" and args.var_name not in derived_cli_vars:
+        parser.error(f"--var-name '{args.var_name}' is not a derived variable. Use --mode source for source variables.")
     return args
 
 
-def main() -> None:
-    args = parse_args()
-    args.process_start = pd.Timestamp(args.process_start)
-    args.process_end = pd.Timestamp(args.process_end)
-    if args.process_end < args.process_start:
-        raise ValueError("--process-end must be greater than or equal to --process-start")
-
+def run_source_pipeline(args: argparse.Namespace) -> None:
     grid = open_grid_index()
     y_slice, x_slice = compute_crop_slices(grid)
     lat, lon = cropped_latlon(grid, y_slice, x_slice)
@@ -828,6 +1012,88 @@ def main() -> None:
 
     if args.consolidate_metadata:
         zarr.consolidate_metadata(args.output_zarr)
+
+
+def run_derived_pipeline(args: argparse.Namespace) -> None:
+    if not os.path.exists(args.output_zarr):
+        raise FileNotFoundError(f"Target HRRR Zarr store not found: {args.output_zarr}")
+    if not os.path.exists(args.orog_path):
+        raise FileNotFoundError(f"Orography template not found: {args.orog_path}")
+
+    spec = DERIVED_SPECS[args.var_name]
+    template_orog = load_template_orography(args.orog_path)
+    ds_meta = open_local_zarr_with_retry(args.output_zarr)
+    ds_src: Optional[xr.Dataset] = None
+    try:
+        if template_orog.sizes["y"] != ds_meta.sizes["y"] or template_orog.sizes["x"] != ds_meta.sizes["x"]:
+            raise ValueError(
+                f"Orography template shape {dict(template_orog.sizes)} does not match target store "
+                f"spatial shape y={ds_meta.sizes['y']}, x={ds_meta.sizes['x']}"
+            )
+        missing_deps = [name for name in spec.dependencies if name not in ds_meta.data_vars]
+        if missing_deps:
+            raise KeyError(f"Missing dependency variables in {args.output_zarr}: {missing_deps}")
+
+        ref_var = spec.dependencies[0]
+        time_chunk = resolve_chunk_size(
+            args.time_chunk,
+            infer_existing_chunk_size(ds_meta, ref_var, "time", int(ds_meta.sizes["time"])),
+            "time",
+        )
+        y_chunk = resolve_chunk_size(
+            args.y_chunk,
+            infer_existing_chunk_size(ds_meta, ref_var, "y", int(ds_meta.sizes["y"])),
+            "y",
+        )
+        x_chunk = resolve_chunk_size(
+            args.x_chunk,
+            infer_existing_chunk_size(ds_meta, ref_var, "x", int(ds_meta.sizes["x"])),
+            "x",
+        )
+
+        full_dates = pd.DatetimeIndex(ds_meta.time.values)
+        report_physical_chunk_size(args.var_name, template_orog, time_chunk, y_chunk, x_chunk)
+        init_derived_var(args.output_zarr, args.var_name, spec, ds_meta, template_orog, time_chunk, y_chunk, x_chunk)
+
+        ds_src = open_local_zarr_with_retry(args.output_zarr)[list(spec.dependencies)]
+        for month in iter_month_starts(args.process_start, args.process_end):
+            month_begin, month_end = month_start_end(month)
+            start = max(month_begin, args.process_start)
+            end = min(month_end, args.process_end)
+            if start > end:
+                continue
+
+            month_times = pd.date_range(start, end, freq="1h")
+            if args.skip_complete_months and time_block_has_complete_data(args.output_zarr, month_times, args.var_name):
+                print(f"[skip] {month.strftime('%Y-%m')} already complete for {args.var_name}")
+                continue
+
+            print(
+                f"[month] {month.strftime('%Y-%m')} deriving {args.var_name}: "
+                f"{start.strftime('%Y-%m-%dT%H')} to {end.strftime('%Y-%m-%dT%H')}"
+            )
+            ds_month = compute_derived_month(ds_src, spec, month_times, template_orog)
+            write_derived_month(ds_month, args.output_zarr, full_dates, time_chunk, y_chunk, x_chunk)
+    finally:
+        if ds_src is not None:
+            ds_src.close()
+        ds_meta.close()
+
+    if args.consolidate_metadata:
+        zarr.consolidate_metadata(args.output_zarr)
+
+
+def main() -> None:
+    args = parse_args()
+    args.process_start = pd.Timestamp(args.process_start)
+    args.process_end = pd.Timestamp(args.process_end)
+    if args.process_end < args.process_start:
+        raise ValueError("--process-end must be greater than or equal to --process-start")
+
+    if args.mode == "derived":
+        run_derived_pipeline(args)
+    else:
+        run_source_pipeline(args)
 
 
 # %%
