@@ -87,9 +87,20 @@ def resolve_chunk_size(requested: int | None, dim_size: int, dim_name: str) -> i
 
 
 def infer_existing_chunk_size(ds: xr.Dataset, var_name: str, dim_name: str, fallback: int) -> int:
-    chunksizes = getattr(ds[var_name], "chunksizes", None)
-    if chunksizes and dim_name in chunksizes and chunksizes[dim_name]:
-        return int(chunksizes[dim_name][0])
+    var = ds[var_name]
+    try:
+        dim_index = var.get_axis_num(dim_name)
+    except ValueError:
+        return fallback
+
+    data_chunks = getattr(var.data, "chunks", None)
+    if data_chunks and dim_index < len(data_chunks) and data_chunks[dim_index]:
+        return int(data_chunks[dim_index][0])
+
+    encoding_chunks = var.encoding.get("chunks")
+    if encoding_chunks and dim_index < len(encoding_chunks):
+        return int(encoding_chunks[dim_index])
+
     return fallback
 
 
@@ -106,6 +117,9 @@ def derive_source_attrs(ds: xr.Dataset, dependencies: Tuple[str, ...]) -> Dict[s
             continue
         unique_values = sorted(set(values))
         if len(unique_values) != 1:
+            if key == "target_var":
+                resolved[key] = ", ".join(unique_values)
+                continue
             raise ValueError(
                 f"Inconsistent source attribute '{key}' across dependencies {dependencies}: {unique_values}"
             )
@@ -158,8 +172,8 @@ def init_derived_var(
         "level": source_attrs.get("level", ""),
         "run_type": source_attrs.get("run_type", ""),
         "source_attribute_note": (
-            "family, target_var, level, and run_type correspond to the shared source metadata "
-            "on the dependency variables in the local HRRR NYS Zarr store"
+            "family, level, and run_type correspond to shared source metadata on the dependency variables; "
+            "target_var lists the source target vars when dependencies differ"
         ),
         "_FillValue": np.nan,
         "missing_value": np.nan,
@@ -210,8 +224,8 @@ def compute_derived_month(
         "level": source_attrs.get("level", ""),
         "run_type": source_attrs.get("run_type", ""),
         "source_attribute_note": (
-            "family, target_var, level, and run_type correspond to the shared source metadata "
-            "on the dependency variables in the local HRRR NYS Zarr store"
+            "family, level, and run_type correspond to shared source metadata on the dependency variables; "
+            "target_var lists the source target vars when dependencies differ"
         ),
         "_FillValue": np.nan,
         "missing_value": np.nan,
