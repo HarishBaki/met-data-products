@@ -4,6 +4,7 @@ import pandas as pd
 import xarray as xr
 import dask
 import os, sys
+from pathlib import Path
 import glob
 import zarr
 from joblib import Parallel, delayed
@@ -12,8 +13,19 @@ import dask.array as da
 import os, sys, time, glob, re
 from tqdm import tqdm
 import argparse
+import yaml
 
-project_dir = '/network/rit/lab/basulab/Harish/DFS'
+BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
+if str(BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(BOOTSTRAP_ROOT))
+
+from repo_utils import find_repo_root
+
+PROJECT_DIR = find_repo_root(__file__)
+CFG_PATH = PROJECT_DIR / "data_utils" / "baseline_regrid.yaml"
+with open(CFG_PATH, "r") as f:
+    CFG = yaml.safe_load(f)
+
 zarr_store = f'/network/rit/lab/basulab/Projects/DFS/DATA/URMA_NYS/URMA_NYS.zarr'
 data_source_dir = '/network/rit/lab/basulab/RAW_DATA/URMA'
 
@@ -400,7 +412,7 @@ if __name__ == "__main__":
     time_chunk=6
     y_chunk=256
     x_chunk=288
-    orog_path = f"{project_dir}/urma_nys_orography.nc"
+    orog_path = CFG["paths"]["urma_orog"]
 
     # %%
     cpus = get_slurm_cpus()

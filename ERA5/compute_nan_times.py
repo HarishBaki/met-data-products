@@ -2,7 +2,6 @@
 import xarray as xr
 import os
 
-PROJECT_DIR = '/network/rit/lab/basulab/Harish/DFS'
 ZARR_STORE = "/network/rit/lab/basulab/Projects/DFS/DATA/ERA5_NYS/ERA5_analysis_NYS.zarr"
 OUTPUT_DIR = "/network/rit/lab/basulab/Projects/DFS/DATA/ERA5_NYS/nan_times"
 

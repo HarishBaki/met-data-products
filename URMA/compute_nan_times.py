@@ -1,7 +1,6 @@
 # %%
 import xarray as xr
 import zarr
-project_dir = '/network/rit/lab/basulab/Harish/DFS'
 zarr_store = '/network/rit/lab/basulab/Projects/DFS/DATA/URMA_NYS/URMA_NYS.zarr'
 output_dir = '/network/rit/lab/basulab/Projects/DFS/DATA/URMA_NYS/nan_times'
 ds = xr.open_zarr(zarr_store)

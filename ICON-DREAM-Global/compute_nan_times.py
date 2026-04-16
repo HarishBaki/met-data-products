@@ -2,7 +2,6 @@
 import xarray as xr
 import zarr
 import os
-project_dir = '/network/rit/lab/basulab/Harish/DFS'
 zarr_store = "/network/rit/lab/basulab/Projects/DFS/DATA/ICON_DREAM_Global_NYS/ICON_DREAM_Global_NYS.zarr"
 output_dir = '/network/rit/lab/basulab/Projects/DFS/DATA/ICON_DREAM_Global_NYS/nan_times'
 os.makedirs(output_dir, exist_ok=True)

@@ -5,3 +5,10 @@ GFS0p25/gfs_lists
 Geomorpho90m/90m
 Geomorpho90m/*/*.vrt
 Geomorpho90m/*/geomorpho90m_**.nc
+*.nc
+*.grb
+*.grb2
+*.zarr
+*.zarr/
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/

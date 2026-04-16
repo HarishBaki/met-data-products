@@ -1,14 +1,25 @@
 # %%
 import os
 import sys
+from pathlib import Path
 
 import numpy as np
 import rioxarray as rxr
 import xarray as xr
 import xesmf as xe
+import yaml
 from rasterio.enums import Resampling
 
-PROJECT_DIR = "/network/rit/lab/basulab/Harish/DFS"
+BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
+if str(BOOTSTRAP_ROOT) not in sys.path:
+  sys.path.insert(0, str(BOOTSTRAP_ROOT))
+
+from repo_utils import find_repo_root
+
+PROJECT_DIR = find_repo_root(__file__)
+CFG_PATH = PROJECT_DIR / "data_utils" / "baseline_regrid.yaml"
+with open(CFG_PATH, "r") as f:
+  CFG = yaml.safe_load(f)
 
 LAT_MIN = 38
 LAT_MAX = 48
@@ -20,7 +31,7 @@ if __name__ == "__main__":
   # %%
   # Allow interactive/IPython runs without argparse errors
   var = "slope"
-  vrt_path = os.path.join(PROJECT_DIR, "Geomorpho90m_downloaders", "vrt_files", f"{var}_90m.vrt")
+  vrt_path = os.path.join(PROJECT_DIR, "Geomorpho90m", "vrt_files", f"{var}_90m.vrt")
 
   # If CLI args are present (outside IPython), honor them
   if len(sys.argv) > 1 and not sys.argv[0].endswith("ipykernel_launcher.py"):
@@ -33,7 +44,7 @@ if __name__ == "__main__":
     if args.vrt:
       vrt_path = args.vrt
     else:
-      vrt_path = os.path.join(PROJECT_DIR, "Geomorpho90m_downloaders", "vrt_files", f"{var}_90m.vrt")
+      vrt_path = os.path.join(PROJECT_DIR, "Geomorpho90m", "vrt_files", f"{var}_90m.vrt")
 
   if not os.path.exists(vrt_path):
     raise FileNotFoundError(f"VRT not found for {var}: {vrt_path}")
@@ -76,7 +87,7 @@ if __name__ == "__main__":
       lat=(("y", "x"), lat2d)
   )
 
-  urma_path = os.path.join(PROJECT_DIR, "urma_nys_orography.nc")
+  urma_path = CFG["paths"]["urma_orog"]
   urma_nys = xr.open_dataset(urma_path)
   regridder = xe.Regridder(
       da_2p5km_ll,
@@ -97,7 +108,7 @@ if __name__ == "__main__":
   da_urma.attrs.update(var_attrs)
 
   # %%
-  out_dir = os.path.join(PROJECT_DIR, "Geomorpho90m_downloaders", "2p5km_urma_nys_files")
+  out_dir = os.path.join(PROJECT_DIR, "Geomorpho90m", "2p5km_urma_nys_files")
   os.makedirs(out_dir, exist_ok=True)
   out_path = os.path.join(out_dir, f"geomorpho90m_{var}_2p5km_urma_nys.nc")
   da_urma.to_netcdf(out_path)

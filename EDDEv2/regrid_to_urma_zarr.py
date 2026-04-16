@@ -18,18 +18,20 @@ import xarray as xr
 import yaml
 import zarr
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
+if str(BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(BOOTSTRAP_ROOT))
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
 from data_utils.regridding import RegridderRegistry
+from repo_utils import find_repo_root
 
 # Reference paths match EDDEv2/process_and_write_to_zarr.py
 OUTPUT_ROOT = "/network/rit/lab/basulab/Projects/DFS/DATA/EDDEv2_NYS/hourly/WRF-MPI"
 
-CFG_PATH = Path(__file__).resolve().parents[1] / "data_utils" / "baseline_regrid.yaml"
+REPO_ROOT = find_repo_root(__file__)
+CFG_PATH = REPO_ROOT / "data_utils" / "baseline_regrid.yaml"
 
 TIME_CHUNK = 6
 Y_CHUNK = -1

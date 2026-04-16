@@ -7,13 +7,26 @@ Combine all regridded Geomorpho90m variables with URMA orography into one NetCDF
 
 import glob
 import os
+import sys
+from pathlib import Path
 
 import xarray as xr
+import yaml
 
-PROJECT_DIR = "/network/rit/lab/basulab/Harish/DFS"
-GEOM_DIR = os.path.join(PROJECT_DIR, "Geomorpho90m_downloaders")
+BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
+if str(BOOTSTRAP_ROOT) not in sys.path:
+  sys.path.insert(0, str(BOOTSTRAP_ROOT))
+
+from repo_utils import find_repo_root
+
+PROJECT_DIR = find_repo_root(__file__)
+CFG_PATH = PROJECT_DIR / "data_utils" / "baseline_regrid.yaml"
+with open(CFG_PATH, "r") as f:
+  CFG = yaml.safe_load(f)
+
+GEOM_DIR = os.path.join(PROJECT_DIR, "Geomorpho90m")
 GEOM_FILES_GLOB = os.path.join(GEOM_DIR, "2p5km_urma_nys_files", "geomorpho90m_*_2p5km_urma_nys.nc")
-URMA_OROG = os.path.join(PROJECT_DIR, "urma_nys_orography.nc")
+URMA_OROG = CFG["paths"]["urma_orog"]
 OUT_PATH = os.path.join('/network/rit/lab/basulab/Projects/DFS/DATA', "geomorpho90m_all_vars_2p5km_urma_nys.nc")
 OUT_PATH_TMP = OUT_PATH + ".tmp"  # write-then-replace to avoid open-file conflicts
 FILL_VALUE = 0.0  # neutral fill to remove NaNs per-variable before merge

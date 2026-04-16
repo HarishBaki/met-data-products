@@ -1,13 +1,22 @@
 # %%
 #!/usr/bin/env python
+import sys
+from pathlib import Path
+
 import xarray as xr
 import numpy as np
 
-PROJECT_DIR = "/network/rit/lab/basulab/Harish/DFS"
+BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
+if str(BOOTSTRAP_ROOT) not in sys.path:
+  sys.path.insert(0, str(BOOTSTRAP_ROOT))
+
+from repo_utils import find_repo_root
+
+PROJECT_DIR = find_repo_root(__file__)
 ZARR_STORE = "/network/rit/lab/basulab/Projects/DFS/DATA/URMA_NYS/URMA_NYS.zarr"
 START = "2018-01-01"
 END = "2023-12-31"
-OUT_PATH = f"{PROJECT_DIR}/URMA/urma_stats_{START[:4]}_{END[:4]}.nc"
+OUT_PATH = PROJECT_DIR / "URMA" / f"urma_stats_{START[:4]}_{END[:4]}.nc"
 
 def main():
   print(f"Opening Zarr store: {ZARR_STORE}")
@@ -36,7 +45,7 @@ def main():
   ds_out = xr.Dataset(stats)
   ds_out.attrs["source"] = ZARR_STORE
   ds_out.attrs["time_range"] = f"{START} to {END}"
-  ds_out.to_netcdf(OUT_PATH)
+  ds_out.to_netcdf(str(OUT_PATH))
   print(f"Wrote stats to {OUT_PATH}")
 
 # %%
