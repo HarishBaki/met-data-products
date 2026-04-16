@@ -197,7 +197,7 @@ def write_chunk(
     )
 
 
-def month_has_data(
+def month_is_complete(
     zarr_store: str,
     var_name: str,
     month_times: pd.DatetimeIndex,
@@ -210,7 +210,12 @@ def month_has_data(
         sel = ds[var_name].sel(time=month_times)
     except KeyError:
         return False
-    return bool(sel.notnull().any().compute())
+    reduce_dims = tuple(dim for dim in sel.dims if dim != "time")
+    if reduce_dims:
+        per_time_has_data = sel.notnull().any(dim=reduce_dims)
+    else:
+        per_time_has_data = sel.notnull()
+    return bool(per_time_has_data.all().compute())
 
 
 def regrid_and_write_month(
@@ -229,8 +234,8 @@ def regrid_and_write_month(
     if month_times.size == 0:
         return
 
-    if month_has_data(zarr_store, var_name, month_times, synchronizer=synchronizer):
-        print(f"[skip] {target_month.strftime('%Y%m')} already has {var_name}")
+    if month_is_complete(zarr_store, var_name, month_times, synchronizer=synchronizer):
+        print(f"[skip] {target_month.strftime('%Y%m')} already complete for {var_name}")
         return
 
     data = src_ds[var_name].sel(time=month_times).reindex(time=month_times)
