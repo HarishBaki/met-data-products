@@ -172,6 +172,7 @@ class RegridderRegistry:
 
         # Load only the grids needed for xESMF
         self.urma = xr.open_dataset(paths_cfg["urma_orog"]).orog.copy()
+        self.hrrr = xr.open_dataset(paths_cfg["hrrr_orog"]).orog.copy()
         self.era5 = xr.open_dataset(paths_cfg["era5_orog"]).orog.copy()
         self.edde = xr.open_dataset(paths_cfg["edde_orog"]).orog.copy()
         self.icon_global = xr.open_dataset(paths_cfg["icon_orog"]).orog.copy()
@@ -186,6 +187,12 @@ class RegridderRegistry:
         # HR regridders
         self.era5_to_urma_hr = xe.Regridder(
             _maybe_add_bounds(self.era5, self.method),
+            _maybe_add_bounds(self.urma, self.method),
+            method=self.method,
+            reuse_weights=False,
+        )
+        self.hrrr_to_urma_hr = xe.Regridder(
+            _maybe_add_bounds(self.hrrr, self.method),
             _maybe_add_bounds(self.urma, self.method),
             method=self.method,
             reuse_weights=False,
@@ -255,6 +262,12 @@ class RegridderRegistry:
 
         self.era5_to_urma_lr_intended = xe.Regridder(
             _maybe_add_bounds(self.era5, self.method),
+            _maybe_add_bounds(self.urma_lr_intended, self.method),
+            method=self.method,
+            reuse_weights=False,
+        )
+        self.hrrr_to_urma_lr_intended = xe.Regridder(
+            _maybe_add_bounds(self.hrrr, self.method),
             _maybe_add_bounds(self.urma_lr_intended, self.method),
             method=self.method,
             reuse_weights=False,
