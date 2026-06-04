@@ -4,7 +4,7 @@ set -euo pipefail
 # ==============================
 # CONFIGURATION
 # ==============================
-MAX_PARALLEL=5
+MAX_PARALLEL=7
 SLEEP_SEC=30
 JOB_NAME="download_icon_dream"
 SLURM_SCRIPT="download_icon_dream.slurm"
@@ -57,8 +57,9 @@ VARS=(
   P
 )
 
-# Year range
-START_YEARMM=201001
+# Start at 202508 to catch TOT_PREC, VMAX_10M, Z0 which are only through 202507.
+# The download script skips files already present with correct size.
+START_YEARMM=202508
 END_YEARMM=202512
 
 # Optional: destination base and per-job parallelism

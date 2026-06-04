@@ -3,7 +3,7 @@
 # ==============================
 # CONFIGURATION
 # ==============================
-MAX_PARALLEL=8
+MAX_PARALLEL=7
 
 VARS=(
     si10
@@ -25,7 +25,7 @@ VARS=(
 # MAIN LOOP
 # ==============================
 for VAR in "${VARS[@]}"; do
-    for year in {2010..2025}; do
+    for year in {2025..2025}; do
         PROCESS_START="${year}01"
         PROCESS_END="${year}12"
         while [ "$(squeue -u "$USER" -n ICON-DREAM -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
