@@ -28,7 +28,7 @@ OUTPUT_ROOT = Path("/network/rit/lab/basulab/Projects/DFS/DATA/ICON_DREAM_Global
 OUTPUT_ZARR = OUTPUT_ROOT / "ICON_DREAM_Global_NYS.zarr"
 ZARR_SYNC_PATH = f"{OUTPUT_ZARR}.sync"
 ZARR_SYNC = zarr.ProcessSynchronizer(ZARR_SYNC_PATH)
-MASK_PATH = Path(__file__).resolve().parent / "icon_global_nys_mask.nc"
+MASK_PATH = OUTPUT_ROOT / "icon_global_nys_mask.nc"
 
 # Folder name -> shortName inside GRIB.
 FILE_TO_SOURCE = {

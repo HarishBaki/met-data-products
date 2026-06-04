@@ -8,6 +8,15 @@ Geomorpho90m/*/geomorpho90m_**.nc
 *.nc
 *.grb
 *.grb2
+
+# Global/full-grid artifacts that should be tracked despite the *.nc exclusions above
+!CONUS404/*_full_*.nc
+!EDDEv2/*_full_*.nc
+!ERA5/*_full_*.nc
+!GFS0p25/*_full_*.nc
+!GFS0p25/processed_sample_gfs.nc
+!ICON-DREAM-EU/*.nc
+!MRMS/*.nc
 *.zarr
 *.zarr/
 .ipynb_checkpoints/
