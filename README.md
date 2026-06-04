@@ -9,10 +9,14 @@ Scripts to download, crop, and process meteorological reanalysis and analysis da
 | Location | What lives here |
 |----------|----------------|
 | **`met-data-products/`** (this repo) | Download scripts, processing scripts, Slurm job scripts, full-grid metadata files (`*_full_*`, grid definitions, constant fields) |
+| **`DFS/data_prep/`** | URMA regridding scripts (`regrid_to_urma_zarr.py` + slurm wrappers) — DFS-specific, not here |
+| **`DFS/data_utils/`** | `RegridderRegistry` and `baseline_regrid.yaml` — single source of truth for regridding logic |
 | **`/network/rit/lab/basulab/Projects/DFS/DATA/`** | NYS-domain outputs — cropped orography/LSM, xESMF weight files, Zarr stores, regridded Zarr stores |
 | **`/network/rit/lab/basulab/RAW_DATA/`** | Raw downloaded files (GRIB, NetCDF) — only for products that require a raw download step |
 
 NYS-specific artifacts (masks, cropped orography, regrid weights) are intentionally kept in `DFS/DATA` alongside the Zarr stores they belong to, not in this repo.
+
+This repo's responsibility ends at the **native NYS zarr** (e.g. `HRRR_NYS.zarr`, `ERA5_analysis_NYS.zarr`). Regridding to URMA and all downstream DL training data preparation lives in `DFS/data_prep/`.
 
 ---
 
@@ -134,17 +138,18 @@ Consistent short names used across all zarr stores:
 ## Processing pipeline (per product)
 
 ```
-Step 1 — Download (products with raw files)
+Step 1 — Download (products with raw files)           [this repo]
   run_all_*downloads.sh  →  RAW_DATA/<product>/
 
-Step 2 — Process & write to zarr (crop to NYS, standardise units/names)
+Step 2 — Process & write to zarr (crop to NYS)        [this repo]
   run_all_process_and_write_to_zarr.sh  →  DFS/DATA/<product>_NYS/<product>_NYS.zarr
 
-Step 3 — Regrid to URMA HR/LR grid (xESMF bilinear or nearest_s2d)
-  run_all_regrid_to_urma_zarr.sh  →  DFS/DATA/<product>_NYS/<product>_NYS_to_URMA_HR_bilinear.zarr
+Step 3 — Regrid to URMA HR/LR grid                    [DFS/data_prep/]
+  DFS/data_prep/<product>/run_all_regrid_to_urma_zarr.sh
+    →  DFS/DATA/<product>_NYS/<product>_NYS_to_URMA_HR_bilinear.zarr
 ```
 
-HRRR skips Step 1 (direct S3 read). Steps 2 and 3 are independent jobs per variable and support resumption via `--skip-complete-months`.
+This repo's pipeline ends at Step 2. Step 3 lives in `DFS/data_prep/` because the URMA target grid, resolution factors, and `RegridderRegistry` are DFS-specific. HRRR skips Step 1 (direct S3 read).
 
 ---
 
