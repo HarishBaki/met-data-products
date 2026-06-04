@@ -3,7 +3,9 @@
 set -euo pipefail
 
 JOBSCRIPT="jobsub_process_and_write_to_zarr_HRRRzarr.slurm"
-MAX_PARALLEL=7
+MAX_PARALLEL=7  # freetier QOS allows 8 jobs/user; stay one below the limit
+PROCESS_START="2018-01-01T00"
+PROCESS_END="2025-12-31T23"
 
 # Hard-define the variables you want to submit here.
 VARS=(
@@ -24,8 +26,8 @@ DERIVED_VARS=(
 declare -A JOB_IDS
 
 wait_for_slot() {
-  while [ "$(squeue -u "$USER" -h -n HRRR_ZARR | wc -l)" -ge "$MAX_PARALLEL" ]; do
-    echo "Reached MAX_PARALLEL=${MAX_PARALLEL} HRRR_ZARR jobs. Waiting..."
+  while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+    echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
     sleep 30
   done
 }
@@ -40,7 +42,7 @@ submit_job() {
     cmd+=(--dependency "$dependency")
   fi
 
-  cmd+=("$JOBSCRIPT" "$mode" "$var_name")
+  cmd+=("$JOBSCRIPT" "$mode" "$var_name" "$PROCESS_START" "$PROCESS_END")
   "${cmd[@]}"
 }
 

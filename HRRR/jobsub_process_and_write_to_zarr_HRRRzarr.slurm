@@ -6,7 +6,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
-#SBATCH --mem=180G
+#SBATCH --mem=80G
+#SBATCH --qos=freetier
 
 set -euo pipefail
 umask 0002
