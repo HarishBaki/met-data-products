@@ -78,7 +78,7 @@ VAR_UNITS = {
     "v10": "m s-1",           # 10 m northward wind
     "sh2": "kg kg-1",         # 2 m specific humidity
     "wdir10": "degree",       # 10 m wind direction
-    "tp": "m",                # total precipitation (hourly accumulation)
+    "tp": "kg m**-2",         # total precipitation (hourly accumulation)
 }
 
 # %%
