@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import csv
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -27,6 +28,12 @@ import pandas as pd
 import xarray as xr
 import zarr
 from joblib import Parallel, delayed
+
+_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
+if str(_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_BOOTSTRAP_ROOT))
+
+from data_utils.zarr_io import apply_var_attrs, target_long_name, target_units
 
 ARCO_SURFACE_PRESSURE_STORE = "gs://gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3"
 ARCO_MODEL_LEVEL_STORE = "gs://gcp-public-data-arco-era5/ar/model-level-1h-0p25deg.zarr-v1"
@@ -56,23 +63,25 @@ SURFACE_DERIVED = {
 
 # Minimal fallback registry-like info used only when registry/source attrs are missing.
 # Keep this focused on variables your pipeline actually uses.
+# Units are now canonical via var_meta.yaml / zarr_io.apply_var_attrs.
+# Only source_var and long_name are retained here as lookup fallbacks.
 FALLBACK_VAR_INFO: Dict[str, Dict[str, str]] = {
     # surface
-    "u10": {"source_var": "10m_u_component_of_wind", "long_name": "10 m eastward wind", "units": "m s**-1"},
-    "v10": {"source_var": "10m_v_component_of_wind", "long_name": "10 m northward wind", "units": "m s**-1"},
-    "t2m": {"source_var": "2m_temperature", "long_name": "2 m air temperature", "units": "K"},
-    "d2m": {"source_var": "2m_dewpoint_temperature", "long_name": "2 m dew point temperature", "units": "K"},
-    "sp": {"source_var": "surface_pressure", "long_name": "surface pressure", "units": "Pa"},
-    "tp": {"source_var": "total_precipitation", "long_name": "total precipitation", "units": "m"},
-    "i10fg": {"source_var": "instantaneous_10m_wind_gust", "long_name": "10 m wind gust", "units": "m s**-1"},
-    "si10": {"long_name": "10 m wind speed", "units": "m s**-1"},
-    "wdir10": {"long_name": "10 m wind direction", "units": "degree"},
+    "u10": {"source_var": "10m_u_component_of_wind", "long_name": "10 m eastward wind"},
+    "v10": {"source_var": "10m_v_component_of_wind", "long_name": "10 m northward wind"},
+    "t2m": {"source_var": "2m_temperature", "long_name": "2 m air temperature"},
+    "d2m": {"source_var": "2m_dewpoint_temperature", "long_name": "2 m dew point temperature"},
+    "sp": {"source_var": "surface_pressure", "long_name": "surface pressure"},
+    "tp": {"source_var": "total_precipitation", "long_name": "total precipitation"},
+    "i10fg": {"source_var": "instantaneous_10m_wind_gust", "long_name": "10 m wind gust"},
+    "si10": {"long_name": "10 m wind speed"},
+    "wdir10": {"long_name": "10 m wind direction"},
     # pressure/model common
-    "u": {"source_var": "u_component_of_wind", "long_name": "U component of wind", "units": "m s**-1"},
-    "v": {"source_var": "v_component_of_wind", "long_name": "V component of wind", "units": "m s**-1"},
-    "t": {"source_var": "temperature", "long_name": "Temperature", "units": "K"},
-    "q": {"source_var": "specific_humidity", "long_name": "Specific humidity", "units": "kg kg**-1"},
-    "z": {"source_var": "geopotential", "long_name": "Geopotential", "units": "m**2 s**-2"},
+    "u": {"source_var": "u_component_of_wind", "long_name": "U component of wind"},
+    "v": {"source_var": "v_component_of_wind", "long_name": "V component of wind"},
+    "t": {"source_var": "temperature", "long_name": "Temperature"},
+    "q": {"source_var": "specific_humidity", "long_name": "Specific humidity"},
+    "z": {"source_var": "geopotential", "long_name": "Geopotential"},
 }
 
 
@@ -362,6 +371,7 @@ def build_day_dataset(cfg: JobConfig, day_ts: pd.Timestamp) -> Optional[xr.Datas
         da_var = da_var.rename(cfg.target_variable)
         out = xr.Dataset({cfg.target_variable: da_var})
         out = out.chunk({"time": cfg.time_chunk, "latitude": out.sizes["latitude"], "longitude": out.sizes["longitude"]})
+        out = apply_var_attrs(out, cfg.target_variable)
         return out
 
     if cfg.group not in (GROUP_PRESSURE, GROUP_MODEL):
@@ -410,6 +420,7 @@ def build_day_dataset(cfg: JobConfig, day_ts: pd.Timestamp) -> Optional[xr.Datas
             "longitude": out.sizes["longitude"],
         }
     )
+    out = apply_var_attrs(out, cfg.target_variable)
     return out
 
 
@@ -486,14 +497,8 @@ def ensure_group_and_variable(cfg: JobConfig, full_times: pd.DatetimeIndex, step
         ds_init = xr.Dataset({cfg.target_variable: xr.DataArray(data, dims=dims)})
 
     ds_init[cfg.target_variable].attrs = {
-        "long_name": (
-            cfg.registry_long_name
-            or FALLBACK_VAR_INFO.get(cfg.variable, {}).get("long_name", cfg.variable)
-        ),
-        "units": (
-            cfg.registry_units
-            or FALLBACK_VAR_INFO.get(cfg.variable, {}).get("units", "")
-        ),
+        "long_name": target_long_name(cfg.target_variable),
+        "units": target_units(cfg.target_variable),
         "_FillValue": np.nan,
         "missing_value": np.nan,
         "target_group": cfg.group,

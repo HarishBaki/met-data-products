@@ -23,6 +23,19 @@ import zarr
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
+BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
+if str(BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(BOOTSTRAP_ROOT))
+
+from data_utils.zarr_io import (
+    apply_var_attrs,
+    ensure_store,
+    get_slurm_cpus,
+    has_missing_data,
+    open_zarr_safe,
+    write_region,
+)
+
 RAW_ROOT = Path("/network/rit/lab/basulab/RAW_DATA/ICON-DREAM-Global")
 OUTPUT_ROOT = Path("/network/rit/lab/basulab/Projects/DFS/DATA/ICON_DREAM_Global_NYS")
 OUTPUT_ZARR = OUTPUT_ROOT / "ICON_DREAM_Global_NYS.zarr"
@@ -30,7 +43,6 @@ ZARR_SYNC_PATH = f"{OUTPUT_ZARR}.sync"
 ZARR_SYNC = zarr.ProcessSynchronizer(ZARR_SYNC_PATH)
 MASK_PATH = OUTPUT_ROOT / "icon_global_nys_mask.nc"
 
-# Folder name -> shortName inside GRIB.
 FILE_TO_SOURCE = {
     "TD_2M": "d2m",
     "TOT_PREC": "tp",
@@ -43,7 +55,6 @@ FILE_TO_SOURCE = {
     "Z0": "fsr",
 }
 
-# shortName -> standardized name.
 rename_map = {
     "d2m": "d2m",
     "tp": "tp",
@@ -52,7 +63,7 @@ rename_map = {
     "sp": "sp",
     "u10": "u10",
     "v10": "v10",
-    "fg10": "i10fg",  # forecast gust to instantaneous gust name
+    "fg10": "i10fg",
     "fsr": "fsr",
 }
 
@@ -63,71 +74,15 @@ DERIVED_VARS: Dict[str, List[str]] = {
     "wdir10": ["u10", "v10"],
 }
 
-VAR_LONGNAME = {
-    "si10": "10 m wind speed",
-    "i10fg": "10 m wind gust",
-    "t2m": "2 m air temperature",
-    "sp": "surface pressure",
-    "d2m": "2 m dew point temperature",
-    "u10": "10 m eastward wind",
-    "v10": "10 m northward wind",
-    "wdir10": "10 m wind direction",
-    "fsr": "forecast surface roughness",
-    "tp": "total precipitation",
-}
-
-VAR_UNITS = {
-    "si10": "m s**-1",        # 10 metre wind speed
-    "i10fg": "m s**-1",       # Instantaneous 10 metre wind gust
-    "t2m": "K",               # 2 metre temperature
-    "sp": "Pa",               # Surface pressure
-    "d2m": "K",               # 2 metre dewpoint temperature
-    "u10": "m s**-1",         # 10 metre U wind component
-    "v10": "m s**-1",         # 10 metre V wind component
-    "wdir10": "Degree true",  # 10 metre wind direction
-    "tp": "kg m**-2",         # Total Precipitation
-    "fsr": "m",               # Forecast surface roughness
-}
+ALL_VARS = list(rename_map.values()) + list(DERIVED_VARS.keys())
 
 TIME_CHUNK = 24
 BATCH_SIZE = 12
-
-UNIT_CONVERSIONS = {
-    "tp": {
-        "kg m**-2": ("kg m**-2", 1.0),
-        "mm": ("kg m**-2", 1.0),
-        "m": ("kg m**-2", 1000.0),
-    },
-    "sp": {
-        "Pa": ("Pa", 1.0),
-        "hPa": ("Pa", 100.0),
-    },
-}
-
-UNIT_ALIASES = {
-    "kg m-2": "kg m**-2",
-    "kg m^-2": "kg m**-2",
-    "kg m**-2": "kg m**-2",
-    "mm": "kg m**-2",
-    "m": "m",
-    "pa": "Pa",
-    "hpa": "hPa",
-    "m s-1": "m s**-1",
-    "m s^-1": "m s**-1",
-    "m s**-1": "m s**-1",
-    "degree": "Degree true",
-    "degrees": "Degree true",
-    "degree true": "Degree true",
-}
 
 
 def is_interactive() -> bool:
     import __main__ as main
     return not hasattr(main, "__file__") or "ipykernel" in sys.argv[0]
-
-
-def get_slurm_cpus() -> int:
-    return int(os.environ.get("SLURM_CPUS_ON_NODE", 1))
 
 
 def load_mask() -> xr.Dataset:
@@ -166,10 +121,11 @@ def crop_to_nys(ds: xr.Dataset, mask_ds: xr.Dataset) -> xr.Dataset:
 
 
 def normalize_time(ds: xr.Dataset, target_month: pd.Timestamp) -> xr.Dataset:
-    ds = (ds.stack(time_step=("time", "step"))
-      .swap_dims({"time_step": "valid_time"})
-      .drop_vars(["step","time","time_step"])
-      .rename({"valid_time": "time"})
+    ds = (
+        ds.stack(time_step=("time", "step"))
+        .swap_dims({"time_step": "valid_time"})
+        .drop_vars(["step", "time", "time_step"])
+        .rename({"valid_time": "time"})
     )
     ds = stash_scalar_var_as_attr(ds, "heightAboveGround")
     ds = stash_scalar_var_as_attr(ds, "surface")
@@ -185,7 +141,7 @@ def file_for_month(shortname: str, target_month: pd.Timestamp) -> Path:
     return RAW_ROOT / folder / fname
 
 
-def source_attrs_for_var(var_name: str) -> Dict[str, object]:
+def source_attrs_for_var(var_name: str) -> Dict:
     if var_name in DERIVED_VARS:
         return {}
     if var_name not in VAR_NAME_TO_SOURCE:
@@ -204,8 +160,8 @@ def source_attrs_for_var(var_name: str) -> Dict[str, object]:
         backend_kwargs={"indexpath": ""},
     )
     try:
-        candidates = [v for v in ds.data_vars if v not in {"lat", "lon", "time", "mtime"}]
-        data_var = candidates[0] if candidates else next(iter(ds.data_vars))
+        candidates_v = [v for v in ds.data_vars if v not in {"lat", "lon", "time", "mtime"}]
+        data_var = candidates_v[0] if candidates_v else next(iter(ds.data_vars))
         return dict(ds[data_var].attrs)
     finally:
         ds.close()
@@ -227,31 +183,6 @@ def open_single_var(shortname: str, target_month: pd.Timestamp) -> xr.Dataset:
     ds = ds.rename({k: v for k, v in rename_map.items() if k in ds.data_vars})
     ds = normalize_time(ds, target_month)
     return ds
-
-
-def convert_units(ds: xr.Dataset, var_name: str) -> xr.Dataset:
-    if var_name not in ds.data_vars:
-        return ds
-    src_units = ds[var_name].attrs.get("units")
-    src_norm = normalize_units(src_units)
-    conv = (
-        UNIT_CONVERSIONS.get(var_name, {}).get(src_units)
-        or UNIT_CONVERSIONS.get(var_name, {}).get(src_norm)
-    )
-    if conv is None:
-        return ds
-    target_units, factor = conv
-    if factor != 1.0:
-        ds[var_name] = ds[var_name] * factor
-    ds[var_name].attrs["units"] = target_units
-    return ds
-
-
-def normalize_units(units: Optional[str]) -> Optional[str]:
-    if not units:
-        return units
-    key = " ".join(units.strip().lower().split())
-    return UNIT_ALIASES.get(key, units)
 
 
 def apply_derived(ds: xr.Dataset, requested_vars: List[str]) -> xr.Dataset:
@@ -289,120 +220,13 @@ def process_single_month(
         return None
 
     ds = crop_to_nys(ds, mask_ds)
-    ds = convert_units(ds, var_name)
+    ds = apply_var_attrs(ds, var_name)
     ds[var_name] = ds[var_name].astype(np.float32)
     return ds
 
 
-def init_zarr(
-    full_times: pd.DatetimeIndex,
-    lat: xr.DataArray,
-    lon: xr.DataArray,
-    var_name: str,
-    output_zarr: str,
-    mode: str,
-    write_global_attrs: bool,
-    source_attrs: Optional[Dict[str, object]] = None,
-) -> None:
-    action = "create" if mode == "w" else "add"
-    print(f"[init] {action} variable '{var_name}' in {output_zarr}")
-    nvals = lat.size
-    chunks = (TIME_CHUNK, nvals)
-    data = da.full((full_times.size, nvals), np.nan, chunks=chunks, dtype=np.float32)
-    ds_init = xr.Dataset(
-        {var_name: xr.DataArray(data, dims=("time", "values"))},
-        coords={"time": full_times, "lat": lat, "lon": lon},
-    )
-    if write_global_attrs:
-        ds_init.attrs = {
-            "title": "ICON-DREAM-Global NYS subset (unstructured)",
-            "Conventions": "CF-1.8",
-            "history": "Initialized empty Zarr store",
-        }
-    attrs = dict(source_attrs or {})
-    attrs.setdefault("long_name", VAR_LONGNAME[var_name])
-    attrs.setdefault("units", VAR_UNITS[var_name])
-    attrs.setdefault("missing_value", np.nan)
-    ds_init[var_name].attrs = attrs
-    encoding = {var_name: {"_FillValue": np.nan}}
-    ds_init.to_zarr(
-        output_zarr,
-        mode=mode,
-        compute=False,
-        zarr_format=2,
-        synchronizer=ZARR_SYNC,
-        encoding=encoding,
-    )
-
-
-def open_zarr_safe(zarr_store: str, attempts: int = 5, base_delay: float = 1.0) -> xr.Dataset:
-    for attempt in range(1, attempts + 1):
-        try:
-            return xr.open_zarr(zarr_store, consolidated=False, synchronizer=ZARR_SYNC)
-        except OSError as exc:
-            if getattr(exc, "errno", None) != 116 or attempt == attempts:
-                raise
-            time.sleep(base_delay * attempt)
-
-
-def ensure_store(
-    full_times: pd.DatetimeIndex,
-    var_name: str,
-    output_zarr: str,
-    mask_ds: xr.Dataset,
-) -> xr.Dataset:
-    if os.path.exists(output_zarr):
-        print(f"[init] opening existing store {output_zarr}")
-        ds = open_zarr_safe(output_zarr)
-        if not np.array_equal(pd.to_datetime(ds.time.values), pd.to_datetime(full_times.values)):
-            raise ValueError("Time axis mismatch in existing Zarr store.")
-        if var_name not in ds.data_vars:
-            print(f"[init] variable '{var_name}' missing; initializing")
-            lat = mask_ds["lat"].where(mask_ds["mask"], drop=True)
-            lon = mask_ds["lon"].where(mask_ds["mask"], drop=True)
-            init_zarr(
-                full_times,
-                lat,
-                lon,
-                var_name,
-                output_zarr,
-                mode="a",
-                write_global_attrs=False,
-                source_attrs=source_attrs_for_var(var_name),
-            )
-        else:
-            print(f"[init] variable '{var_name}' already present; skipping")
-        return ds
-
-    print(f"[init] creating new store {output_zarr}")
-    lat = mask_ds["lat"].where(mask_ds["mask"], drop=True)
-    lon = mask_ds["lon"].where(mask_ds["mask"], drop=True)
-    init_zarr(
-        full_times,
-        lat,
-        lon,
-        var_name,
-        output_zarr,
-        mode="w",
-        write_global_attrs=True,
-        source_attrs=source_attrs_for_var(var_name),
-    )
-    return xr.open_zarr(output_zarr, consolidated=False, synchronizer=ZARR_SYNC)
-
-
-def write_chunk(ds: xr.Dataset, zarr_store: str, region: Dict[str, slice]) -> None:
-    ds.to_zarr(
-        zarr_store,
-        mode="r+",
-        region=region,
-        compute=True,
-        zarr_format=2,
-        synchronizer=ZARR_SYNC,
-    )
-
-
 def month_has_data(zarr_store: str, var_name: str, month_times: pd.DatetimeIndex) -> bool:
-    ds = open_zarr_safe(zarr_store)
+    ds = open_zarr_safe(zarr_store, ZARR_SYNC)
     if var_name not in ds.data_vars:
         return False
     try:
@@ -424,7 +248,9 @@ def process_and_write_month(
         print(f"[skip] no data for {target_month.strftime('%Y%m')} {var_name}")
         return
 
-    month_times = full_times[(full_times.year == target_month.year) & (full_times.month == target_month.month)]
+    month_times = full_times[
+        (full_times.year == target_month.year) & (full_times.month == target_month.month)
+    ]
     if month_times.size == 0:
         return
 
@@ -434,9 +260,10 @@ def process_and_write_month(
 
     ds = ds.reindex(time=month_times)
     ds = ds.reset_coords(names=["lat", "lon"], drop=True)
+
+    # apply_var_attrs already called in process_single_month.
+    # For ICON: move _FillValue out of attrs and into encoding (zarr convention).
     attrs = dict(ds[var_name].attrs)
-    attrs.setdefault("long_name", VAR_LONGNAME[var_name])
-    attrs.setdefault("units", VAR_UNITS[var_name])
     attrs.pop("_FillValue", None)
     attrs.pop("missing_value", None)
     ds[var_name].attrs = attrs
@@ -446,8 +273,17 @@ def process_and_write_month(
     start_idx = int(full_times.searchsorted(month_times[0]))
     end_idx = int(full_times.searchsorted(month_times[-1]))
     region = {"time": slice(start_idx, end_idx + 1)}
-    write_chunk(ds, zarr_store, region)
+
+    ds.to_zarr(
+        zarr_store,
+        mode="r+",
+        region=region,
+        compute=True,
+        zarr_format=2,
+        synchronizer=ZARR_SYNC,
+    )
     print(f"[write] {target_month.strftime('%Y%m')} {var_name} -> {region}")
+
 
 # %%
 if __name__ == "__main__":
@@ -459,7 +295,7 @@ if __name__ == "__main__":
         "--var_name",
         type=str,
         default="wdir10" if is_interactive() else None,
-        choices=sorted(VAR_LONGNAME.keys()),
+        choices=ALL_VARS,
         help="Standardized variable name",
     )
     parser.add_argument(
@@ -494,7 +330,23 @@ if __name__ == "__main__":
     )
 
     mask_ds = load_mask()
-    ensure_store(full_times, var_name, OUTPUT_ZARR, mask_ds)
+
+    def _get_template():
+        lat = mask_ds["lat"].where(mask_ds["mask"], drop=True)
+        lon = mask_ds["lon"].where(mask_ds["mask"], drop=True)
+        return xr.Dataset(coords={"lat": lat, "lon": lon})
+
+    chunks = {"time": TIME_CHUNK}
+    ensure_store(
+        str(OUTPUT_ZARR),
+        full_times,
+        var_name,
+        _get_template,
+        chunks,
+        global_title="ICON-DREAM-Global NYS subset (unstructured)",
+        extra_var_attrs=source_attrs_for_var(var_name),
+        synchronizer=ZARR_SYNC,
+    )
 
     start_month = pd.to_datetime(start_yearmonth, format="%Y%m")
     end_month = pd.to_datetime(end_yearmonth, format="%Y%m")
@@ -506,9 +358,9 @@ if __name__ == "__main__":
     print(cpus)
     # %%
     for i in tqdm(range(0, len(months), BATCH_SIZE), desc=f"{var_name} {start_yearmonth}-{end_yearmonth}"):
-        batch = months[i:i + BATCH_SIZE]
+        batch = months[i: i + BATCH_SIZE]
         Parallel(n_jobs=cpus, backend="loky", verbose=0)(
-            delayed(process_and_write_month)(var_name, m, full_times, mask_ds, OUTPUT_ZARR)
+            delayed(process_and_write_month)(var_name, m, full_times, mask_ds, str(OUTPUT_ZARR))
             for m in batch
         )
 

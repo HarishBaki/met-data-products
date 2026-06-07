@@ -32,6 +32,16 @@ import xarray as xr
 import zarr
 from joblib import Parallel, delayed
 
+_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
+if str(_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_BOOTSTRAP_ROOT))
+
+from data_utils.zarr_io import (
+    convert_units_numpy,
+    target_long_name,
+    target_units,
+)
+
 
 HRRRZARR_BUCKET = "hrrrzarr"
 GRID_INDEX_STORE = f"s3://{HRRRZARR_BUCKET}/grid/HRRR_chunk_index.zarr"
@@ -64,57 +74,6 @@ BBOX = {
     "lon_max": -68.0,
 }
 
-UNIT_CONVERSIONS = {
-    "tp": {
-        "kg m-2": ("kg m-2", 1.0),
-        "kg m**-2": ("kg m-2", 1.0),
-        "mm": ("kg m-2", 1.0),
-        "m": ("kg m-2", 1000.0),
-    },
-    "sp": {
-        "Pa": ("Pa", 1.0),
-        "hPa": ("Pa", 100.0),
-    },
-    "i10fg": {
-        "m s-1": ("m s-1", 1.0),
-        "m s**-1": ("m s-1", 1.0),
-    },
-    "u10": {
-        "m s-1": ("m s-1", 1.0),
-        "m s**-1": ("m s-1", 1.0),
-    },
-    "v10": {
-        "m s-1": ("m s-1", 1.0),
-        "m s**-1": ("m s-1", 1.0),
-    },
-    "t2m": {
-        "K": ("K", 1.0),
-    },
-    "d2m": {
-        "K": ("K", 1.0),
-    },
-    "sh2": {
-        "kg kg-1": ("kg kg-1", 1.0),
-    },
-    "orog": {
-        "m": ("m", 1.0),
-    },
-}
-
-UNIT_ALIASES = {
-    "kg m-2": "kg m-2",
-    "kg m^-2": "kg m-2",
-    "kg m**-2": "kg m-2",
-    "mm": "mm",
-    "m": "m",
-    "pa": "Pa",
-    "hpa": "hPa",
-    "m s-1": "m s-1",
-    "m s^-1": "m s-1",
-    "m s**-1": "m s-1",
-    "k": "K",
-    "kg kg-1": "kg kg-1",
-}
 
 
 def _format_bytes(n_bytes: int) -> str:
@@ -186,14 +145,14 @@ DERIVED_SPECS: Dict[str, DerivedSpec] = {
         var_name="si10",
         dependencies=("u10", "v10"),
         long_name="10 m wind speed",
-        units="m s-1",
+        units="m s**-1",
         description="Derived from 10 m eastward and northward wind components as sqrt(u10^2 + v10^2).",
     ),
     "wdir10": DerivedSpec(
         var_name="wdir10",
         dependencies=("u10", "v10"),
         long_name="10 m wind direction",
-        units="degree",
+        units="Degree true",
         description="Derived from 10 m wind components using meteorological convention: (270 - atan2(v10, u10) in degrees) mod 360.",
     ),
 }
@@ -309,34 +268,14 @@ def load_var_specs(var_specs_path: Path, registry: Dict[RegistryKey, RegistryEnt
 VAR_SPECS = load_var_specs(VAR_SPECS_PATH, VAR_REGISTRY)
 
 
-def normalize_units(units: Optional[str]) -> Optional[str]:
-    if not units:
-        return units
-    key = " ".join(units.strip().lower().split())
-    return UNIT_ALIASES.get(key, units)
-
-
 def convert_data_units(
     data: np.ndarray,
     var_name: str,
     src_units: Optional[str],
-    target_units: Optional[str],
+    output_units: Optional[str] = None,  # kept for call-site compatibility; ignored
 ) -> np.ndarray:
-    src_norm = normalize_units(src_units)
-    target_norm = normalize_units(target_units)
-    if not src_norm or not target_norm or src_norm == target_norm:
-        return data
-
-    conv = UNIT_CONVERSIONS.get(var_name, {}).get(src_units) or UNIT_CONVERSIONS.get(var_name, {}).get(src_norm)
-    if conv is None or normalize_units(conv[0]) != target_norm:
-        raise ValueError(f"No unit conversion available for {var_name}: {src_units} -> {target_units}")
-
-    out_units, factor = conv
-    if normalize_units(out_units) != target_norm:
-        raise ValueError(f"Conversion target mismatch for {var_name}: {out_units} != {target_units}")
-    if factor == 1.0:
-        return data
-    return np.asarray(data * factor, dtype=np.float32)
+    """Convert numpy array to canonical units via zarr_io.convert_units_numpy."""
+    return convert_units_numpy(data, var_name, src_units)
 
 
 def resolve_var_spec(var_name: str) -> Tuple[VarSpec, RegistryEntry]:
@@ -536,8 +475,8 @@ def init_zarr_store(
         }
     var_spec, registry_entry = resolve_var_spec(var_name)
     ds_init[var_name].attrs = {
-        "long_name": var_spec.output_long_name,
-        "units": var_spec.output_units,
+        "long_name": target_long_name(var_name),
+        "units": target_units(var_name),
         "family": registry_entry.family,
         "target_var": registry_entry.target_var,
         "level": registry_entry.level,
@@ -648,8 +587,8 @@ def derive_source_attrs(ds: xr.Dataset, dependencies: Tuple[str, ...]) -> Dict[s
 
 def derived_attrs(spec: DerivedSpec, source_attrs: Dict[str, str]) -> Dict[str, object]:
     return {
-        "long_name": spec.long_name,
-        "units": spec.units,
+        "long_name": target_long_name(spec.var_name),
+        "units": target_units(spec.var_name),
         "description": spec.description,
         "dependencies": ", ".join(spec.dependencies),
         "family": source_attrs.get("family", ""),
@@ -824,8 +763,8 @@ def build_time_block_dataset(
         coords={"time": block_times, "latitude": lat, "longitude": lon},
         name=var_name,
         attrs={
-            "long_name": var_spec.output_long_name,
-            "units": var_spec.output_units,
+            "long_name": target_long_name(var_name),
+            "units": target_units(var_name),
             "family": source_spec.family,
             "target_var": source_spec.target_var,
             "level": source_spec.level,

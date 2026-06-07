@@ -1,0 +1,98 @@
+# Canonical variable metadata for all met-data-products zarr writes.
+# All output zarr stores must conform to the units and long_names defined here.
+#
+# unit_conversions: {var_name: {src_units: [canonical_units, scale_factor]}}
+# unit_aliases:     {lowercased-notation-variant: canonical-notation}
+#   Aliases are for NOTATION equivalence only (same physical unit, different string).
+#   Actual dimensional conversions (m → kg m**-2) live in unit_conversions.
+
+variables:
+  # --- precipitation ---
+  tp:
+    long_name: total precipitation
+    units: kg m**-2
+
+  # --- pressure ---
+  sp:
+    long_name: surface pressure
+    units: Pa
+
+  # --- winds ---
+  si10:
+    long_name: 10 m wind speed
+    units: m s**-1
+  u10:
+    long_name: 10 m eastward wind
+    units: m s**-1
+  v10:
+    long_name: 10 m northward wind
+    units: m s**-1
+  i10fg:
+    long_name: 10 m wind gust
+    units: m s**-1
+  wdir10:
+    long_name: 10 m wind direction
+    units: Degree true
+
+  # --- temperature / moisture ---
+  t2m:
+    long_name: 2 m air temperature
+    units: K
+  d2m:
+    long_name: 2 m dew point temperature
+    units: K
+  sh2:
+    long_name: 2 m specific humidity
+    units: kg kg**-1
+
+  # --- surface ---
+  orog:
+    long_name: surface geopotential height
+    units: m
+  fsr:
+    long_name: forecast surface roughness
+    units: m
+
+  # --- pressure/model level (ARCO) ---
+  u:
+    long_name: U component of wind
+    units: m s**-1
+  v:
+    long_name: V component of wind
+    units: m s**-1
+  t:
+    long_name: temperature
+    units: K
+  q:
+    long_name: specific humidity
+    units: kg kg**-1
+  z:
+    long_name: geopotential
+    units: m**2 s**-2
+
+# Actual dimensional conversions: {var_name: {src_units: [target_canonical, factor]}}
+unit_conversions:
+  tp:
+    m:       [kg m**-2, 1000.0]   # ERA5 precipitation in meters of water
+    mm:      [kg m**-2, 1.0]      # mm water depth ≡ kg m**-2
+    kg m-2:  [kg m**-2, 1.0]      # old exponent notation
+    kg m^-2: [kg m**-2, 1.0]      # old exponent notation
+  sp:
+    hPa:     [Pa, 100.0]          # EDDEv2 stores pressure in hPa
+
+# Notation aliases (same physical unit, different string forms).
+# Keys are lowercased for lookup. Values are the canonical string.
+unit_aliases:
+  m s-1:        m s**-1
+  m s^-1:       m s**-1
+  m/s:          m s**-1
+  kg m-2:       kg m**-2
+  kg m^-2:      kg m**-2
+  kg kg-1:      kg kg**-1
+  kg kg^-1:     kg kg**-1
+  degree:       Degree true
+  degrees:      Degree true
+  degree true:  Degree true
+  k:            K
+  pa:           Pa
+  hpa:          hPa
