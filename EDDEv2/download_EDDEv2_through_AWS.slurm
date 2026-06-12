@@ -6,7 +6,7 @@
 #SBATCH --time=05-00:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=32
+#SBATCH --cpus-per-task=16
 
 # Ensure log directory exists
 mkdir -p slurmout
@@ -30,9 +30,9 @@ echo "Job start: $(date)"
 prefix="${1:-s3://epa-edde-v2/EDDE_V2/hourly}"
 dest_root="${2:-/network/rit/lab/basulab/RAW_DATA/EDDE_V2/hourly}"
 num_workers="${NUM_WORKERS:-${SLURM_CPUS_PER_TASK:-16}}"
-start_year="${START_YEAR:-1985}"
-end_year="${END_YEAR:-2030}"
-var_name="${VAR_NAME:-va}"
+start_year="${START_YEAR:-2031}"
+end_year="${END_YEAR:-2100}"
+var_name="${VAR_NAME:-wdirs}"
 
 pattern="*${var_name}.*.nc"
 

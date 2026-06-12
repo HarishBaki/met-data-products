@@ -223,4 +223,14 @@ if __name__ == "__main__":
             for ts in chunk_times
         )
 
+    # Exit 0 if [process-start, process-end] is now fully written for var_name
+    # (no NaNs), exit 1 otherwise. Lets a caller decide whether the raw inputs
+    # for this range are safe to delete.
+    check_times = pd.date_range(
+        args.process_start,
+        pd.Period(args.process_end, freq="M").end_time.floor("h"),
+        freq="1h",
+    )
+    sys.exit(0 if not has_missing_data(OUTPUT_ZARR, check_times, var_name, ZARR_SYNC) else 1)
+
 # %%
