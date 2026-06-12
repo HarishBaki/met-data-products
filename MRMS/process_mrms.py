@@ -62,12 +62,7 @@ from tqdm import tqdm
 # ─────────────────────────────────────────────────────────────
 # Project paths
 # ─────────────────────────────────────────────────────────────
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-SRC_DIR = PROJECT_ROOT / "src"
-if str(SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(SRC_DIR))
-
-from project_paths import DATA_DIR, STATIC_DATA_DIR  # noqa: E402
+PROJECT_ROOT = Path(__file__).resolve().parent
 
 DEFAULT_CONFIG = PROJECT_ROOT / "configs" / "mrms.yaml"
 

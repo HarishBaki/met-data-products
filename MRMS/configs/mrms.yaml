@@ -1,0 +1,104 @@
+# ============================================================
+# MRMS pipeline configuration
+# ============================================================
+# Pass this file via --config to met-data-products/MRMS/process_mrms.py
+# (default --config already points here).
+
+# Global time axis (full pre-allocated range in the Zarr store)
+full_start: "20180101"
+full_end:   "20271231"
+
+# Number of parallel threads used per day for file-level processing
+workers: 8
+
+# ────────────────────────────────────────────────────────────
+# Zarr store
+# ────────────────────────────────────────────────────────────
+zarr:
+  store:       "/network/rit/lab/basulab/Projects/WISER/DATA/MRMS.zarr"
+  zarr_format: 2                  # must stay 2; v3 not yet readable by xarray here
+  freq:        "5min"
+  time_chunk:  24                 # 2 hours of 5-min steps
+  y_chunk:     256
+  x_chunk:     288
+
+# ────────────────────────────────────────────────────────────
+# Target spatial grid
+# ────────────────────────────────────────────────────────────
+grid:
+  # CF-compliant 2-D lat/lon (256 x 288), extracted from the WISER MRMS.zarr
+  # coordinates so regridding is byte-identical to the existing store's grid.
+  orography: "/network/rit/lab/basulab/Harish/met-data-products/MRMS/configs/orography_grid_cf.nc"
+
+# ────────────────────────────────────────────────────────────
+# S3 source  (NOAA MRMS open-data bucket, no auth required)
+# ────────────────────────────────────────────────────────────
+s3:
+  bucket:      "noaa-mrms-pds"
+  prefix:      "CONUS"            # path component: s3://{bucket}/{prefix}/{product}/{day}/
+  num_workers: 32                 # --numworkers passed to s5cmd sync
+
+# ────────────────────────────────────────────────────────────
+# Variables
+# key   = exact S3 product folder name under s3://{bucket}/{prefix}/
+# ────────────────────────────────────────────────────────────
+variables:
+
+  # ── Tier 1: Core reflectivity (already populated 2020-11 .. 2025-08-26) ──
+  MergedReflectivityQCComposite_00.50:
+    var_name:          "Reflectivity_composite"
+    long_name:         "Composite Reflectivity Mosaic (optimal method)"
+    units:             "dBZ"
+    missing_value:     -99.0
+    no_coverage_value: -999.0
+
+  MergedReflectivityAtLowestAltitude_00.50:
+    var_name:          "Reflectivity_lowest"
+    long_name:         "Non Quality Controlled Reflectivity At Lowest Altitude"
+    units:             "dBZ"
+    missing_value:     -99.0
+    no_coverage_value: -999.0
+
+  # ── Tier 1: Storm vertical structure ─────────────────────
+  EchoTop_18_00.50:
+    var_name:          "EchoTop_18"
+    long_name:         "Echo Top - 18 dBZ"
+    units:             "km MSL"
+    missing_value:     -1.0
+    no_coverage_value: -3.0
+
+  VIL_00.50:
+    var_name:          "VIL"
+    long_name:         "Vertically Integrated Liquid"
+    units:             "kg m-2"
+    missing_value:     -1.0
+    no_coverage_value: -3.0
+
+  # ── Tier 2: High-value additions ─────────────────────────
+  VIL_Density_00.50:
+    var_name:          "VIL_Density"
+    long_name:         "Vertically Integrated Liquid Density"
+    units:             "g m-3"
+    missing_value:     -1.0
+    no_coverage_value: -3.0
+
+  PrecipRate_00.00:
+    var_name:          "PrecipRate"
+    long_name:         "Radar Precipitation Rate"
+    units:             "mm hr-1"
+    missing_value:     -1.0
+    no_coverage_value: -3.0
+
+  PrecipFlag_00.00:
+    var_name:          "PrecipFlag"
+    long_name:         "Surface Precipitation Type (Convective/Stratiform/Tropical/Hail/Snow)"
+    units:             "flag"
+    missing_value:     -1.0
+    no_coverage_value: -3.0
+
+  MergedAzShear0to2kmAGL_00.50:
+    var_name:          "AzShear0to2km"
+    long_name:         "Azimuth Shear 0-2km AGL"
+    units:             "0.001 s-1"
+    missing_value:     0.0
+    no_coverage_value: 0.0
