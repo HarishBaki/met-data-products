@@ -364,4 +364,14 @@ if __name__ == "__main__":
             for m in batch
         )
 
+    # Exit 0 if [start-yearmonth, end-yearmonth] is now fully written for
+    # var_name (no NaNs), exit 1 otherwise. Lets a caller decide whether the
+    # raw inputs for this range are safe to delete.
+    check_times = pd.date_range(
+        start_month,
+        pd.Period(end_month, freq="M").end_time.floor("h"),
+        freq="h",
+    )
+    sys.exit(0 if not has_missing_data(str(OUTPUT_ZARR), check_times, var_name, ZARR_SYNC) else 1)
+
 # %%
