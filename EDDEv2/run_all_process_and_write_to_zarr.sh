@@ -33,7 +33,7 @@ for RUN_TYPE in "${RUN_TYPES[@]}"; do
         PROCESS_END="2014-12"
     else
         PROCESS_START="2025-01"
-        PROCESS_END="2030-12"   # FIXME, for full years up to 2100
+        PROCESS_END="2099-12"
     fi
 
     for VAR in "${VARS[@]}"; do
