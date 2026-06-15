@@ -292,6 +292,17 @@ def write_region(
     if drop:
         ds = ds.drop_vars(drop)
 
+    # Region-mode appends target an already-initialized zarr array, whose
+    # _FillValue is fixed once by init_zarr. xarray derives encoding["_FillValue"]
+    # from that existing array, which then collides with attrs["_FillValue"] /
+    # attrs["missing_value"] (set by apply_var_attrs) during to_zarr's CF encoding.
+    for name in ds.data_vars:
+        ds[name].encoding = {}
+        ds[name].attrs = {
+            k: v for k, v in ds[name].attrs.items()
+            if k not in ("_FillValue", "missing_value")
+        }
+
     kwargs: Dict = {
         "mode": "a",
         "region": region,
