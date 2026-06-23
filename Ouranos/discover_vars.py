@@ -20,14 +20,18 @@ modified in place.
 import argparse
 import csv
 import time
-from datetime import date
 from pathlib import Path
 
 import xarray as xr
 
-from download_ouranos import DEFAULT_CATALOG, load_catalog, parse_index_spec
+from download_ouranos import load_catalog, ncml_timerange_for_freq, parse_index_spec
 
 FREQUENCIES = ["1hr", "3hr", "day", "mon"]
+
+# This is the only script that reads catalog.csv directly - every other script
+# in this directory defaults --catalog to the catalog_with_vars.csv this one
+# produces, so they don't need their own copy of this constant.
+DEFAULT_INPUT_CATALOG = Path(__file__).parent / "catalog.csv"
 
 BASE_OPENDAP = (
     "https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/dodsC"
@@ -42,24 +46,6 @@ VAR_COLUMNS = [f"vars_{freq}" for freq in FREQUENCIES]
 # ---------------------------------------------------------------------------
 # URL construction
 # ---------------------------------------------------------------------------
-
-def ncml_timerange_for_freq(row: dict, freq: str) -> str:
-    if freq == "1hr":
-        # catalog.csv's ncml_timerange is the verified, verbatim 1hr string -
-        # some rows (e.g. ERA5 v1-r2) are anchored at :30 instead of :00, so
-        # this must be reused rather than recomputed from sim_start/end_year.
-        return row["ncml_timerange"]
-
-    start = date(row["sim_start_year"], 1, 1)
-    end = date(row["sim_end_year"], 12, 31)
-    if freq == "3hr":
-        return f"{start:%Y%m%d}0000-{end:%Y%m%d}2100"
-    if freq == "day":
-        return f"{start:%Y%m%d}-{end:%Y%m%d}"
-    if freq == "mon":
-        return f"{start:%Y%m}-{end:%Y%m}"
-    raise ValueError(f"Unknown frequency: {freq!r}")
-
 
 def build_ncml_url(row: dict, freq: str) -> str:
     timerange = ncml_timerange_for_freq(row, freq)
@@ -171,7 +157,7 @@ def write_rows(rows: list[dict], fieldnames: list[str], output_path: Path) -> No
 
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--catalog", default=str(DEFAULT_CATALOG), help="Path to input catalog CSV")
+    p.add_argument("--catalog", default=str(DEFAULT_INPUT_CATALOG), help="Path to input catalog CSV")
     p.add_argument("--output", default=None,
                    help="Path to write the catalog with vars_* columns (default: catalog_with_vars.csv next to --catalog)")
 

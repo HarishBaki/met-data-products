@@ -2,8 +2,10 @@
 """
 Download Ouranos CRCM5-CMIP6 subsets via THREDDS NCSS.
 
-The simulation catalog is read from catalog.csv (one row = one NCML file).
-Files already present on disk are skipped (no-clobber).
+The simulation catalog is read from catalog_with_vars.csv by default (one row =
+one NCML file; produced from catalog.csv by discover_vars.py, which is the only
+script that touches catalog.csv directly). Files already present on disk are
+skipped (no-clobber).
 
 SELECTING PRODUCTS
 ------------------
@@ -16,18 +18,37 @@ SELECTING PRODUCTS
   Named filters (--source-id, --experiment, --variant, --realization) can be
   used instead of or combined with --index.
 
-VARIABLE PRESETS
-----------------
-  all      areacella orog tas hurs huss uas vas pr ps   (default)
-  static   areacella orog                               (for grid inspection)
-  dynamic  tas hurs huss uas vas pr ps
+SELECTING VARIABLES
+-------------------
+  --vars               tas,pr,hurs    explicit comma-separated list
+  --vars-file          path/to/vars.txt
+                                       one var per line (or comma-separated),
+                                       '#' starts a comment, blank lines ignored
+  --vars-from-catalog  (flag, no value)
+                                       per-row lookup of that row's own
+                                       vars_{frequency} column, read directly
+                                       off the loaded --catalog file (its
+                                       default, catalog_with_vars.csv, already
+                                       has these columns - see discover_vars.py).
+                                       Every selected row gets its own list,
+                                       built from what's actually available for
+                                       that row rather than one list applied
+                                       uniformly to every row.
+
+  Exactly one of the three must be given - there is no built-in default variable
+  list. Project-specific choices (e.g. the DFS downscaling pipeline's variable set)
+  belong in the caller (a Slurm script, a vars-file, etc.), not in this script.
+
+SELECTING FREQUENCY
+--------------------
+  --frequency  1hr / 3hr / day / mon   (default: 1hr)
 
 TIME CHUNK MODES
 ----------------
   year     One output file per calendar year            (default)
   month    One output file per calendar month
   full     Entire simulation period in one request
-  static   Single 1-hour anchor at sim start — pair with --vars static
+  static   Single 1-hour anchor at sim start — pair with a static-field --vars list (e.g. areacella,orog)
 
 SPATIAL MODES
 -------------
@@ -40,17 +61,23 @@ EXAMPLES
   python download_ouranos.py --list
 
   # Download orography for every simulation (grid comparison)
-  python download_ouranos.py --vars static --time-chunk static --full-domain
+  python download_ouranos.py --vars areacella,orog --time-chunk static --full-domain
 
   # Download a single product by index (e.g. Slurm array task)
-  python download_ouranos.py --index 2 --vars dynamic --time-chunk year
+  python download_ouranos.py --index 2 --vars tas,hurs,huss,uas,vas,pr,ps --time-chunk year
 
   # Download CNRM-ESM2-1 historical monthly tas+pr for 1985-2014
   python download_ouranos.py --source-id CNRM-ESM2-1 --experiment historical \\
       --vars tas,pr --time-chunk month --start-year 1985 --end-year 2014
 
+  # Download exactly what discover_vars.py found available for each row
+  python download_ouranos.py --vars-from-catalog --time-chunk year
+
+  # Download monthly-frequency data instead of the 1hr default
+  python download_ouranos.py --index 2 --vars tas,pr --frequency mon --time-chunk full
+
   # Dry run
-  python download_ouranos.py --index 11-15 --vars static --time-chunk static --dry-run
+  python download_ouranos.py --index 11-15 --vars areacella,orog --time-chunk static --dry-run
 """
 
 import argparse
@@ -67,10 +94,12 @@ import requests
 # ---------------------------------------------------------------------------
 # THREDDS NCSS endpoint
 # ---------------------------------------------------------------------------
-BASE_NCSS = (
+BASE_NCSS_TMPL = (
     "https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/ncss/grid"
-    "/datasets/simulations/RCM-CMIP6/CORDEX/NAM-12/1hr"
+    "/datasets/simulations/RCM-CMIP6/CORDEX/NAM-12/{freq}"
 )
+
+FREQUENCIES = ["1hr", "3hr", "day", "mon"]
 
 # ---------------------------------------------------------------------------
 # Spatial bounding boxes  (0-360 longitude convention)
@@ -79,18 +108,9 @@ BBOX_NY   = {"north": 48, "south": 38, "west": 278, "east": 292}
 BBOX_FULL = None  # omit spatial params → full domain
 
 # ---------------------------------------------------------------------------
-# Variable presets
-# ---------------------------------------------------------------------------
-VAR_PRESETS = {
-    "static":  ["areacella", "orog"],
-    "dynamic": ["tas", "hurs", "huss", "uas", "vas", "pr", "ps"],
-    "all":     ["areacella", "orog", "tas", "hurs", "huss", "uas", "vas", "pr", "ps"],
-}
-
-# ---------------------------------------------------------------------------
 # Catalog I/O
 # ---------------------------------------------------------------------------
-DEFAULT_CATALOG = Path(__file__).parent / "catalog.csv"
+DEFAULT_CATALOG = Path(__file__).parent / "catalog_with_vars.csv"
 
 
 def load_catalog(csv_path: Path) -> list[dict]:
@@ -120,23 +140,43 @@ def parse_index_spec(spec: str, max_index: int) -> set[int]:
 
 
 # ---------------------------------------------------------------------------
+# Per-frequency NCML timerange strings
+# ---------------------------------------------------------------------------
+
+def ncml_timerange_for_freq(row: dict, freq: str) -> str:
+    if freq == "1hr":
+        # catalog.csv's ncml_timerange is the verified, verbatim 1hr string -
+        # some rows (e.g. ERA5 v1-r2) are anchored at :30 instead of :00, so
+        # this must be reused rather than recomputed from sim_start/end_year.
+        return row["ncml_timerange"]
+
+    start = date(row["sim_start_year"], 1, 1)
+    end = date(row["sim_end_year"], 12, 31)
+    if freq == "3hr":
+        return f"{start:%Y%m%d}0000-{end:%Y%m%d}2100"
+    if freq == "day":
+        return f"{start:%Y%m%d}-{end:%Y%m%d}"
+    if freq == "mon":
+        return f"{start:%Y%m}-{end:%Y%m}"
+    raise ValueError(f"Unknown frequency: {freq!r}")
+
+
+# ---------------------------------------------------------------------------
 # Time-chunk helpers
 # ---------------------------------------------------------------------------
 
-def _sim_start_date(ncml_timerange: str) -> date:
-    s = ncml_timerange[:8]
-    return date(int(s[:4]), int(s[4:6]), int(s[6:8]))
-
-
 def time_windows(chunk: str, sim_start_year: int, sim_end_year: int,
-                 ncml_timerange: str, start_date: date | None, end_date: date | None):
+                 start_date: date | None, end_date: date | None):
     """Yield (time_start_iso, time_end_iso, label) tuples."""
     eff_start = start_date or date(sim_start_year, 1, 1)
     eff_end   = end_date   or date(sim_end_year,   12, 31)
 
     if chunk == "static":
-        anchor = _sim_start_date(ncml_timerange)
-        t = anchor.isoformat()
+        # Every catalog row's simulation starts Jan 1 of sim_start_year - the
+        # static branch always anchors on 00:00Z/01:00Z regardless, so the
+        # actual day-level start time (e.g. ERA5 v1-r2's :30 offset) never
+        # mattered here even before this simplification.
+        t = date(sim_start_year, 1, 1).isoformat()
         yield f"{t}T00:00:00Z", f"{t}T01:00:00Z", "static"
 
     elif chunk == "full":
@@ -169,11 +209,12 @@ def time_windows(chunk: str, sim_start_year: int, sim_end_year: int,
 # URL and path construction
 # ---------------------------------------------------------------------------
 
-def build_url(row: dict, vars_list: list[str],
-              time_start: str, time_end: str, bbox: dict | None) -> str:
+def build_url(row: dict, vars_list: list[str], time_start: str, time_end: str,
+              bbox: dict | None, frequency: str = "1hr") -> str:
+    timerange = ncml_timerange_for_freq(row, frequency)
     ncml = (
         f"NAM-12_{row['source_id']}_{row['experiment_id']}_{row['variant']}"
-        f"_OURANOS_CRCM5_{row['realization']}_1hr_{row['ncml_timerange']}.ncml"
+        f"_OURANOS_CRCM5_{row['realization']}_{frequency}_{timerange}.ncml"
     )
     var_str = "&".join(f"var={v}" for v in vars_list)
     params  = {
@@ -186,18 +227,19 @@ def build_url(row: dict, vars_list: list[str],
     if bbox:
         params.update(north=bbox["north"], south=bbox["south"],
                       west=bbox["west"],   east=bbox["east"])
-    return f"{BASE_NCSS}/{ncml}?{var_str}&{urlencode(params)}"
+    base = BASE_NCSS_TMPL.format(freq=frequency)
+    return f"{base}/{ncml}?{var_str}&{urlencode(params)}"
 
 
 def build_dest(dest_root: Path, row: dict, vars_list: list[str],
-               label: str, full_domain: bool) -> Path:
+               label: str, full_domain: bool, frequency: str = "1hr") -> Path:
     out_dir = dest_root / row["dest_subdir"]
     out_dir.mkdir(parents=True, exist_ok=True)
     var_tag    = "+".join(vars_list) if len(vars_list) <= 3 else f"{len(vars_list)}vars"
     domain_tag = "full" if full_domain else "NYS"
     fname = (
         f"NAM-12_{row['source_id']}_{row['experiment_id']}_{row['variant']}"
-        f"_OURANOS_CRCM5_{row['realization']}_{domain_tag}_{var_tag}_{label}.nc4"
+        f"_OURANOS_CRCM5_{row['realization']}_{frequency}_{domain_tag}_{var_tag}_{label}.nc4"
     )
     return out_dir / fname
 
@@ -240,7 +282,7 @@ def parse_args():
     )
     # Catalog
     p.add_argument("--catalog",     default=str(DEFAULT_CATALOG),
-                   help="Path to catalog CSV (default: catalog.csv next to this script)")
+                   help="Path to catalog CSV (default: catalog_with_vars.csv next to this script)")
     p.add_argument("--list",        action="store_true",
                    help="Print the catalog and exit")
 
@@ -252,9 +294,22 @@ def parse_args():
     p.add_argument("--variant",     default=None, help="Filter by variant     (e.g. r3i1p1f1)")
     p.add_argument("--realization", default=None, help="Filter by realization (e.g. v1-r2)")
 
-    # Variable selection
-    p.add_argument("--vars", default="all",
-                   help="Comma-separated variables or preset: all / static / dynamic")
+    # Variable selection - exactly one source is required, no built-in default list
+    var_source = p.add_mutually_exclusive_group(required=True)
+    var_source.add_argument("--vars", default=None,
+                   help="Comma-separated variable names, e.g. tas,pr,hurs")
+    var_source.add_argument("--vars-file", default=None,
+                   help="Path to a text file listing variables (one per line or "
+                        "comma-separated; '#' comments and blank lines ignored)")
+    var_source.add_argument("--vars-from-catalog", action="store_true",
+                   help="Use each row's own vars_{frequency} column, read directly "
+                        "off the loaded --catalog file (its default, "
+                        "catalog_with_vars.csv, already has these columns - "
+                        "see discover_vars.py)")
+
+    # Frequency
+    p.add_argument("--frequency",   default="1hr", choices=FREQUENCIES,
+                   help="THREDDS time frequency to download (default: 1hr)")
 
     # Time controls
     p.add_argument("--time-chunk",  default="year",
@@ -280,10 +335,28 @@ def parse_args():
 
 
 def resolve_vars(spec: str) -> list[str]:
-    spec = spec.strip()
-    if spec in VAR_PRESETS:
-        return VAR_PRESETS[spec]
     return [v.strip() for v in spec.split(",") if v.strip()]
+
+
+def read_vars_file(path: Path) -> list[str]:
+    out = []
+    for line in path.read_text().splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        out.extend(v.strip() for v in line.split(",") if v.strip())
+    return out
+
+
+def vars_from_catalog_row(row: dict, frequency: str, catalog_path: Path) -> list[str]:
+    column = f"vars_{frequency}"
+    cell = row.get(column, "")
+    if not cell or cell == "ERROR":
+        raise SystemExit(
+            f"row {row['index']} has no usable {column} in {catalog_path} (value: {cell!r}) - "
+            f"did you point --catalog at a catalog_with_vars.csv-style file?"
+        )
+    return [v for v in cell.split(";") if v]
 
 
 def resolve_dates(args) -> tuple[date | None, date | None]:
@@ -323,24 +396,38 @@ def main():
         print("No catalog rows matched the given filters.")
         return
 
-    vars_list   = resolve_vars(args.vars)
     bbox        = BBOX_FULL if args.full_domain else BBOX_NY
     dest_root   = Path(args.dest_root)
     start_date, end_date = resolve_dates(args)
 
     tasks = []
+    vars_by_row = {}
     for row in rows:
+        if args.vars is not None:
+            vars_list = resolve_vars(args.vars)
+        elif args.vars_file is not None:
+            vars_list = read_vars_file(Path(args.vars_file))
+        else:
+            vars_list = vars_from_catalog_row(row, args.frequency, Path(args.catalog))
+        vars_by_row[row["index"]] = vars_list
+
         for t_start, t_end, label in time_windows(
             args.time_chunk, row["sim_start_year"], row["sim_end_year"],
-            row["ncml_timerange"], start_date, end_date,
+            start_date, end_date,
         ):
-            url  = build_url(row, vars_list, t_start, t_end, bbox)
-            path = build_dest(dest_root, row, vars_list, label, args.full_domain)
+            url  = build_url(row, vars_list, t_start, t_end, bbox, args.frequency)
+            path = build_dest(dest_root, row, vars_list, label, args.full_domain, args.frequency)
             tasks.append((url, path))
 
     print(f"Matched rows : {[r['index'] for r in rows]}", flush=True)
     print(f"Total tasks  : {len(tasks)}",                  flush=True)
-    print(f"Variables    : {vars_list}",                   flush=True)
+    if len(set(map(tuple, vars_by_row.values()))) == 1:
+        print(f"Variables    : {next(iter(vars_by_row.values()))}", flush=True)
+    else:
+        print("Variables    : (per-row, see vars-from-catalog)", flush=True)
+        for idx, vlist in vars_by_row.items():
+            print(f"  row {idx}: {vlist}", flush=True)
+    print(f"Frequency    : {args.frequency}",              flush=True)
     print(f"Time chunk   : {args.time_chunk}",             flush=True)
     print(f"Spatial      : {'full domain' if args.full_domain else f'NYS bbox {BBOX_NY}'}", flush=True)
 

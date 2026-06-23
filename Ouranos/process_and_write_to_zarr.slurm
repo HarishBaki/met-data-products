@@ -16,10 +16,14 @@ conda activate DFSAI
 ############################################################
 # Usage: sbatch process_and_write_to_zarr.slurm <index> <var|init> [year]
 #   <index>  catalog row (0-26)
-#   <var>    one of t2m sp sh2 tp rh2 u10 v10 si10 wdir10, or "init"
+#   <var>    valid choices depend on FREQUENCY - see VAR_GROUPS_BY_FREQUENCY
+#            in process_and_write_to_zarr.py, or "init"
 #   [year]   required unless <var> is "init"
 #
-# Override OUTPUT_ROOT / RAW_ROOT / KEEP_RAW via env vars before sbatch.
+# Override OUTPUT_ROOT / RAW_ROOT / KEEP_RAW / FREQUENCY via env vars before
+# sbatch. FREQUENCY defaults to 1hr. The Python script's own --catalog default
+# (catalog_with_vars.csv) drives the per-row availability check; pass CATALOG
+# to point at a different file.
 ############################################################
 index="$1"
 var="$2"
@@ -33,16 +37,20 @@ fi
 output_root="${OUTPUT_ROOT:-/network/rit/lab/basulab/Projects/DFS/DATA/Ouranos_NYS}"
 raw_root="${RAW_ROOT:-/network/rit/lab/basulab/RAW_DATA/Ouranos/1hr}"
 keep_raw="${KEEP_RAW:-}"   # set to any non-empty value to keep downloaded yearly NetCDF files
+frequency="${FREQUENCY:-1hr}"
+catalog="${CATALOG:-}"
 
 opt_args=""
 [[ -n "${year}"     ]] && opt_args+=" --year ${year}"
 [[ -n "${keep_raw}" ]] && opt_args+=" --keep-raw"
+[[ -n "${catalog}"  ]] && opt_args+=" --catalog ${catalog}"
 
-echo "Job start: $(date)  index=${index} var=${var} year=${year}"
+echo "Job start: $(date)  index=${index} var=${var} year=${year} freq=${frequency}"
 
 python process_and_write_to_zarr.py \
     --index       "${index}" \
     --var         "${var}" \
+    --frequency   "${frequency}" \
     --output-root "${output_root}" \
     --raw-root    "${raw_root}" \
     ${opt_args}

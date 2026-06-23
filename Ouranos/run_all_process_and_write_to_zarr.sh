@@ -11,8 +11,10 @@
 # cluster), and a multi-year submission loop easily exceeds that gap, causing
 # "Job dependency problem" failures for every job depending on a purged ID.
 #
-# Edit INDICES / YEARS below, then run:
+# Edit INDICES / YEARS / FREQUENCY below, then run:
 #   ./run_all_process_and_write_to_zarr.sh
+# Or override FREQUENCY / CATALOG via env vars, e.g.:
+#   FREQUENCY=day ./run_all_process_and_write_to_zarr.sh
 
 MAX_PARALLEL=7
 JOBNAME=process_ouranos
@@ -29,7 +31,28 @@ declare -A YEARS=(
     [5]="2018-2024"
 )
 
-DOWNLOAD_VARS=(t2m sp sh2 tp rh2 u10 v10)
+# Single frequency for the whole run (1hr/3hr/day/mon). Exported so sbatch
+# (and CATALOG, if set) propagate to process_and_write_to_zarr.slurm.
+FREQUENCY="${FREQUENCY:-1hr}"
+export FREQUENCY
+[[ -n "${CATALOG:-}" ]] && export CATALOG
+
+# Download/derived var lists mirror VAR_GROUPS_BY_FREQUENCY in
+# process_and_write_to_zarr.py - keep these two in sync by hand.
+declare -A DOWNLOAD_VARS_BY_FREQUENCY=(
+    [1hr]="t2m sp sh2 tp rh2 u10 v10"
+    [3hr]="clwvi hfls mrro prw snw"
+    [day]="t2m tasmax tasmin snw"
+    [mon]="t2m sp sh2 rh2 u10 v10 tasmax tasmin snw"
+)
+declare -A DERIVED_VARS_BY_FREQUENCY=(
+    [1hr]="si10 wdir10"
+    [3hr]=""
+    [day]=""
+    [mon]="si10 wdir10"
+)
+DOWNLOAD_VARS=(${DOWNLOAD_VARS_BY_FREQUENCY[$FREQUENCY]})
+DERIVED_VARS=(${DERIVED_VARS_BY_FREQUENCY[$FREQUENCY]})
 
 throttle() {
     while [ "$(squeue -u "$USER" -h -n "$JOBNAME" | wc -l)" -ge "$MAX_PARALLEL" ]; do
@@ -110,13 +133,17 @@ for idx in "${INDICES[@]}"; do
             [[ "$var" == "v10" ]] && v10_id=$jid
         done
 
-        echo "Waiting for index=$idx year=$year u10/v10 jobs ($u10_id, $v10_id) to complete..."
-        if ! wait_for_jobs "$u10_id" "$v10_id"; then
-            echo "ERROR: index=$idx year=$year u10/v10 jobs did not complete successfully. Skipping si10/wdir10 for this year." >&2
+        if [[ ${#DERIVED_VARS[@]} -eq 0 ]]; then
             continue
         fi
 
-        for var in si10 wdir10; do
+        echo "Waiting for index=$idx year=$year u10/v10 jobs ($u10_id, $v10_id) to complete..."
+        if ! wait_for_jobs "$u10_id" "$v10_id"; then
+            echo "ERROR: index=$idx year=$year u10/v10 jobs did not complete successfully. Skipping ${DERIVED_VARS[*]} for this year." >&2
+            continue
+        fi
+
+        for var in "${DERIVED_VARS[@]}"; do
             throttle
             jid=$(sbatch --parsable "$SLURM_SCRIPT" "$idx" "$var" "$year")
             echo "Submitted: index=$idx var=$var year=$year job=$jid"
