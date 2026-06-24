@@ -67,7 +67,7 @@ RAW_ROOT_DEFAULT = Path("/network/rit/lab/basulab/RAW_DATA/Ouranos/1hr")
 OUTPUT_ROOT_DEFAULT = Path("/network/rit/lab/basulab/Projects/DFS/DATA/Ouranos_NYS")
 OROG_PATH = (
     OUTPUT_ROOT_DEFAULT
-    / "NAM-12_ERA5_evaluation_r1i1p1_OURANOS_CRCM5_v1-r1_NYS_areacella+orog_static.nc4"
+    / "ERA5/evaluation/r1i1p1/v1-r1_nys_orography.nc4"
 )
 
 TIME_CHUNK_BY_FREQUENCY = {"1hr": 24, "3hr": 240, "day": 365, "mon": 120}

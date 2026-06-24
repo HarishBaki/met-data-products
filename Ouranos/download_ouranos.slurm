@@ -27,9 +27,9 @@ echo "Job start: $(date)  array_task=${SLURM_ARRAY_TASK_ID}"
 # if a job needs a different set.
 #
 # Examples:
-#   # Download orography for all 27 products in parallel
-#   VARS=areacella,orog TIME_CHUNK=static FULL_DOMAIN=1 \
-#       sbatch --array=0-26 download_ouranos.slurm
+#   # fx (static) variables - orog, areacella, sftlf, etc. - are rejected by
+#   # download_ouranos.py; use download_fx.py instead, e.g.:
+#   #   python download_fx.py --index 0 --vars orog,areacella
 #
 #   # Download the default DFS variable set, yearly, for CNRM-ESM2-1 historical (index 2)
 #   sbatch --array=2 download_ouranos.slurm

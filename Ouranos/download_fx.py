@@ -54,6 +54,9 @@ from download_ouranos import (
     BBOX_FULL,
     BBOX_NY,
     DEFAULT_CATALOG,
+    FX_VARS,
+    OUTPUT_ROOT_FULL,
+    OUTPUT_ROOT_NYS,
     download_one,
     load_catalog,
     parse_index_spec,
@@ -70,13 +73,6 @@ BASE_NCSS_FX = "https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/ncss/grid"
 BASE_FILESERVER_FX = "https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/fileServer"
 
 XLINK_HREF = "{http://www.w3.org/1999/xlink}href"
-
-FX_VARS = [
-    "areacella", "classFrac", "clayfrac", "cropFrac", "dtb", "fldcapacity",
-    "grassFrac", "ksat", "ldpth", "mrsofc", "orog", "porosity", "rootd",
-    "sandfrac", "sftgif", "sftlaf", "sftlf", "sftof", "sfturf",
-    "treeFracPrimDec", "treeFracPrimEver", "wetlandFrac",
-]
 
 
 # ---------------------------------------------------------------------------
@@ -173,28 +169,26 @@ def build_fileserver_url(url_path: str) -> str:
 def build_fx_dest(dest_root: Path, row: dict, var: str, domain_tag: str) -> Path:
     out_dir = dest_root / row["dest_subdir"]
     out_dir.mkdir(parents=True, exist_ok=True)
-    fname = (
-        f"NAM-12_{row['source_id']}_{row['experiment_id']}_{row['variant']}"
-        f"_OURANOS_CRCM5_{row['realization']}_{domain_tag}_{var}_fx.nc4"
-    )
+    fname = f"{row['realization']}_{domain_tag.lower()}_{var}.nc4"
     return out_dir / fname
 
 
 def download_with_fallback(
-    url: str, fallback_url: str, dest_root: Path, row: dict, var: str,
-    domain_tag: str, retries: int,
+    url: str, fallback_url: str, dest_root: Path, full_domain_root: Path,
+    row: dict, var: str, domain_tag: str, retries: int,
 ) -> str:
     """Try the NCSS-subsetted URL first; if it fails outright (not just slow/flaky),
     fall back to a full-domain plain-file download so a single NCSS-incompatible
     variable (e.g. rootd - see build_fileserver_url) doesn't end up missing entirely.
-    The fallback lands at the 'full' domain path, not the originally requested
-    domain_tag's path, since that's honestly what its content is."""
+    The fallback lands under full_domain_root at the 'full' domain path, not the
+    originally requested dest_root/domain_tag, since that's honestly what its
+    content is and where uncropped data belongs."""
     path = build_fx_dest(dest_root, row, var, domain_tag)
     result = download_one(url, path, retries=retries)
     if not result.startswith("FAIL"):
         return result
 
-    fallback_path = build_fx_dest(dest_root, row, var, "full")
+    fallback_path = build_fx_dest(full_domain_root, row, var, "full")
     fallback_result = download_one(fallback_url, fallback_path, retries=retries)
     if fallback_result.startswith("OK"):
         return f"OK    {fallback_path.name}  [full-domain fallback - NCSS subsetting failed]"
@@ -220,7 +214,9 @@ def parse_args():
     p.add_argument("--full-domain", action="store_true",
                    help="No spatial subsetting - full North American CORDEX domain")
 
-    p.add_argument("--dest-root", default="raw")
+    p.add_argument("--dest-root", default=None,
+                   help="Root dir override; files land at {dest-root}/{dest_subdir}/{realization}_{nys|full}_{var}.nc4. "
+                        f"Default: {OUTPUT_ROOT_NYS} (cropped) or {OUTPUT_ROOT_FULL} (--full-domain)")
     p.add_argument("--num-workers", type=int, default=4, help="Parallel download threads (default: 4)")
     p.add_argument("--retries", type=int, default=3)
     p.add_argument("--dry-run", action="store_true",
@@ -254,7 +250,11 @@ def main():
 
     vars_list = resolve_vars(args.vars)
     bbox = BBOX_FULL if args.full_domain else BBOX_NY
-    dest_root = Path(args.dest_root)
+    if args.dest_root is not None:
+        dest_root = full_domain_root = Path(args.dest_root)
+    else:
+        dest_root = OUTPUT_ROOT_FULL if args.full_domain else OUTPUT_ROOT_NYS
+        full_domain_root = OUTPUT_ROOT_FULL
 
     print(f"Matched rows : {[r['index'] for r in rows]}", flush=True)
     print(f"Variables    : {vars_list}", flush=True)
@@ -291,7 +291,7 @@ def main():
     dl_ok = dl_skip = dl_fail = dl_fallback = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.num_workers) as pool:
         futures = {
-            pool.submit(download_with_fallback, url, fallback_url, dest_root, row, var, domain_tag, args.retries): (row, var)
+            pool.submit(download_with_fallback, url, fallback_url, dest_root, full_domain_root, row, var, domain_tag, args.retries): (row, var)
             for url, fallback_url, row, var in tasks
         }
         for i, fut in enumerate(concurrent.futures.as_completed(futures), 1):

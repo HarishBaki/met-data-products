@@ -48,20 +48,24 @@ TIME CHUNK MODES
   year     One output file per calendar year            (default)
   month    One output file per calendar month
   full     Entire simulation period in one request
-  static   Single 1-hour anchor at sim start — pair with a static-field --vars list (e.g. areacella,orog)
+  static   Single 1-hour anchor at sim start — for non-fx, time-invariant-in-practice
+           fields only. fx variables (areacella, orog, sftlf, ...) are rejected here
+           regardless of time-chunk mode - use download_fx.py for those instead.
 
 SPATIAL MODES
 -------------
   Default     NY bbox: N=48 S=38 W=278 E=292  (0-360 lon)
   --full-domain  No spatial subsetting (full North American CORDEX domain)
 
+OUTPUT ROOT
+-----------
+  --dest-root defaults to OUTPUT_ROOT_NYS (cropped) or OUTPUT_ROOT_FULL (--full-domain) -
+  same split as download_fx.py - override with --dest-root if needed.
+
 EXAMPLES
 --------
   # List the catalog
   python download_ouranos.py --list
-
-  # Download orography for every simulation (grid comparison)
-  python download_ouranos.py --vars areacella,orog --time-chunk static --full-domain
 
   # Download a single product by index (e.g. Slurm array task)
   python download_ouranos.py --index 2 --vars tas,hurs,huss,uas,vas,pr,ps --time-chunk year
@@ -76,8 +80,8 @@ EXAMPLES
   # Download monthly-frequency data instead of the 1hr default
   python download_ouranos.py --index 2 --vars tas,pr --frequency mon --time-chunk full
 
-  # Dry run
-  python download_ouranos.py --index 11-15 --vars areacella,orog --time-chunk static --dry-run
+  # fx variables (orog, areacella, sftlf, ...) - use download_fx.py, not this script
+  python download_fx.py --index 0 --vars orog,areacella
 """
 
 import argparse
@@ -106,6 +110,28 @@ FREQUENCIES = ["1hr", "3hr", "day", "mon"]
 # ---------------------------------------------------------------------------
 BBOX_NY   = {"north": 48, "south": 38, "west": 278, "east": 292}
 BBOX_FULL = None  # omit spatial params → full domain
+
+# ---------------------------------------------------------------------------
+# Output roots - cropped (NYS) output goes straight to the same Ouranos_NYS
+# tree process_and_write_to_zarr.py reads from; full-domain output goes to
+# RAW_DATA/Ouranos. Shared with download_fx.py so both scripts' default
+# destinations move together. (process_and_write_to_zarr.py's own pipeline
+# stages year-by-year downloads through RAW_ROOT_DEFAULT/--raw-root instead,
+# bypassing these CLI defaults entirely - see that script.)
+# ---------------------------------------------------------------------------
+OUTPUT_ROOT_NYS  = Path("/network/rit/lab/basulab/Projects/DFS/DATA/Ouranos_NYS")
+OUTPUT_ROOT_FULL = Path("/network/rit/lab/basulab/RAW_DATA/Ouranos")
+
+# fx (static) variables live on a separate raw THREDDS tree with version-dated
+# paths - download_fx.py is the dedicated downloader for these (see its module
+# docstring). Listed here, not there, so download_ouranos.py can refuse them
+# without download_fx.py needing to import back into this module.
+FX_VARS = [
+    "areacella", "classFrac", "clayfrac", "cropFrac", "dtb", "fldcapacity",
+    "grassFrac", "ksat", "ldpth", "mrsofc", "orog", "porosity", "rootd",
+    "sandfrac", "sftgif", "sftlaf", "sftlf", "sftof", "sfturf",
+    "treeFracPrimDec", "treeFracPrimEver", "wetlandFrac",
+]
 
 # ---------------------------------------------------------------------------
 # Catalog I/O
@@ -325,8 +351,9 @@ def parse_args():
                    help="No spatial subsetting — full North American CORDEX domain")
 
     # Output
-    p.add_argument("--dest-root",   default="raw",
-                   help="Root directory prepended to dest_subdir from CSV (default: ./raw)")
+    p.add_argument("--dest-root",   default=None,
+                   help="Root dir override, with dest_subdir from CSV appended. "
+                        f"Default: {OUTPUT_ROOT_NYS} (cropped) or {OUTPUT_ROOT_FULL} (--full-domain)")
     p.add_argument("--num-workers", type=int, default=4,
                    help="Parallel download threads (default: 4)")
     p.add_argument("--dry-run",     action="store_true",
@@ -397,7 +424,10 @@ def main():
         return
 
     bbox        = BBOX_FULL if args.full_domain else BBOX_NY
-    dest_root   = Path(args.dest_root)
+    if args.dest_root is not None:
+        dest_root = Path(args.dest_root)
+    else:
+        dest_root = OUTPUT_ROOT_FULL if args.full_domain else OUTPUT_ROOT_NYS
     start_date, end_date = resolve_dates(args)
 
     tasks = []
@@ -409,6 +439,14 @@ def main():
             vars_list = read_vars_file(Path(args.vars_file))
         else:
             vars_list = vars_from_catalog_row(row, args.frequency, Path(args.catalog))
+
+        fx_requested = sorted(set(vars_list) & set(FX_VARS))
+        if fx_requested:
+            raise SystemExit(
+                f"{fx_requested} are fx (static) variables, not time-varying NCML data - "
+                f"download_ouranos.py can't resolve them. Use download_fx.py instead, e.g.:\n"
+                f"  python download_fx.py --index {row['index']} --vars {','.join(fx_requested)}"
+            )
         vars_by_row[row["index"]] = vars_list
 
         for t_start, t_end, label in time_windows(
