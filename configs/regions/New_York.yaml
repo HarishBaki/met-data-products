@@ -1,0 +1,32 @@
+# New York region config for met-data-products' crop step (URMA/HRRR/ERA5/ICON/
+# EDDEv2/Ouranos process_and_write_to_zarr.py scripts).
+#
+# grid/crop below are NOT the output of compute_region_crop.py --auto-grid --
+# they're the values already in production use (hardcoded across every
+# product's process_and_write_to_zarr.py before this region config existed).
+# Running compute_region_crop.py --state "New York" against these same GADM
+# boundaries produces a LARGER superset (x_start=1781, y_start=811, nx=320,
+# ny=288) that fully contains this crop with margin on every side -- a useful
+# sanity check that these hand-picked values aren't wrong, but deliberately
+# NOT swapped in: doing so would change URMA_NYS.zarr's shape and break
+# compatibility with every already-trained model and already-written zarr
+# product built against the current 256x288 domain (original_output_size in
+# DL_downscaling/configs/baseline.yaml). Don't regenerate NY's data to match
+# the auto-computed crop without a deliberate, separate decision to do so.
+region_id: new_york
+
+data_root: /network/rit/lab/basulab/Projects/DFS/DATA
+region_tag: NYS
+
+boundary:
+  gadm_file: /network/rit/lab/basulab/Harish/ResearchOS/Projects/Active/Sparse-to-grided-deep-interpolation/git_repos/Sparse_to_dense_meteorological_variables/data/geospatial/gadm_410.gpkg
+  country: United States
+  state: New York
+  buffer_m: 5000
+
+grid:
+  nx: 288
+  ny: 256
+  crop:
+    x_start: 1800
+    y_start: 830
