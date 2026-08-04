@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """
-Download Ouranos CRCM5-CMIP6 (NAM-12, any frequency) NYS-cropped data and write
-directly to per-run Zarr stores under Ouranos_NYS, one (catalog row, variable,
-year) per job.
+Download Ouranos CRCM5-CMIP6 (NAM-12, any frequency) region-cropped data and
+write directly to per-run Zarr stores under Ouranos_{region_tag} (--region,
+default New_York), one (catalog row, variable, year) per job. The crop bbox
+and output/raw-staging locations come from configs/regions/{region}.yaml via
+download_ouranos.py's resolve_region_bbox()/resolve_region_output_root() --
+see this script's resolve_region_raw_root()/resolve_region_orog_path().
 
 Design:
 - `--var init` pre-creates a NaN-filled Zarr store spanning the full
@@ -42,12 +45,14 @@ import xarray as xr
 import zarr
 
 from download_ouranos import (
-    BBOX_NY,
     FREQUENCIES,
     build_dest,
     build_url,
     download_one,
     load_catalog,
+    load_region_vars,
+    resolve_region_bbox,
+    resolve_region_output_root,
 )
 
 _BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
@@ -63,12 +68,37 @@ from data_utils.zarr_io import (  # noqa: E402
 )
 
 DEFAULT_CATALOG = Path(__file__).parent / "catalog_with_vars.csv"
-RAW_ROOT_DEFAULT = Path("/network/rit/lab/basulab/RAW_DATA/Ouranos/1hr")
-OUTPUT_ROOT_DEFAULT = Path("/network/rit/lab/basulab/Projects/DFS/DATA/Ouranos_NYS")
-OROG_PATH = (
-    OUTPUT_ROOT_DEFAULT
-    / "ERA5/evaluation/r1i1p1/v1-r1_nys_orography.nc4"
-)
+
+# --output-root/--raw-root are region-derived when not explicitly overridden --
+# see resolve_region_raw_root() below and resolve_region_output_root() (imported)
+# and main()'s output_root resolution. OROG_PATH is set from the resolved
+# output_root in main(): get_template() reads it as a module global, which is
+# safe here since this script has no parallelism/subprocess forking (one
+# (row, var, year) per invocation).
+OROG_PATH = None
+
+
+def resolve_region_raw_root(region: str) -> Path:
+    """Raw yearly-download staging root for a region. Region-scoped (unlike
+    URMA/HRRR/etc.'s raw archives, which cover the full native grid regardless
+    of region) because these files are already cropped to this region's bbox
+    at download time (see build_url's bbox param, from download_ouranos.
+    resolve_region_bbox) -- keeping a single shared, non-region-tagged
+    directory across regions would be confusing even though build_dest's
+    domain_tag already keeps filenames themselves collision-free."""
+    region_tag = load_region_vars(region)["region_tag"]
+    return Path(f"/network/rit/lab/basulab/RAW_DATA/Ouranos_{region_tag}/1hr")
+
+
+def resolve_region_orog_path(region: str, output_root: Path) -> Path:
+    """Path to the region's already-downloaded static orography file -- the
+    spatial template init_store()/get_template() need. Produced by running
+    download_fx.py --region {region} --vars orog against the ERA5/evaluation
+    row first; filename convention (v1-r1_{region_tag_lower}_orography.nc4)
+    matches build_fx_dest's domain_tag.lower() naming. Doesn't exist yet for
+    a brand-new region (e.g. New Mexico) until that download is run once."""
+    region_tag = load_region_vars(region)["region_tag"]
+    return output_root / "ERA5/evaluation/r1i1p1" / f"v1-r1_{region_tag.lower()}_orography.nc4"
 
 TIME_CHUNK_BY_FREQUENCY = {"1hr": 24, "3hr": 240, "day": 365, "mon": 120}
 
@@ -211,7 +241,7 @@ def _finalize_and_write(
 def process_download_var(
     row: dict, var_name: str, year: int, output_zarr: str, full_times: pd.DatetimeIndex,
     chunks: dict, raw_root: Path, keep_raw: bool, zarr_sync: zarr.ProcessSynchronizer,
-    frequency: str,
+    frequency: str, bbox: dict, domain_tag: str,
 ) -> str:
     source_var = VAR_GROUPS_BY_FREQUENCY[frequency][var_name]["source_var"]
     _, check_times = year_times_for(year, frequency)
@@ -225,10 +255,10 @@ def process_download_var(
         )
 
     url = build_url(
-        row, [source_var], f"{year}-01-01T00:00:00Z", f"{year}-12-31T23:00:00Z", BBOX_NY,
+        row, [source_var], f"{year}-01-01T00:00:00Z", f"{year}-12-31T23:00:00Z", bbox,
         frequency=frequency,
     )
-    dest = build_dest(raw_root, row, [source_var], str(year), full_domain=False, frequency=frequency)
+    dest = build_dest(raw_root, row, [source_var], str(year), domain_tag, frequency=frequency)
     result = download_one(url, dest)
     if result.startswith("FAIL"):
         return f"[fail] {dest.name}: {result}"
@@ -291,6 +321,7 @@ def process_derived_var(
 
 def init_store(
     row: dict, output_zarr: str, full_times: pd.DatetimeIndex, chunks: dict, frequency: str,
+    region_tag: str,
 ) -> None:
     # No synchronizer here: this is a standalone job that must complete before any
     # per-variable jobs for this row start (see process_and_write_to_zarr.slurm /
@@ -304,7 +335,7 @@ def init_store(
         ensure_store(
             output_zarr, full_times, var_name, get_template, chunks,
             global_title=(
-                f"Ouranos NAM-12 CRCM5 {frequency} NYS - {row['source_id']} "
+                f"Ouranos NAM-12 CRCM5 {frequency} {region_tag} - {row['source_id']} "
                 f"{row['experiment_id']} {row['realization']}"
             ),
         )
@@ -331,8 +362,21 @@ def parse_args() -> argparse.Namespace:
         help="Time frequency to process (default: 1hr)",
     )
     p.add_argument("--year", type=int, default=None, help="Year to process (required unless --var init)")
-    p.add_argument("--output-root", default=str(OUTPUT_ROOT_DEFAULT), help="Root dir for output Zarr stores")
-    p.add_argument("--raw-root", default=str(RAW_ROOT_DEFAULT), help="Root dir for downloaded yearly NetCDF files")
+    p.add_argument(
+        "--region", type=str, default="New_York",
+        help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
+             "supplies the download bbox (grid.Ouranos.bbox) and, when --output-root/"
+             "--raw-root are not given explicitly, those locations too."
+    )
+    p.add_argument(
+        "--output-root", default=None,
+        help="Root dir for output Zarr stores. Default: {data_root}/Ouranos_{region_tag}, from --region.",
+    )
+    p.add_argument(
+        "--raw-root", default=None,
+        help="Root dir for downloaded yearly NetCDF files. "
+             "Default: /network/rit/lab/basulab/RAW_DATA/Ouranos_{region_tag}/1hr, from --region.",
+    )
     p.add_argument("--keep-raw", action="store_true", help="Keep downloaded yearly NetCDF files after writing to zarr")
     return p.parse_args()
 
@@ -352,8 +396,13 @@ def main() -> None:
             f"valid: {list(freq_vars)}"
         )
 
-    output_root = Path(args.output_root)
-    raw_root = Path(args.raw_root)
+    output_root = Path(args.output_root) if args.output_root else resolve_region_output_root(args.region)
+    raw_root = Path(args.raw_root) if args.raw_root else resolve_region_raw_root(args.region)
+    region_tag = load_region_vars(args.region)["region_tag"]
+
+    global OROG_PATH
+    OROG_PATH = resolve_region_orog_path(args.region, output_root)
+
     full_times = full_time_axis(row, args.frequency)
     output_zarr = output_zarr_path(output_root, row, args.frequency)
     chunks = {"time": TIME_CHUNK_BY_FREQUENCY[args.frequency]}
@@ -367,7 +416,7 @@ def main() -> None:
     )
 
     if args.var == "init":
-        init_store(row, output_zarr, full_times, chunks, args.frequency)
+        init_store(row, output_zarr, full_times, chunks, args.frequency, region_tag)
         return
 
     if args.year is None:
@@ -376,9 +425,10 @@ def main() -> None:
     zarr_sync = zarr.ProcessSynchronizer(f"{output_zarr}.sync")
     info = freq_vars[args.var]
     if info["kind"] == "download":
+        bbox = resolve_region_bbox(args.region)
         result = process_download_var(
             row, args.var, args.year, output_zarr, full_times, chunks, raw_root, args.keep_raw,
-            zarr_sync, args.frequency,
+            zarr_sync, args.frequency, bbox, region_tag,
         )
     else:
         result = process_derived_var(

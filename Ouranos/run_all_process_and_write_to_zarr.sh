@@ -13,8 +13,9 @@
 #
 # Edit INDICES / YEARS / FREQUENCY below, then run:
 #   ./run_all_process_and_write_to_zarr.sh
-# Or override FREQUENCY / CATALOG via env vars, e.g.:
+# Or override FREQUENCY / REGION / CATALOG via env vars, e.g.:
 #   FREQUENCY=day ./run_all_process_and_write_to_zarr.sh
+#   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
 
 MAX_PARALLEL=7
 JOBNAME=process_ouranos
@@ -32,9 +33,11 @@ declare -A YEARS=(
 )
 
 # Single frequency for the whole run (1hr/3hr/day/mon). Exported so sbatch
-# (and CATALOG, if set) propagate to process_and_write_to_zarr.slurm.
+# (and CATALOG/REGION, if set) propagate to process_and_write_to_zarr.slurm.
 FREQUENCY="${FREQUENCY:-1hr}"
 export FREQUENCY
+REGION="${REGION:-New_York}"
+export REGION
 [[ -n "${CATALOG:-}" ]] && export CATALOG
 
 # Download/derived var lists mirror VAR_GROUPS_BY_FREQUENCY in
