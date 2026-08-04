@@ -1,17 +1,21 @@
 # New Mexico region config for met-data-products' crop step.
 #
-# grid/crop computed for real via compute_region_crop.py --auto-grid against
-# URMA's native grid (not hand-picked -- see compute_region_crop.py):
-#   python compute_region_crop.py --state "New Mexico" \
-#       --grib /network/rit/lab/basulab/RAW_DATA/URMA/20250101/urma2p5.t00z.2dvaranl_ndfd.grb2_wexp \
-#       --auto-grid --padding 10
+# grid.URMA computed for real via compute_region_crop.py --mode boundary
+# against URMA's native grid (not hand-picked):
+#   python compute_region_crop.py --product URMA --grid-source URMA/urma_full_orography.nc \
+#       --mode boundary --state "New Mexico" --padding 10 \
+#       --region-config configs/regions/New_Mexico.yaml --update-config
 #
-# Note ny=288 here, not New York's ny=256 -- New Mexico is a taller domain at
-# URMA's native resolution (its state bbox is closer to square than New
-# York's east-west-elongated shape). This is a real, confirmed difference,
-# not a guess: DL_downscaling/configs/baseline.yaml's original_output_size
-# (currently a flat, non-region-templated [256,288]) will need to become
-# region-aware before New Mexico training configs can use this domain size.
+# Every other product's grid.<product> entry should be computed via
+# --mode reference (matched to grid.URMA's crop, above) or --mode bbox.
+#
+# Note n0(y)=288 here, not New York's n0(y)=256 -- New Mexico is a taller
+# domain at URMA's native resolution (its state bbox is closer to square than
+# New York's east-west-elongated shape). This is a real, confirmed
+# difference, not a guess: DL_downscaling/configs/baseline.yaml's
+# original_output_size (currently a flat, non-region-templated [256,288])
+# will need to become region-aware before New Mexico training configs can
+# use this domain size.
 region_id: new_mexico
 
 data_root: null  # fill in once decided where NM's processed products should live
@@ -24,8 +28,11 @@ boundary:
   buffer_m: 5000
 
 grid:
-  nx: 288
-  ny: 288
-  crop:
-    x_start: 751
-    y_start: 381
+  URMA:
+    type: curvilinear
+    dims: [y, x]
+    n0: 288
+    n1: 288
+    crop:
+      y_start: 381
+      x_start: 751

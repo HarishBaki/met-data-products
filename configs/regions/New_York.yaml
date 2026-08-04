@@ -1,18 +1,22 @@
 # New York region config for met-data-products' crop step (URMA/HRRR/ERA5/ICON/
 # EDDEv2/Ouranos process_and_write_to_zarr.py scripts).
 #
-# grid/crop below are NOT the output of compute_region_crop.py --auto-grid --
-# they're the values already in production use (hardcoded across every
-# product's process_and_write_to_zarr.py before this region config existed).
-# Running compute_region_crop.py --state "New York" against these same GADM
-# boundaries produces a LARGER superset (x_start=1781, y_start=811, nx=320,
-# ny=288) that fully contains this crop with margin on every side -- a useful
-# sanity check that these hand-picked values aren't wrong, but deliberately
-# NOT swapped in: doing so would change URMA_NYS.zarr's shape and break
-# compatibility with every already-trained model and already-written zarr
-# product built against the current 256x288 domain (original_output_size in
-# DL_downscaling/configs/baseline.yaml). Don't regenerate NY's data to match
-# the auto-computed crop without a deliberate, separate decision to do so.
+# grid.<product> entries are per-product crops (see compute_region_crop.py --
+# --mode boundary for URMA, --mode reference or --mode bbox for everything
+# else, which gets xESMF-regridded onto URMA's grid regardless of its own crop).
+#
+# grid.URMA below is NOT the output of compute_region_crop.py --mode boundary --
+# it's the value already in production use (hardcoded across every product's
+# process_and_write_to_zarr.py before this region config existed). Running
+# --mode boundary --state "New York" against the same GADM boundary produces a
+# LARGER superset (y_start=811, x_start=1781, n0=288, n1=320) that fully
+# contains this crop with margin on every side -- a useful sanity check that
+# the hand-picked values aren't wrong, but deliberately NOT swapped in: doing
+# so would change URMA_NYS.zarr's shape and break compatibility with every
+# already-trained model and already-written zarr product built against the
+# current 256x288 domain (original_output_size in DL_downscaling/configs/
+# baseline.yaml). Don't regenerate NY's data to match the auto-computed crop
+# without a deliberate, separate decision to do so.
 region_id: new_york
 
 data_root: /network/rit/lab/basulab/Projects/DFS/DATA
@@ -25,8 +29,11 @@ boundary:
   buffer_m: 5000
 
 grid:
-  nx: 288
-  ny: 256
-  crop:
-    x_start: 1800
-    y_start: 830
+  URMA:
+    type: curvilinear
+    dims: [y, x]
+    n0: 256
+    n1: 288
+    crop:
+      y_start: 830
+      x_start: 1800
