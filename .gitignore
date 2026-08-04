@@ -22,6 +22,7 @@ Geomorpho90m/*/geomorpho90m_**.nc
 !HRRR/*_full_*.nc
 !ICON-DREAM-Global/*_full_*.nc
 !Ouranos/*_full_*.nc
+!configs/regions/masks/*.nc
 *.zarr
 *.zarr/
 .ipynb_checkpoints/

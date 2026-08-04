@@ -1,38 +1,65 @@
-# New Mexico region config for met-data-products' crop step.
-#
-# grid.URMA computed for real via compute_region_crop.py --mode boundary
-# against URMA's native grid (not hand-picked):
-#   python compute_region_crop.py --product URMA --grid-source URMA/urma_full_orography.nc \
-#       --mode boundary --state "New Mexico" --padding 10 \
-#       --region-config configs/regions/New_Mexico.yaml --update-config
-#
-# Every other product's grid.<product> entry should be computed via
-# --mode reference (matched to grid.URMA's crop, above) or --mode bbox.
-#
-# Note n0(y)=288 here, not New York's n0(y)=256 -- New Mexico is a taller
-# domain at URMA's native resolution (its state bbox is closer to square than
-# New York's east-west-elongated shape). This is a real, confirmed
-# difference, not a guess: DL_downscaling/configs/baseline.yaml's
-# original_output_size (currently a flat, non-region-templated [256,288])
-# will need to become region-aware before New Mexico training configs can
-# use this domain size.
 region_id: new_mexico
-
-data_root: null  # fill in once decided where NM's processed products should live
+data_root: null
 region_tag: NMS
-
 boundary:
   gadm_file: /network/rit/lab/basulab/Harish/ResearchOS/Projects/Active/Sparse-to-grided-deep-interpolation/git_repos/Sparse_to_dense_meteorological_variables/data/geospatial/gadm_410.gpkg
   country: United States
   state: New Mexico
   buffer_m: 5000
-
 grid:
   URMA:
     type: curvilinear
-    dims: [y, x]
+    dims:
+    - y
+    - x
     n0: 288
     n1: 288
     crop:
       y_start: 381
       x_start: 751
+  HRRR:
+    type: curvilinear
+    dims:
+    - y
+    - x
+    n0: 379
+    n1: 368
+    crop:
+      y_start: 193
+      x_start: 450
+  ERA5:
+    type: separable
+    dims:
+    - latitude
+    - longitude
+    n0: 55
+    n1: 61
+    crop:
+      latitude_start: 196
+      longitude_start: 986
+  EDDEv2:
+    type: curvilinear
+    dims:
+    - y
+    - x
+    n0: 109
+    n1: 107
+    crop:
+      y_start: 135
+      x_start: 122
+  Ouranos:
+    type: curvilinear
+    dims:
+    - rlat
+    - rlon
+    n0: 108
+    n1: 109
+    crop:
+      rlat_start: 135
+      rlon_start: 184
+  ICON:
+    type: unstructured
+    dims:
+    - cell
+    n_selected: 5979
+    cell_mask_file: configs/regions/masks/new_mexico_ICON_cell_mask.nc

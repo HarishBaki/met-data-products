@@ -1,39 +1,65 @@
-# New York region config for met-data-products' crop step (URMA/HRRR/ERA5/ICON/
-# EDDEv2/Ouranos process_and_write_to_zarr.py scripts).
-#
-# grid.<product> entries are per-product crops (see compute_region_crop.py --
-# --mode boundary for URMA, --mode reference or --mode bbox for everything
-# else, which gets xESMF-regridded onto URMA's grid regardless of its own crop).
-#
-# grid.URMA below is NOT the output of compute_region_crop.py --mode boundary --
-# it's the value already in production use (hardcoded across every product's
-# process_and_write_to_zarr.py before this region config existed). Running
-# --mode boundary --state "New York" against the same GADM boundary produces a
-# LARGER superset (y_start=811, x_start=1781, n0=288, n1=320) that fully
-# contains this crop with margin on every side -- a useful sanity check that
-# the hand-picked values aren't wrong, but deliberately NOT swapped in: doing
-# so would change URMA_NYS.zarr's shape and break compatibility with every
-# already-trained model and already-written zarr product built against the
-# current 256x288 domain (original_output_size in DL_downscaling/configs/
-# baseline.yaml). Don't regenerate NY's data to match the auto-computed crop
-# without a deliberate, separate decision to do so.
 region_id: new_york
-
 data_root: /network/rit/lab/basulab/Projects/DFS/DATA
 region_tag: NYS
-
 boundary:
   gadm_file: /network/rit/lab/basulab/Harish/ResearchOS/Projects/Active/Sparse-to-grided-deep-interpolation/git_repos/Sparse_to_dense_meteorological_variables/data/geospatial/gadm_410.gpkg
   country: United States
   state: New York
   buffer_m: 5000
-
 grid:
   URMA:
     type: curvilinear
-    dims: [y, x]
+    dims:
+    - y
+    - x
     n0: 256
     n1: 288
     crop:
       y_start: 830
       x_start: 1800
+  HRRR:
+    type: curvilinear
+    dims:
+    - y
+    - x
+    n0: 611
+    n1: 574
+    crop:
+      y_start: 447
+      x_start: 1224
+  ERA5:
+    type: separable
+    dims:
+    - latitude
+    - longitude
+    n0: 40
+    n1: 56
+    crop:
+      latitude_start: 168
+      longitude_start: 1112
+  EDDEv2:
+    type: curvilinear
+    dims:
+    - y
+    - x
+    n0: 164
+    n1: 165
+    crop:
+      y_start: 206
+      x_start: 324
+  Ouranos:
+    type: curvilinear
+    dims:
+    - rlat
+    - rlon
+    n0: 172
+    n1: 174
+    crop:
+      rlat_start: 202
+      rlon_start: 383
+  ICON:
+    type: unstructured
+    dims:
+    - cell
+    n_selected: 7083
+    cell_mask_file: configs/regions/masks/new_york_ICON_cell_mask.nc
