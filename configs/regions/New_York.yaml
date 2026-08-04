@@ -14,18 +14,34 @@
 # boolean cell mask (configs/regions/masks/), not an index window -- its
 # native grid is an unstructured mesh with no rectangular structure to slice.
 #
-# Every entry here records what's ALREADY IN PRODUCTION USE, not a fresh
-# tool-derived value -- read directly (read-only) from each product's real,
-# already-cropped orography file under /network/rit/lab/basulab/Projects/
-# DFS/DATA/{PRODUCT}_NYS/, not computed from scratch. Two things that
-# surfaced doing this: HRRR's and Ouranos's real production crops are
-# noticeably wider than the BBOX/BBOX_NY constants hardcoded in their own
-# scripts (HRRR: real file spans lat 35.5-50.2 vs the script's hardcoded
-# 38-48; Ouranos: download_ouranos.py's BBOX_NY is 38-48/-82,-68 vs the real
-# file's 35.1-50.5/-84.4,-63.1) -- the scripts' own constants are stale
-# relative to what's actually running. ICON's derived mask (7083 cells)
-# landed within 1 cell of the real production mask (7084) -- a good
-# independent cross-check that this reconstruction is accurate.
+# URMA/HRRR/ERA5/EDDEv2/ICON below are EXACT, verified reproductions of
+# what's already in production use -- not reconstructed by reading a real
+# cropped file's own lat/lon min/max and treating that as "the bbox that
+# produced it". That approach was tried first and is WRONG for anything on a
+# curvilinear/projected grid (HRRR, EDDEv2): a rectangular bbox drawn around
+# an already-cropped curvilinear region is inherently wider than the crop
+# itself, since the crop isn't axis-aligned in lat/lon space to begin with
+# (confirmed: reconstructing HRRR's crop this way gave 611x574 against the
+# real 452x459). It even affects separable grids (ERA5) via a smaller
+# off-by-one: manual >=/<= masking doesn't reproduce xarray's .sel()
+# inclusive-boundary behavior exactly. Fixed by instead replicating each
+# script's OWN current exact logic once (literal indices for
+# URMA/EDDEv2, the same compute_crop_slices/.sel() computation for
+# HRRR/ERA5, the real icon_global_nys_mask.nc copied directly for ICON) and
+# verifying the result reproduces the real file/mask exactly before trusting
+# it -- see conversation history for the specific verification run per
+# product, not just asserted here.
+#
+# grid.Ouranos is the one deliberate exception: Ouranos's real production
+# crop isn't a local file crop at all -- process_and_write_to_zarr.py does no
+# spatial subsetting; the crop happens in download_ouranos.py, where BBOX_NY
+# (38-48N/-82,-68E) is an arbitrary value passed into the download request
+# URL, never designed for DL-compatible sizing or exact alignment to URMA's
+# domain. So grid.Ouranos here is NOT a reproduction of that -- it's a
+# properly-derived crop via --mode reference against URMA's real production
+# domain (urma_nys_orography.nc) with a 1-degree halo, same procedure used
+# for New Mexico's grid.Ouranos. Using it would require adding an actual
+# local crop step to Ouranos's pipeline, which doesn't exist yet.
 #
 # grid.URMA specifically: running --mode boundary --state "New York" against
 # the same GADM boundary produces a LARGER superset (y_start=811, x_start=
@@ -60,18 +76,18 @@ grid:
     dims:
     - y
     - x
-    n0: 611
-    n1: 574
+    n0: 452
+    n1: 459
     crop:
-      y_start: 447
-      x_start: 1224
+      y_start: 549
+      x_start: 1288
   ERA5:
     type: separable
     dims:
     - latitude
     - longitude
-    n0: 40
-    n1: 56
+    n0: 41
+    n1: 57
     crop:
       latitude_start: 168
       longitude_start: 1112
@@ -80,24 +96,24 @@ grid:
     dims:
     - y
     - x
-    n0: 164
-    n1: 165
+    n0: 112
+    n1: 114
     crop:
-      y_start: 206
-      x_start: 324
+      y_start: 231
+      x_start: 339
   Ouranos:
     type: curvilinear
     dims:
     - rlat
     - rlon
-    n0: 172
-    n1: 174
+    n0: 113
+    n1: 113
     crop:
-      rlat_start: 202
-      rlon_start: 383
+      rlat_start: 229
+      rlon_start: 397
   ICON:
     type: unstructured
     dims:
     - cell
-    n_selected: 7083
+    n_selected: 7084
     cell_mask_file: configs/regions/masks/new_york_ICON_cell_mask.nc
