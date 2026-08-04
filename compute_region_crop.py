@@ -182,10 +182,24 @@ def crop_from_bbox(grid: Grid, bbox: tuple[float, float, float, float], padding:
     n0 = (d0_end - d0_start) if not round32 else int(np.ceil((d0_end - d0_start) / 32) * 32)
     n1 = (d1_end - d1_start) if not round32 else int(np.ceil((d1_end - d1_start) / 32) * 32)
 
+    # Real-world lat/lon extent of the SELECTED index window (post padding/
+    # round32) -- not the input bbox. Needed by any product whose actual crop
+    # mechanism is a download-time bbox request against a remote service
+    # rather than a local isel() (Ouranos: THREDDS NCSS north/south/west/east
+    # params), where the index crop itself is never applied locally.
+    lat_window = lat2d[d0_start:d0_start + n0, d1_start:d1_start + n1]
+    lon_window = lon2d[d0_start:d0_start + n0, d1_start:d1_start + n1]
+    lon_window_180 = ((lon_window + 180) % 360) - 180
+    bbox_extent = {
+        "lat_min": float(np.nanmin(lat_window)), "lat_max": float(np.nanmax(lat_window)),
+        "lon_min": float(np.nanmin(lon_window_180)), "lon_max": float(np.nanmax(lon_window_180)),
+    }
+
     return {
         "kind": grid.kind, "dims": grid.dims,
         "dim0_start": d0_start, "dim1_start": d1_start,
         "n0": n0, "n1": n1,
+        "bbox_extent": bbox_extent,
     }
 
 
@@ -217,6 +231,7 @@ def update_region_config(region_config: str, product: str, crop: dict, mask_out_
             "dims": [d0, d1],
             "n0": int(crop["n0"]), "n1": int(crop["n1"]),
             "crop": {f"{d0}_start": int(crop["dim0_start"]), f"{d1}_start": int(crop["dim1_start"])},
+            "bbox": {k: round(v, 6) for k, v in crop["bbox_extent"].items()},
         }
 
     with open(region_path, "w") as f:
@@ -287,6 +302,8 @@ def main():
         d0, d1 = crop["dims"]
         print(f"  {d0}_start = {crop['dim0_start']}   n{d0} = {crop['n0']}")
         print(f"  {d1}_start = {crop['dim1_start']}   n{d1} = {crop['n1']}")
+        be = crop["bbox_extent"]
+        print(f"  bbox extent: lat=[{be['lat_min']:.3f},{be['lat_max']:.3f}]  lon=[{be['lon_min']:.3f},{be['lon_max']:.3f}]")
 
     if args.update_config:
         if not args.region_config:

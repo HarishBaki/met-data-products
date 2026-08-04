@@ -21,6 +21,16 @@
 # cell mask under configs/regions/masks/, not an index window -- unstructured
 # mesh, same as New York's).
 #
+# grid.Ouranos additionally carries a bbox field (lat_min/lat_max/lon_min/
+# lon_max) -- the real-world extent of the selected index window, computed
+# with --round32 for DL-compatible sizing (n0=n1=128, not the un-rounded
+# 108x109). This is what download_ouranos.py/download_fx.py actually read
+# for New Mexico's downloads: Ouranos has no local index-crop step, its real
+# crop happens via a THREDDS NCSS bbox param in the download request, so the
+# index crop above is theoretical/unused and the bbox is the operative
+# value. Contrast with New_York.yaml's grid.Ouranos.bbox, which is
+# deliberately NOT this same derivation -- see that file's header.
+#
 # Note n0(y)=288 here, not New York's n0(y)=256 -- New Mexico is a taller
 # domain at URMA's native resolution (its state bbox is closer to square
 # than New York's east-west-elongated shape). This is a real, confirmed
@@ -82,11 +92,16 @@ grid:
     dims:
     - rlat
     - rlon
-    n0: 108
-    n1: 109
+    n0: 128
+    n1: 128
     crop:
       rlat_start: 135
       rlon_start: 184
+    bbox:
+      lat_min: 27.415634
+      lat_max: 42.694974
+      lon_min: -115.382369
+      lon_max: -96.776292
   ICON:
     type: unstructured
     dims:

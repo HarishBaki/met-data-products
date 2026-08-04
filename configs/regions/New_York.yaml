@@ -32,16 +32,33 @@
 # it -- see conversation history for the specific verification run per
 # product, not just asserted here.
 #
-# grid.Ouranos is the one deliberate exception: Ouranos's real production
-# crop isn't a local file crop at all -- process_and_write_to_zarr.py does no
-# spatial subsetting; the crop happens in download_ouranos.py, where BBOX_NY
-# (38-48N/-82,-68E) is an arbitrary value passed into the download request
-# URL, never designed for DL-compatible sizing or exact alignment to URMA's
-# domain. So grid.Ouranos here is NOT a reproduction of that -- it's a
-# properly-derived crop via --mode reference against URMA's real production
-# domain (urma_nys_orography.nc) with a 1-degree halo, same procedure used
-# for New Mexico's grid.Ouranos. Using it would require adding an actual
-# local crop step to Ouranos's pipeline, which doesn't exist yet.
+# grid.Ouranos is the one deliberate exception, in two ways:
+#
+# 1. Ouranos's real production crop isn't a local file crop at all --
+#    process_and_write_to_zarr.py does no spatial subsetting; the crop
+#    happens in download_ouranos.py, where a bbox (north/south/west/east) is
+#    passed into the THREDDS NCSS download request URL. So grid.Ouranos.crop/
+#    n0/n1 above (an index window against ouranos_full_orography.nc, from
+#    --mode reference against URMA's domain with a 1-degree halo) is a
+#    theoretical derivation only -- nothing in Ouranos's pipeline applies it
+#    locally, and it was never validated against real data (see point 2).
+#
+# 2. grid.Ouranos.bbox -- the field download_ouranos.py/download_fx.py
+#    actually read -- is DELIBERATELY NOT the output of that same --mode
+#    reference/--round32 derivation for New York. ~300GB of real Ouranos_NYS
+#    data already exists (raw downloads + processed Zarr + 2 regridded Zarr
+#    products) built from the historical arbitrary bbox {38-48N,-82,-68E}
+#    (0-360: north=48,south=38,west=278,east=292), whose real downloaded
+#    shape (rlat=113,rlon=116) doesn't even match this file's own
+#    grid.Ouranos.n0/n1 (113,113) -- confirming that index entry was never
+#    checked against reality. So grid.Ouranos.bbox here is set to EXACTLY
+#    reproduce that historical bbox, to avoid making future incremental
+#    downloads/reprocessing diverge from the ~300GB already on disk. New
+#    Mexico's grid.Ouranos.bbox, by contrast, IS the properly-derived,
+#    --round32 DL-compatible --mode reference output, since no real
+#    production data exists yet there to protect. Don't swap New York's
+#    bbox for the properly-derived one without a deliberate, separate
+#    decision to redownload/reprocess all of Ouranos_NYS.
 #
 # grid.URMA specifically: running --mode boundary --state "New York" against
 # the same GADM boundary produces a LARGER superset (y_start=811, x_start=
@@ -111,6 +128,11 @@ grid:
     crop:
       rlat_start: 229
       rlon_start: 397
+    bbox:
+      lat_min: 38.0
+      lat_max: 48.0
+      lon_min: -82.0
+      lon_max: -68.0
   ICON:
     type: unstructured
     dims:

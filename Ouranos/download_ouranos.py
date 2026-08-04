@@ -54,13 +54,18 @@ TIME CHUNK MODES
 
 SPATIAL MODES
 -------------
-  Default     NY bbox: N=48 S=38 W=278 E=292  (0-360 lon)
+  Default        Region bbox from configs/regions/{region}.yaml's grid.Ouranos.bbox,
+                 selected via --region (default: New_York -> N=48 S=38 W=278 E=292,
+                 preserved to match ~300GB of existing production data -- see that
+                 file's header). New_York's bbox is NOT the DL-compatible/--round32
+                 derivation the New_Mexico is; --region New_Mexico uses that.
   --full-domain  No spatial subsetting (full North American CORDEX domain)
 
 OUTPUT ROOT
 -----------
-  --dest-root defaults to OUTPUT_ROOT_NYS (cropped) or OUTPUT_ROOT_FULL (--full-domain) -
-  same split as download_fx.py - override with --dest-root if needed.
+  --dest-root defaults to {data_root}/Ouranos_{region_tag} (cropped, from the region
+  config) or OUTPUT_ROOT_FULL (--full-domain) - same split as download_fx.py -
+  override with --dest-root if needed.
 
 EXAMPLES
 --------
@@ -88,12 +93,19 @@ import argparse
 import calendar
 import concurrent.futures
 import csv
+import sys
 import time
 from datetime import date
 from pathlib import Path
 from urllib.parse import urlencode
 
 import requests
+
+_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
+if str(_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_BOOTSTRAP_ROOT))
+
+from repo_utils import load_region_grid, load_region_vars
 
 # ---------------------------------------------------------------------------
 # THREDDS NCSS endpoint
@@ -108,17 +120,55 @@ FREQUENCIES = ["1hr", "3hr", "day", "mon"]
 # ---------------------------------------------------------------------------
 # Spatial bounding boxes  (0-360 longitude convention)
 # ---------------------------------------------------------------------------
+# BBOX_NY is now historical/reference only -- kept because it's exactly what
+# resolve_region_bbox("New_York") returns (configs/regions/New_York.yaml's
+# grid.Ouranos.bbox was deliberately set to reproduce it, to protect the
+# ~300GB of existing Ouranos_NYS production data -- see that file's header).
+# Default spatial selection is now resolve_region_bbox(args.region), not this.
 BBOX_NY   = {"north": 48, "south": 38, "west": 278, "east": 292}
 BBOX_FULL = None  # omit spatial params → full domain
 
+
+def resolve_region_bbox(region: str) -> dict:
+    """NCSS bbox dict (north/south/west/east, 0-360 lon) from
+    configs/regions/{region}.yaml's grid.Ouranos.bbox.
+
+    Ouranos has no local crop step -- process_and_write_to_zarr.py does no
+    spatial subsetting, so this download-time bbox param IS the actual crop
+    mechanism (see compute_region_crop.py and New_York.yaml's header for how
+    grid.Ouranos.bbox is derived per region, and why New York's deliberately
+    preserves the historical BBOX_NY instead of the DL-compatible derivation
+    New Mexico uses)."""
+    region_grid = load_region_grid(region, "Ouranos")
+    bbox = region_grid["bbox"]
+    return {
+        "north": bbox["lat_max"],
+        "south": bbox["lat_min"],
+        "west": (bbox["lon_min"] + 360) % 360,
+        "east": (bbox["lon_max"] + 360) % 360,
+    }
+
+
+def resolve_region_output_root(region: str) -> Path:
+    region_vars = load_region_vars(region)
+    data_root = region_vars["data_root"]
+    region_tag = region_vars["region_tag"]
+    if not data_root:
+        raise ValueError(f"configs/regions/{region}.yaml has no data_root set yet.")
+    return Path(data_root) / f"Ouranos_{region_tag}"
+
 # ---------------------------------------------------------------------------
-# Output roots - cropped (NYS) output goes straight to the same Ouranos_NYS
-# tree process_and_write_to_zarr.py reads from; full-domain output goes to
-# RAW_DATA/Ouranos. Shared with download_fx.py so both scripts' default
-# destinations move together. (process_and_write_to_zarr.py's own pipeline
-# stages year-by-year downloads through RAW_ROOT_DEFAULT/--raw-root instead,
-# bypassing these CLI defaults entirely - see that script.)
+# Output roots - full-domain output goes to RAW_DATA/Ouranos regardless of
+# region (there's no region to speak of once nothing's cropped). Cropped
+# output now defaults to resolve_region_output_root(args.region), not a
+# fixed constant - see that function. Shared with download_fx.py so both
+# scripts' full-domain destination moves together. (process_and_write_to_
+# zarr.py's own pipeline stages year-by-year downloads through
+# RAW_ROOT_DEFAULT/--raw-root instead, bypassing these CLI defaults
+# entirely - see that script.)
 # ---------------------------------------------------------------------------
+# OUTPUT_ROOT_NYS is historical/reference only -- kept because it's exactly
+# what resolve_region_output_root("New_York") returns.
 OUTPUT_ROOT_NYS  = Path("/network/rit/lab/basulab/Projects/DFS/DATA/Ouranos_NYS")
 OUTPUT_ROOT_FULL = Path("/network/rit/lab/basulab/RAW_DATA/Ouranos")
 
@@ -258,11 +308,10 @@ def build_url(row: dict, vars_list: list[str], time_start: str, time_end: str,
 
 
 def build_dest(dest_root: Path, row: dict, vars_list: list[str],
-               label: str, full_domain: bool, frequency: str = "1hr") -> Path:
+               label: str, domain_tag: str, frequency: str = "1hr") -> Path:
     out_dir = dest_root / row["dest_subdir"]
     out_dir.mkdir(parents=True, exist_ok=True)
     var_tag    = "+".join(vars_list) if len(vars_list) <= 3 else f"{len(vars_list)}vars"
-    domain_tag = "full" if full_domain else "NYS"
     fname = (
         f"NAM-12_{row['source_id']}_{row['experiment_id']}_{row['variant']}"
         f"_OURANOS_CRCM5_{row['realization']}_{frequency}_{domain_tag}_{var_tag}_{label}.nc4"
@@ -347,13 +396,21 @@ def parse_args():
     p.add_argument("--end-year",    type=int, default=None, help="End   year (overridden by --end-date)")
 
     # Spatial
+    p.add_argument(
+        "--region", type=str, default="New_York",
+        help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
+             "supplies the bbox (grid.Ouranos.bbox) and, when --dest-root is not given "
+             "explicitly, the output location (data_root/region_tag) too. Ignored if "
+             "--full-domain is passed."
+    )
     p.add_argument("--full-domain", action="store_true",
                    help="No spatial subsetting — full North American CORDEX domain")
 
     # Output
     p.add_argument("--dest-root",   default=None,
                    help="Root dir override, with dest_subdir from CSV appended. "
-                        f"Default: {OUTPUT_ROOT_NYS} (cropped) or {OUTPUT_ROOT_FULL} (--full-domain)")
+                        f"Default: {{data_root}}/Ouranos_{{region_tag}} (cropped, from --region) "
+                        f"or {OUTPUT_ROOT_FULL} (--full-domain)")
     p.add_argument("--num-workers", type=int, default=4,
                    help="Parallel download threads (default: 4)")
     p.add_argument("--dry-run",     action="store_true",
@@ -423,11 +480,17 @@ def main():
         print("No catalog rows matched the given filters.")
         return
 
-    bbox        = BBOX_FULL if args.full_domain else BBOX_NY
+    if args.full_domain:
+        bbox = BBOX_FULL
+        domain_tag = "full"
+    else:
+        bbox = resolve_region_bbox(args.region)
+        domain_tag = load_region_vars(args.region)["region_tag"]
+
     if args.dest_root is not None:
         dest_root = Path(args.dest_root)
     else:
-        dest_root = OUTPUT_ROOT_FULL if args.full_domain else OUTPUT_ROOT_NYS
+        dest_root = OUTPUT_ROOT_FULL if args.full_domain else resolve_region_output_root(args.region)
     start_date, end_date = resolve_dates(args)
 
     tasks = []
@@ -454,7 +517,7 @@ def main():
             start_date, end_date,
         ):
             url  = build_url(row, vars_list, t_start, t_end, bbox, args.frequency)
-            path = build_dest(dest_root, row, vars_list, label, args.full_domain, args.frequency)
+            path = build_dest(dest_root, row, vars_list, label, domain_tag, args.frequency)
             tasks.append((url, path))
 
     print(f"Matched rows : {[r['index'] for r in rows]}", flush=True)
@@ -467,7 +530,7 @@ def main():
             print(f"  row {idx}: {vlist}", flush=True)
     print(f"Frequency    : {args.frequency}",              flush=True)
     print(f"Time chunk   : {args.time_chunk}",             flush=True)
-    print(f"Spatial      : {'full domain' if args.full_domain else f'NYS bbox {BBOX_NY}'}", flush=True)
+    print(f"Spatial      : {'full domain' if args.full_domain else f'{args.region} bbox {bbox}'}", flush=True)
 
     if args.dry_run:
         for url, path in tasks:

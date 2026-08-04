@@ -26,7 +26,8 @@ VARIABLES
 
 SPATIAL MODES
 -------------
-  Default        NY bbox: N=48 S=38 W=278 E=292 (0-360 lon) - same as download_ouranos.py
+  Default        Region bbox from configs/regions/{region}.yaml's grid.Ouranos.bbox,
+                 selected via --region (default: New_York) - same as download_ouranos.py
   --full-domain  No spatial subsetting (full North American CORDEX domain)
 
 EXAMPLES
@@ -52,14 +53,15 @@ import requests
 
 from download_ouranos import (
     BBOX_FULL,
-    BBOX_NY,
     DEFAULT_CATALOG,
     FX_VARS,
     OUTPUT_ROOT_FULL,
-    OUTPUT_ROOT_NYS,
     download_one,
     load_catalog,
+    load_region_vars,
     parse_index_spec,
+    resolve_region_bbox,
+    resolve_region_output_root,
 )
 
 # ---------------------------------------------------------------------------
@@ -211,12 +213,20 @@ def parse_args():
     p.add_argument("--realization", default=None)
 
     p.add_argument("--vars", default="all", help="Comma-separated fx variables, or 'all' (default: all 22)")
+    p.add_argument(
+        "--region", type=str, default="New_York",
+        help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
+             "supplies the bbox (grid.Ouranos.bbox) and, when --dest-root is not given "
+             "explicitly, the output location (data_root/region_tag) too. Ignored if "
+             "--full-domain is passed."
+    )
     p.add_argument("--full-domain", action="store_true",
                    help="No spatial subsetting - full North American CORDEX domain")
 
     p.add_argument("--dest-root", default=None,
-                   help="Root dir override; files land at {dest-root}/{dest_subdir}/{realization}_{nys|full}_{var}.nc4. "
-                        f"Default: {OUTPUT_ROOT_NYS} (cropped) or {OUTPUT_ROOT_FULL} (--full-domain)")
+                   help="Root dir override; files land at {dest-root}/{dest_subdir}/{realization}_{region_tag|full}_{var}.nc4. "
+                        f"Default: {{data_root}}/Ouranos_{{region_tag}} (cropped, from --region) "
+                        f"or {OUTPUT_ROOT_FULL} (--full-domain)")
     p.add_argument("--num-workers", type=int, default=4, help="Parallel download threads (default: 4)")
     p.add_argument("--retries", type=int, default=3)
     p.add_argument("--dry-run", action="store_true",
@@ -249,16 +259,22 @@ def main():
         return
 
     vars_list = resolve_vars(args.vars)
-    bbox = BBOX_FULL if args.full_domain else BBOX_NY
+    if args.full_domain:
+        bbox = BBOX_FULL
+        domain_tag = "full"
+    else:
+        bbox = resolve_region_bbox(args.region)
+        domain_tag = load_region_vars(args.region)["region_tag"]
+
     if args.dest_root is not None:
         dest_root = full_domain_root = Path(args.dest_root)
     else:
-        dest_root = OUTPUT_ROOT_FULL if args.full_domain else OUTPUT_ROOT_NYS
+        dest_root = OUTPUT_ROOT_FULL if args.full_domain else resolve_region_output_root(args.region)
         full_domain_root = OUTPUT_ROOT_FULL
 
     print(f"Matched rows : {[r['index'] for r in rows]}", flush=True)
     print(f"Variables    : {vars_list}", flush=True)
-    print(f"Spatial      : {'full domain' if args.full_domain else f'NYS bbox {BBOX_NY}'}", flush=True)
+    print(f"Spatial      : {'full domain' if args.full_domain else f'{args.region} bbox {bbox}'}", flush=True)
     print(f"\nResolving {len(rows) * len(vars_list)} (row, var) urlPaths...", flush=True)
 
     results = discover_all(rows, vars_list, retries=args.retries)
@@ -269,7 +285,6 @@ def main():
         failed = [k for k, v in results.items() if not v["urlPath"]]
         print(f"Failed (index, var) pairs: {failed}", flush=True)
 
-    domain_tag = "full" if args.full_domain else "NYS"
     tasks = []
     for row in rows:
         for var in vars_list:
