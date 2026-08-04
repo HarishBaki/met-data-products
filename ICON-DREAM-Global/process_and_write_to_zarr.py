@@ -13,7 +13,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import dask.array as da
 import numpy as np
@@ -35,13 +35,10 @@ from data_utils.zarr_io import (
     open_zarr_safe,
     write_region,
 )
+from repo_utils import find_repo_root, load_region_grid, load_region_vars
 
 RAW_ROOT = Path("/network/rit/lab/basulab/RAW_DATA/ICON-DREAM-Global")
-OUTPUT_ROOT = Path("/network/rit/lab/basulab/Projects/DFS/DATA/ICON_DREAM_Global_NYS")
-OUTPUT_ZARR = OUTPUT_ROOT / "ICON_DREAM_Global_NYS.zarr"
-ZARR_SYNC_PATH = f"{OUTPUT_ZARR}.sync"
-ZARR_SYNC = zarr.ProcessSynchronizer(ZARR_SYNC_PATH)
-MASK_PATH = OUTPUT_ROOT / "icon_global_nys_mask.nc"
+FULL_OROG_PATH = Path(__file__).with_name("icon_full_orography.nc")
 
 FILE_TO_SOURCE = {
     "TD_2M": "d2m",
@@ -85,10 +82,40 @@ def is_interactive() -> bool:
     return not hasattr(main, "__file__") or "ipykernel" in sys.argv[0]
 
 
-def load_mask() -> xr.Dataset:
-    if not MASK_PATH.exists():
-        raise FileNotFoundError(f"Mask not found: {MASK_PATH}")
-    return xr.open_dataset(MASK_PATH)
+def load_region_mask(region: str) -> xr.Dataset:
+    """Build a load_mask()-shaped Dataset (values-dim lat/lon/mask, matching the
+    real production icon_global_nys_mask.nc) from configs/regions/{region}.yaml's
+    grid.ICON.cell_mask_file -- which only stores the boolean mask itself (dims:
+    cell, no lat/lon) -- plus icon_full_orography.nc's latitude/longitude, which
+    are cell-for-cell positionally identical to the mask's cell ordering (verified
+    when the mask was first derived from that same full orography file)."""
+    region_grid = load_region_grid(region, "ICON")
+    if region_grid["type"] != "unstructured":
+        raise ValueError(f"Expected an unstructured grid.ICON entry, got {region_grid['type']!r}")
+    repo_root = find_repo_root(__file__)
+    mask_path = repo_root / region_grid["cell_mask_file"]
+    if not mask_path.is_file():
+        raise FileNotFoundError(f"Mask not found: {mask_path}")
+    cell_mask = xr.open_dataset(mask_path)
+    full = xr.open_dataset(FULL_OROG_PATH)
+    return xr.Dataset(
+        {"mask": ("values", cell_mask["mask"].values)},
+        coords={
+            "lat": ("values", full["latitude"].values),
+            "lon": ("values", full["longitude"].values),
+        },
+    )
+
+
+def resolve_region_output(region: str) -> Tuple[str, "zarr.ProcessSynchronizer"]:
+    region_vars = load_region_vars(region)
+    data_root = region_vars["data_root"]
+    region_tag = region_vars["region_tag"]
+    if not data_root:
+        raise ValueError(f"configs/regions/{region}.yaml has no data_root set yet.")
+    output_zarr = f"{data_root}/ICON_DREAM_Global_{region_tag}/ICON_DREAM_Global_{region_tag}.zarr"
+    zarr_sync = zarr.ProcessSynchronizer(f"{output_zarr}.sync")
+    return output_zarr, zarr_sync
 
 
 def stash_scalar_var_as_attr(ds: xr.Dataset, name: str) -> xr.Dataset:
@@ -225,8 +252,8 @@ def process_single_month(
     return ds
 
 
-def month_has_data(zarr_store: str, var_name: str, month_times: pd.DatetimeIndex) -> bool:
-    ds = open_zarr_safe(zarr_store, ZARR_SYNC)
+def month_has_data(zarr_store: str, var_name: str, month_times: pd.DatetimeIndex, zarr_sync) -> bool:
+    ds = open_zarr_safe(zarr_store, zarr_sync)
     if var_name not in ds.data_vars:
         return False
     try:
@@ -242,6 +269,7 @@ def process_and_write_month(
     full_times: pd.DatetimeIndex,
     mask_ds: xr.Dataset,
     zarr_store: str,
+    zarr_sync,
 ) -> None:
     ds = process_single_month(target_month, var_name, mask_ds)
     if ds is None:
@@ -254,7 +282,7 @@ def process_and_write_month(
     if month_times.size == 0:
         return
 
-    if month_has_data(zarr_store, var_name, month_times):
+    if month_has_data(zarr_store, var_name, month_times, zarr_sync):
         print(f"[skip] {target_month.strftime('%Y%m')} already has data for {var_name}")
         return
 
@@ -280,7 +308,7 @@ def process_and_write_month(
         region=region,
         compute=True,
         zarr_format=2,
-        synchronizer=ZARR_SYNC,
+        synchronizer=zarr_sync,
     )
     print(f"[write] {target_month.strftime('%Y%m')} {var_name} -> {region}")
 
@@ -312,6 +340,11 @@ if __name__ == "__main__":
     )
     parser.add_argument("--full-start-year", type=int, default=2010)
     parser.add_argument("--full-end-year", type=int, default=2025)
+    parser.add_argument(
+        "--region", type=str, default="New_York",
+        help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
+             "supplies the cell mask (grid.ICON) and output location (data_root/region_tag)."
+    )
 
     # %%
     if is_interactive():
@@ -329,7 +362,8 @@ if __name__ == "__main__":
         freq="h",
     )
 
-    mask_ds = load_mask()
+    mask_ds = load_region_mask(args.region)
+    output_zarr, zarr_sync = resolve_region_output(args.region)
 
     def _get_template():
         lat = mask_ds["lat"].where(mask_ds["mask"], drop=True)
@@ -338,14 +372,14 @@ if __name__ == "__main__":
 
     chunks = {"time": TIME_CHUNK}
     ensure_store(
-        str(OUTPUT_ZARR),
+        output_zarr,
         full_times,
         var_name,
         _get_template,
         chunks,
-        global_title="ICON-DREAM-Global NYS subset (unstructured)",
+        global_title=f"ICON-DREAM-Global {args.region} subset (unstructured)",
         extra_var_attrs=source_attrs_for_var(var_name),
-        synchronizer=ZARR_SYNC,
+        synchronizer=zarr_sync,
     )
 
     start_month = pd.to_datetime(start_yearmonth, format="%Y%m")
@@ -360,7 +394,7 @@ if __name__ == "__main__":
     for i in tqdm(range(0, len(months), BATCH_SIZE), desc=f"{var_name} {start_yearmonth}-{end_yearmonth}"):
         batch = months[i: i + BATCH_SIZE]
         Parallel(n_jobs=cpus, backend="loky", verbose=0)(
-            delayed(process_and_write_month)(var_name, m, full_times, mask_ds, str(OUTPUT_ZARR))
+            delayed(process_and_write_month)(var_name, m, full_times, mask_ds, output_zarr, zarr_sync)
             for m in batch
         )
 
@@ -372,6 +406,6 @@ if __name__ == "__main__":
         pd.Period(end_month, freq="M").end_time.floor("h"),
         freq="h",
     )
-    sys.exit(0 if not has_missing_data(str(OUTPUT_ZARR), check_times, var_name, ZARR_SYNC) else 1)
+    sys.exit(0 if not has_missing_data(output_zarr, check_times, var_name, zarr_sync) else 1)
 
 # %%

@@ -41,12 +41,15 @@ from data_utils.zarr_io import (
     target_long_name,
     target_units,
 )
+from repo_utils import load_region_grid, load_region_vars
 
 
 HRRRZARR_BUCKET = "hrrrzarr"
 GRID_INDEX_STORE = f"s3://{HRRRZARR_BUCKET}/grid/HRRR_chunk_index.zarr"
-DEFAULT_OUTPUT_ZARR = "/network/rit/lab/basulab/Projects/DFS/DATA/HRRR_NYS/HRRR_NYS.zarr"
-DEFAULT_OROG_PATH = str(Path(__file__).with_name("hrrr_orography_cropped_nys.nc"))
+# Region-derived when not explicitly overridden -- see resolve_region_crop().
+DEFAULT_OUTPUT_ZARR = None
+DEFAULT_OROG_PATH = None
+FULL_OROG_PATH = Path(__file__).with_name("hrrr_full_orography.nc")
 REGISTRY_PATH = Path(__file__).with_name("hrrr_variable_registry.csv")
 VAR_SPECS_PATH = Path(__file__).with_name("hrrr_var_specs.csv")
 
@@ -55,6 +58,7 @@ MANUAL_DEFAULTS = {
     "var_name": "u10",
     "process_start": "2025-01-01T00",
     "process_end": "2025-01-31T23",
+    "region": "New_York",
     "output_zarr": DEFAULT_OUTPUT_ZARR,
     "orog_path": DEFAULT_OROG_PATH,
     "full_start_year": 2010,
@@ -66,14 +70,6 @@ MANUAL_DEFAULTS = {
     "skip_complete_months": True,
     "consolidate_metadata": True,
 }
-
-BBOX = {
-    "lat_min": 38.0,
-    "lat_max": 48.0,
-    "lon_min": -82.0,
-    "lon_max": -68.0,
-}
-
 
 
 def _format_bytes(n_bytes: int) -> str:
@@ -354,30 +350,35 @@ def open_grid_index() -> xr.Dataset:
     )
 
 
-def normalize_bbox_lon(lon: np.ndarray) -> Tuple[float, float]:
-    lon_max = float(np.nanmax(lon))
-    if lon_max > 180.0:
-        return (
-            BBOX["lon_min"] + 360.0 if BBOX["lon_min"] < 0 else BBOX["lon_min"],
-            BBOX["lon_max"] + 360.0 if BBOX["lon_max"] < 0 else BBOX["lon_max"],
-        )
-    return BBOX["lon_min"], BBOX["lon_max"]
+def resolve_region_crop(region: str) -> Tuple[dict, dict, slice, slice]:
+    """Load configs/regions/{region}.yaml's grid.HRRR entry and turn it into
+    (y_slice, x_slice) against HRRR's native grid, replacing the old NYS-only
+    BBOX + compute_crop_slices() dynamic mask computation (which reproduced
+    exactly the same 452x459 NYS crop, but only ever worked for that one
+    hardcoded lat/lon box)."""
+    region_grid = load_region_grid(region, "HRRR")
+    region_vars = load_region_vars(region)
+    assert region_grid["dims"] == ["y", "x"], region_grid["dims"]
+    y_start = region_grid["crop"]["y_start"]
+    x_start = region_grid["crop"]["x_start"]
+    ny = region_grid["n0"]
+    nx = region_grid["n1"]
+    y_slice = slice(y_start, y_start + ny)
+    x_slice = slice(x_start, x_start + nx)
+    return region_grid, region_vars, y_slice, x_slice
 
 
-def compute_crop_slices(grid: xr.Dataset) -> Tuple[slice, slice]:
-    lat = grid["latitude"].values
-    lon = grid["longitude"].values
-    lon_min, lon_max = normalize_bbox_lon(lon)
-    mask = (
-        (lat >= BBOX["lat_min"])
-        & (lat <= BBOX["lat_max"])
-        & (lon >= lon_min)
-        & (lon <= lon_max)
-    )
-    ys, xs = np.where(mask)
-    if ys.size == 0 or xs.size == 0:
-        raise ValueError("No HRRR grid cells found inside the NYS bounding box.")
-    return slice(int(ys.min()), int(ys.max()) + 1), slice(int(xs.min()), int(xs.max()) + 1)
+def region_cropped_template_orog(region_grid: dict) -> xr.DataArray:
+    """In-memory cropped orography template for a region, derived from
+    hrrr_full_orography.nc rather than requiring a pre-existing per-region
+    cropped file on disk -- mirrors URMA's _get_template() approach so new
+    regions don't need a manually-created cropped orography file first."""
+    y_start = region_grid["crop"]["y_start"]
+    x_start = region_grid["crop"]["x_start"]
+    ny = region_grid["n0"]
+    nx = region_grid["n1"]
+    full = xr.open_dataset(FULL_OROG_PATH)
+    return full.orog.isel(y=slice(y_start, y_start + ny), x=slice(x_start, x_start + nx)).load()
 
 
 def cropped_latlon(grid: xr.Dataset, y_slice: slice, x_slice: slice) -> Tuple[xr.DataArray, xr.DataArray]:
@@ -861,6 +862,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--var-name", choices=cli_vars)
     parser.add_argument("--process-start", help="Inclusive start time, e.g. 2025-01-01T00")
     parser.add_argument("--process-end", help="Inclusive end time, e.g. 2025-01-31T23")
+    parser.add_argument(
+        "--region", type=str, default="New_York",
+        help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
+             "supplies the crop (grid.HRRR) and, when --output-zarr/--orog-path are not "
+             "given explicitly, the output location (data_root/region_tag) and template "
+             "orography too."
+    )
     parser.add_argument("--output-zarr", default=DEFAULT_OUTPUT_ZARR)
     parser.add_argument("--orog-path", default=DEFAULT_OROG_PATH)
     parser.add_argument("--full-start-year", type=int, default=2010)
@@ -908,14 +916,24 @@ def parse_args() -> argparse.Namespace:
 
 
 def run_source_pipeline(args: argparse.Namespace) -> None:
+    region_grid, region_vars, y_slice, x_slice = resolve_region_crop(args.region)
+
     grid = open_grid_index()
-    y_slice, x_slice = compute_crop_slices(grid)
     lat, lon = cropped_latlon(grid, y_slice, x_slice)
 
-    if not os.path.exists(args.orog_path):
-        raise FileNotFoundError(f"Orography template not found: {args.orog_path}")
+    if args.output_zarr is None:
+        data_root = region_vars["data_root"]
+        region_tag = region_vars["region_tag"]
+        if not data_root:
+            raise ValueError(f"configs/regions/{args.region}.yaml has no data_root set yet.")
+        args.output_zarr = f"{data_root}/HRRR_{region_tag}/HRRR_{region_tag}.zarr"
 
-    template_orog = load_template_orography(args.orog_path)
+    if args.orog_path is not None:
+        if not os.path.exists(args.orog_path):
+            raise FileNotFoundError(f"Orography template not found: {args.orog_path}")
+        template_orog = load_template_orography(args.orog_path)
+    else:
+        template_orog = region_cropped_template_orog(region_grid)
     y_chunk = resolve_chunk_size(args.y_chunk, int(template_orog.sizes["y"]), "y")
     x_chunk = resolve_chunk_size(args.x_chunk, int(template_orog.sizes["x"]), "x")
     report_physical_chunk_size(args.var_name, template_orog, args.time_chunk, y_chunk, x_chunk)
@@ -954,13 +972,28 @@ def run_source_pipeline(args: argparse.Namespace) -> None:
 
 
 def run_derived_pipeline(args: argparse.Namespace) -> None:
+    region_grid = load_region_grid(args.region, "HRRR")
+    region_vars = load_region_vars(args.region)
+    assert region_grid["dims"] == ["y", "x"], region_grid["dims"]
+
+    if args.output_zarr is None:
+        data_root = region_vars["data_root"]
+        region_tag = region_vars["region_tag"]
+        if not data_root:
+            raise ValueError(f"configs/regions/{args.region}.yaml has no data_root set yet.")
+        args.output_zarr = f"{data_root}/HRRR_{region_tag}/HRRR_{region_tag}.zarr"
+
     if not os.path.exists(args.output_zarr):
         raise FileNotFoundError(f"Target HRRR Zarr store not found: {args.output_zarr}")
-    if not os.path.exists(args.orog_path):
-        raise FileNotFoundError(f"Orography template not found: {args.orog_path}")
+
+    if args.orog_path is not None:
+        if not os.path.exists(args.orog_path):
+            raise FileNotFoundError(f"Orography template not found: {args.orog_path}")
+        template_orog = load_template_orography(args.orog_path)
+    else:
+        template_orog = region_cropped_template_orog(region_grid)
 
     spec = DERIVED_SPECS[args.var_name]
-    template_orog = load_template_orography(args.orog_path)
     ds_meta = open_local_zarr_with_retry(args.output_zarr)
     ds_src: Optional[xr.Dataset] = None
     try:

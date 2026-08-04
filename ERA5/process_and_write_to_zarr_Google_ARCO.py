@@ -34,24 +34,19 @@ if str(_BOOTSTRAP_ROOT) not in sys.path:
     sys.path.insert(0, str(_BOOTSTRAP_ROOT))
 
 from data_utils.zarr_io import apply_var_attrs, target_long_name, target_units
+from repo_utils import load_region_grid, load_region_vars
 
 ARCO_SURFACE_PRESSURE_STORE = "gs://gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3"
 ARCO_MODEL_LEVEL_STORE = "gs://gcp-public-data-arco-era5/ar/model-level-1h-0p25deg.zarr-v1"
 
-DEFAULT_OUTPUT_ZARR = (
-    "/network/rit/lab/basulab/Projects/DFS/DATA/ERA5_NYS/ERA5_analysis_ARCO_NYS.zarr"
-)
+# Region-derived when not explicitly overridden -- see resolve_region_crop().
+DEFAULT_OUTPUT_ZARR = None
 DEFAULT_REGISTRY_FILE = str(Path(__file__).with_name("arco_variable_registry.csv"))
 
 GROUP_SURFACE = "sl"
 GROUP_PRESSURE = "pl"
 GROUP_MODEL = "ml"
 GROUP_CHOICES = (GROUP_SURFACE, GROUP_PRESSURE, GROUP_MODEL)
-
-LAT_MIN = 38.0
-LAT_MAX = 48.0
-LON_MIN = -82.0
-LON_MAX = -68.0
 
 TIME_CHUNK = 24
 LEVEL_CHUNK = 1
@@ -107,6 +102,8 @@ class JobConfig:
     source_map: Dict[str, str]
     registry_long_name: Optional[str]
     registry_units: Optional[str]
+    lat_slice: slice
+    lon_slice: slice
 
 
 @dataclass(frozen=True)
@@ -221,21 +218,32 @@ def day_start_end(ts: pd.Timestamp) -> Tuple[pd.Timestamp, pd.Timestamp]:
     return start, end
 
 
-def normalize_lon_bounds(ds: xr.Dataset) -> Tuple[float, float]:
-    lon_max_ds = float(ds.longitude.max())
-    if lon_max_ds > 180:
-        return (
-            LON_MIN + 360.0 if LON_MIN < 0 else LON_MIN,
-            LON_MAX + 360.0 if LON_MAX < 0 else LON_MAX,
-        )
-    return LON_MIN, LON_MAX
+def resolve_region_crop(region: str) -> Tuple[dict, slice, slice]:
+    """Load configs/regions/{region}.yaml's grid.ERA5 entry and turn it into
+    (lat_slice, lon_slice) index slices against ERA5's native 0.25deg grid.
+
+    Replaces the old NYS-only LAT_MIN/MAX/LON_MIN/MAX + .sel()-based crop_nys():
+    that bounds-based .sel() crop only ever worked for the one hardcoded lat/lon
+    box. grid.ERA5's crop.latitude_start/longitude_start/n0/n1 were verified to
+    reproduce .sel()'s exact inclusive-boundary result for New York cell-for-
+    cell (manual >=/<= masking is off-by-one vs .sel() on separable grids), so
+    .isel() with these indices is behavior-preserving for New York while being
+    generic across regions.
+    """
+    region_grid = load_region_grid(region, "ERA5")
+    region_vars = load_region_vars(region)
+    assert region_grid["dims"] == ["latitude", "longitude"], region_grid["dims"]
+    lat_start = region_grid["crop"]["latitude_start"]
+    lon_start = region_grid["crop"]["longitude_start"]
+    n0 = region_grid["n0"]
+    n1 = region_grid["n1"]
+    lat_slice = slice(lat_start, lat_start + n0)
+    lon_slice = slice(lon_start, lon_start + n1)
+    return region_vars, lat_slice, lon_slice
 
 
-def crop_nys(ds: xr.Dataset) -> xr.Dataset:
-    lon_min, lon_max = normalize_lon_bounds(ds)
-    lat_slice = slice(LAT_MAX, LAT_MIN) if ds.latitude[0] > ds.latitude[-1] else slice(LAT_MIN, LAT_MAX)
-    lon_slice = slice(lon_min, lon_max) if ds.longitude[0] < ds.longitude[-1] else slice(lon_max, lon_min)
-    return ds.sel(latitude=lat_slice, longitude=lon_slice)
+def crop_nys(ds: xr.Dataset, lat_slice: slice, lon_slice: slice) -> xr.Dataset:
+    return ds.isel(latitude=lat_slice, longitude=lon_slice)
 
 
 def open_source(store: str, token: str, time_chunk: int) -> xr.Dataset:
@@ -342,7 +350,7 @@ def build_day_dataset(cfg: JobConfig, day_ts: pd.Timestamp) -> Optional[xr.Datas
         sub = ds[read_vars].sel(time=slice(start, end))
         if sub.sizes.get("time", 0) == 0:
             return None
-        sub = crop_nys(sub)
+        sub = crop_nys(sub, cfg.lat_slice, cfg.lon_slice)
 
         if cfg.variable == "si10":
             u_key = cfg.source_map.get("u10", FALLBACK_VAR_INFO["u10"]["source_var"])
@@ -385,7 +393,7 @@ def build_day_dataset(cfg: JobConfig, day_ts: pd.Timestamp) -> Optional[xr.Datas
     sub = source_var_ds.sel({level_dim_src: cfg.level_values_write, "time": slice(start, end)})
     if sub.sizes.get("time", 0) == 0:
         return None
-    sub = crop_nys(sub)
+    sub = crop_nys(sub, cfg.lat_slice, cfg.lon_slice)
     da_var = sub[cfg.source_variable]
 
     if level_dim_src != cfg.level_dim_out:
@@ -707,6 +715,7 @@ def build_config(args: argparse.Namespace) -> JobConfig:
     target_variable = args.target_var if args.target_var else args.var_name
 
     level_dim_out, level_values_all, level_values_write, level_indices_write = resolve_level_config(args, group)
+    _, lat_slice, lon_slice = resolve_region_crop(args.region)
 
     return JobConfig(
         variable=args.var_name,
@@ -729,6 +738,8 @@ def build_config(args: argparse.Namespace) -> JobConfig:
         source_map=source_map,
         registry_long_name=registry_entry.long_name if registry_entry else None,
         registry_units=registry_entry.units if registry_entry else None,
+        lat_slice=lat_slice,
+        lon_slice=lon_slice,
     )
 
 
@@ -799,6 +810,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--process-end", default="2028-12-31 23:00:00", help="Process end datetime (inclusive).")
     parser.add_argument("--full-start-year", type=int, default=1940, help="Global full time axis start year.")
     parser.add_argument("--full-end-year", type=int, default=2050, help="Global full time axis end year.")
+    parser.add_argument(
+        "--region", type=str, default="New_York",
+        help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
+             "supplies the crop (grid.ERA5) and, when --output-zarr is not given "
+             "explicitly, the output location (data_root/region_tag) too."
+    )
     parser.add_argument("--output-zarr", default=DEFAULT_OUTPUT_ZARR, help="Output root Zarr path.")
     parser.add_argument("--sync-path", default=None, help="Path for ProcessSynchronizer lock file.")
     parser.add_argument("--token", default="anon", help="GCS token mode for ARCO read access.")
@@ -812,6 +829,13 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     args = parse_args()
+    if args.output_zarr is None:
+        region_vars, _, _ = resolve_region_crop(args.region)
+        data_root = region_vars["data_root"]
+        region_tag = region_vars["region_tag"]
+        if not data_root:
+            raise ValueError(f"configs/regions/{args.region}.yaml has no data_root set yet.")
+        args.output_zarr = f"{data_root}/ERA5_{region_tag}/ERA5_analysis_ARCO_{region_tag}.zarr"
     if args.sync_path is None:
         args.sync_path = f"{args.output_zarr}.sync"
 

@@ -38,9 +38,9 @@ from data_utils.zarr_io import (
     open_zarr_safe,
     write_region,
 )
+from repo_utils import load_region_grid, load_region_vars
 
 RAW_ROOT = Path("/network/rit/lab/basulab/RAW_DATA/EDDE_V2/hourly/WRF-MPI")
-OUTPUT_ROOT = Path("/network/rit/lab/basulab/Projects/DFS/DATA/EDDEv2_NYS/hourly/WRF-MPI")
 
 FILE_TO_SOURCE = {
     "pr": "PRECIP",
@@ -78,8 +78,28 @@ ALL_VARS = list(rename_map.values())
 
 TIME_CHUNK = 24
 BATCH_SIZE = 64
-y_min, y_max = 231, 343
-x_min, x_max = 339, 453
+
+
+def resolve_region_crop(region: str) -> tuple:
+    region_grid = load_region_grid(region, "EDDEv2")
+    region_vars = load_region_vars(region)
+    assert region_grid["dims"] == ["y", "x"], region_grid["dims"]
+    y_start = region_grid["crop"]["y_start"]
+    x_start = region_grid["crop"]["x_start"]
+    ny = region_grid["n0"]
+    nx = region_grid["n1"]
+    y_slice = slice(y_start, y_start + ny)
+    x_slice = slice(x_start, x_start + nx)
+    return region_vars, y_slice, x_slice
+
+
+def resolve_region_output(region: str) -> Path:
+    region_vars = load_region_vars(region)
+    data_root = region_vars["data_root"]
+    region_tag = region_vars["region_tag"]
+    if not data_root:
+        raise ValueError(f"configs/regions/{region}.yaml has no data_root set yet.")
+    return Path(data_root) / f"EDDEv2_{region_tag}" / "hourly" / "WRF-MPI"
 
 
 def find_reference_file_for_var(var_name: str, run_type: str) -> Path:
@@ -96,8 +116,8 @@ def find_reference_file_for_var(var_name: str, run_type: str) -> Path:
     return Path(candidates[0])
 
 
-def crop_region(ds: xr.Dataset) -> xr.Dataset:
-    return ds.isel(y=slice(y_min, y_max), x=slice(x_min, x_max))
+def crop_region(ds: xr.Dataset, y_slice: slice, x_slice: slice) -> xr.Dataset:
+    return ds.isel(y=y_slice, x=x_slice)
 
 
 def run_folder(run_type: str) -> Path:
@@ -121,6 +141,8 @@ def process_single_month(
     target_month: pd.Timestamp,
     renamed_var: str,
     run_type: str,
+    y_slice: slice,
+    x_slice: slice,
 ) -> Optional[xr.Dataset]:
     files = files_for_month(run_type, target_month, renamed_var)
     if not files:
@@ -141,7 +163,7 @@ def process_single_month(
     ds = ds.assign_coords(longitude=((ds.longitude + 360) % 360))
     ds = ds.drop_vars(["mtime", "y", "x"], errors="ignore")
     ds = ds.rename({k: v for k, v in rename_map.items() if k in ds.data_vars})
-    ds = crop_region(ds)
+    ds = crop_region(ds, y_slice, x_slice)
     ds = ds.transpose("time", "y", "x")
     return ds
 
@@ -153,8 +175,10 @@ def write_one_time(
     run_type: str,
     output_zarr: str,
     zarr_sync: zarr.ProcessSynchronizer,
+    y_slice: slice,
+    x_slice: slice,
 ):
-    ds = process_single_month(target_month, var_name, run_type)
+    ds = process_single_month(target_month, var_name, run_type, y_slice, x_slice)
     if ds is None:
         return
 
@@ -183,8 +207,15 @@ if __name__ == "__main__":
                         help="Start month (inclusive), e.g., 2025-01")
     parser.add_argument("--process-end", default="2030-12",
                         help="End month (inclusive), e.g., 2030-12")
+    parser.add_argument(
+        "--region", type=str, default="New_York",
+        help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
+             "supplies the crop (grid.EDDEv2) and output location (data_root/region_tag)."
+    )
     args, _ = parser.parse_known_args()
 
+    _, y_slice, x_slice = resolve_region_crop(args.region)
+    OUTPUT_ROOT = resolve_region_output(args.region)
     OUTPUT_ZARR = str(OUTPUT_ROOT / f"{args.run_type}.zarr")
     ZARR_SYNC_PATH = f"{OUTPUT_ZARR}.sync"
     ZARR_SYNC = zarr.ProcessSynchronizer(ZARR_SYNC_PATH)
@@ -201,7 +232,7 @@ if __name__ == "__main__":
     def _get_template():
         ref_file = find_reference_file_for_var(var_name, args.run_type)
         ref_month = month_from_filename(ref_file)
-        tmpl = process_single_month(ref_month, var_name, args.run_type)
+        tmpl = process_single_month(ref_month, var_name, args.run_type, y_slice, x_slice)
         if tmpl is None:
             raise RuntimeError("Failed to build template dataset for initialization.")
         return apply_var_attrs(tmpl, var_name)
@@ -209,7 +240,7 @@ if __name__ == "__main__":
     chunks = {"time": TIME_CHUNK}
     ensure_store(
         OUTPUT_ZARR, full_times, var_name, _get_template, chunks,
-        global_title="EDDEv2 hourly NYS subset",
+        global_title=f"EDDEv2 hourly {args.region} subset",
         synchronizer=ZARR_SYNC,
     )
 
@@ -218,7 +249,7 @@ if __name__ == "__main__":
         chunk_times = dates[i: i + BATCH_SIZE]
         Parallel(n_jobs=cpus, backend="loky")(
             delayed(write_one_time)(
-                ts, var_name, full_times, args.run_type, OUTPUT_ZARR, ZARR_SYNC
+                ts, var_name, full_times, args.run_type, OUTPUT_ZARR, ZARR_SYNC, y_slice, x_slice
             )
             for ts in chunk_times
         )

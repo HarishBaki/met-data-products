@@ -19,7 +19,7 @@ BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
 if str(BOOTSTRAP_ROOT) not in sys.path:
     sys.path.insert(0, str(BOOTSTRAP_ROOT))
 
-from repo_utils import find_repo_root
+from repo_utils import find_repo_root, load_region_grid, load_region_vars
 from data_utils.zarr_io import (
     apply_var_attrs,
     ensure_store,
@@ -30,11 +30,10 @@ from data_utils.zarr_io import (
 )
 
 PROJECT_DIR = find_repo_root(__file__)
-CFG_PATH = PROJECT_DIR / "data_utils" / "baseline_regrid.yaml"
-with open(CFG_PATH, "r") as f:
-    CFG = yaml.safe_load(f)
+FULL_OROG_PATH = PROJECT_DIR / "URMA" / "urma_full_orography.nc"
 
-zarr_store = f'/network/rit/lab/basulab/Projects/DFS/DATA/URMA_NYS/URMA_NYS.zarr'
+# Not region-specific -- the raw URMA archive covers the whole native grid
+# regardless of which region's crop is being processed.
 data_source_dir = '/network/rit/lab/basulab/RAW_DATA/URMA'
 
 # %%
@@ -122,10 +121,9 @@ def normalize_time(ds):
     return ds
 
 
-def daily_processing(var_name, date, time_chunk, x_chunk, y_chunk):
-    nx, ny = 288, 256
-    x_start, x_end = 1800, 1800 + nx
-    y_start, y_end = 830, 830 + ny
+def daily_processing(var_name, date, time_chunk, x_chunk, y_chunk, x_start, y_start, nx, ny):
+    x_end = x_start + nx
+    y_end = y_start + ny
 
     if var_name != 'tp':
         files = glob.glob(f'{data_source_dir}/{date}/*2dvaranl*')
@@ -181,13 +179,14 @@ def daily_processing(var_name, date, time_chunk, x_chunk, y_chunk):
 
 def process_and_write_single_day(
     date, var_name, zarr_store, dates, full_dates, time_chunk, x_chunk, y_chunk,
+    x_start, y_start, nx, ny,
 ):
     if check_existing_data_in_zarr(zarr_store, date, var_name):
         print(f"[skip] {date} already exists in {zarr_store} for {var_name}")
         return
 
     try:
-        ds = daily_processing(var_name, date, time_chunk, x_chunk, y_chunk)
+        ds = daily_processing(var_name, date, time_chunk, x_chunk, y_chunk, x_start, y_start, nx, ny)
 
         # Ensure source units are set (cfgrib may omit them).
         if not ds[var_name].attrs.get("units") and var_name in _GRIB_SOURCE_UNITS:
@@ -231,6 +230,11 @@ if __name__ == "__main__":
     )
     parser.add_argument("--full-start-year", type=int, default=2010)
     parser.add_argument("--full-end-year", type=int, default=2040)
+    parser.add_argument(
+        "--region", type=str, default="New_York",
+        help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
+             "supplies the crop (grid.URMA) and output location (data_root/region_tag)."
+    )
 
     if is_interactive():
         args, unknown = parser.parse_known_args()
@@ -239,6 +243,20 @@ if __name__ == "__main__":
 
     var_name = args.var_name
     YEAR = args.year
+
+    # Region-specific crop and output location -- see configs/regions/{region}.yaml.
+    region_grid = load_region_grid(args.region, "URMA")
+    region_vars = load_region_vars(args.region)
+    assert region_grid["dims"] == ["y", "x"]
+    y_start = region_grid["crop"]["y_start"]
+    x_start = region_grid["crop"]["x_start"]
+    ny = region_grid["n0"]
+    nx = region_grid["n1"]
+    data_root = region_vars["data_root"]
+    region_tag = region_vars["region_tag"]
+    if not data_root:
+        raise ValueError(f"configs/regions/{args.region}.yaml has no data_root set yet.")
+    zarr_store = f"{data_root}/URMA_{region_tag}/URMA_{region_tag}.zarr"
 
     # %%
     full_dates = pd.date_range(
@@ -249,21 +267,24 @@ if __name__ == "__main__":
     time_chunk = 6
     y_chunk = 256
     x_chunk = 288
-    orog_path = CFG["paths"]["urma_orog"]
 
     # %%
     cpus = get_slurm_cpus()
     print(cpus)
 
-    # Initialize zarr for this variable using orography file for spatial structure.
-    # zarr_io.init_zarr reads spatial dims/coords directly from the dataset.
+    # Initialize zarr for this variable using the region's cropped orography for
+    # spatial structure -- cropped in-memory from the full native grid using the
+    # region's own crop, rather than depending on a pre-existing per-region
+    # cropped orography file, so this works for any region already present in
+    # configs/regions/, not just ones that happen to already have one on disk.
     def _get_template():
-        return xr.open_dataset(orog_path)
+        full = xr.open_dataset(FULL_OROG_PATH)
+        return full.isel(y=slice(y_start, y_start + ny), x=slice(x_start, x_start + nx))
 
     chunks = {"time": time_chunk, "y": y_chunk, "x": x_chunk}
     ensure_store(
         zarr_store, full_dates, var_name, _get_template, chunks,
-        global_title="NYS Remapped Meteorological Dataset",
+        global_title=f"{region_tag} Remapped Meteorological Dataset",
     )
 
     # 2. Process each day in parallel batches.
@@ -273,7 +294,7 @@ if __name__ == "__main__":
         Parallel(n_jobs=cpus, backend="loky", verbose=0)(
             delayed(process_and_write_single_day)(
                 date, var_name, zarr_store, dates, full_dates,
-                time_chunk, x_chunk, y_chunk,
+                time_chunk, x_chunk, y_chunk, x_start, y_start, nx, ny,
             )
             for date in batch_dates
         )
