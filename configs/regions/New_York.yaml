@@ -1,3 +1,41 @@
+# New York region config for met-data-products' crop step (URMA/HRRR/ERA5/ICON/
+# EDDEv2/Ouranos process_and_write_to_zarr.py scripts).
+#
+# Maintained via compute_region_crop.py --update-config, which round-trips
+# this file through ruamel.yaml specifically so this header (and any future
+# comments) survive future updates -- plain yaml.safe_load/dump silently
+# stripped it across Step 4's six updates the first time, which is why this
+# note exists at all.
+#
+# grid.<product> is a per-product crop against that product's own native
+# grid (see compute_region_crop.py --mode boundary for URMA, --mode
+# reference or --mode bbox for everything else, which gets xESMF-regridded
+# onto URMA's grid regardless of its own crop). ICON's entry is a saved
+# boolean cell mask (configs/regions/masks/), not an index window -- its
+# native grid is an unstructured mesh with no rectangular structure to slice.
+#
+# Every entry here records what's ALREADY IN PRODUCTION USE, not a fresh
+# tool-derived value -- read directly (read-only) from each product's real,
+# already-cropped orography file under /network/rit/lab/basulab/Projects/
+# DFS/DATA/{PRODUCT}_NYS/, not computed from scratch. Two things that
+# surfaced doing this: HRRR's and Ouranos's real production crops are
+# noticeably wider than the BBOX/BBOX_NY constants hardcoded in their own
+# scripts (HRRR: real file spans lat 35.5-50.2 vs the script's hardcoded
+# 38-48; Ouranos: download_ouranos.py's BBOX_NY is 38-48/-82,-68 vs the real
+# file's 35.1-50.5/-84.4,-63.1) -- the scripts' own constants are stale
+# relative to what's actually running. ICON's derived mask (7083 cells)
+# landed within 1 cell of the real production mask (7084) -- a good
+# independent cross-check that this reconstruction is accurate.
+#
+# grid.URMA specifically: running --mode boundary --state "New York" against
+# the same GADM boundary produces a LARGER superset (y_start=811, x_start=
+# 1781, n0=288, n1=320) that fully contains this crop with margin on every
+# side -- confirms the method is sound, but deliberately NOT swapped in:
+# doing so would change URMA_NYS.zarr's shape and break compatibility with
+# every already-trained model and already-written zarr product built
+# against the current 256x288 domain (original_output_size in
+# DL_downscaling/configs/baseline.yaml). Don't regenerate NY's data to match
+# the auto-computed crop without a deliberate, separate decision to do so.
 region_id: new_york
 data_root: /network/rit/lab/basulab/Projects/DFS/DATA
 region_tag: NYS

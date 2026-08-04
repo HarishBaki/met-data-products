@@ -1,5 +1,35 @@
+# New Mexico region config for met-data-products' crop step.
+#
+# Maintained via compute_region_crop.py --update-config, which round-trips
+# this file through ruamel.yaml specifically so this header (and any future
+# comments) survive future updates -- see New_York.yaml's header for why
+# that note exists.
+#
+# Unlike New_York.yaml, nothing here records existing production data --
+# New Mexico hasn't been processed yet, so every grid.<product> entry below
+# is a genuine tool-derived computation, not a read of a real already-cropped
+# file.
+#
+# grid.URMA computed via --mode boundary (real GADM boundary, not
+# hand-picked):
+#   python compute_region_crop.py --product URMA --grid-source URMA/urma_full_orography.nc \
+#       --mode boundary --state "New Mexico" --padding 10 \
+#       --region-config configs/regions/New_Mexico.yaml --update-config
+#
+# Every other grid.<product> entry computed via --mode reference, matched to
+# grid.URMA's crop above with a 1-degree halo (ICON's is a saved boolean
+# cell mask under configs/regions/masks/, not an index window -- unstructured
+# mesh, same as New York's).
+#
+# Note n0(y)=288 here, not New York's n0(y)=256 -- New Mexico is a taller
+# domain at URMA's native resolution (its state bbox is closer to square
+# than New York's east-west-elongated shape). This is a real, confirmed
+# difference, not a guess: DL_downscaling/configs/baseline.yaml's
+# original_output_size (currently a flat, non-region-templated [256,288])
+# will need to become region-aware before New Mexico training configs can
+# use this domain size.
 region_id: new_mexico
-data_root: null
+data_root:
 region_tag: NMS
 boundary:
   gadm_file: /network/rit/lab/basulab/Harish/ResearchOS/Projects/Active/Sparse-to-grided-deep-interpolation/git_repos/Sparse_to_dense_meteorological_variables/data/geospatial/gadm_410.gpkg

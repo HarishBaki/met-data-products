@@ -60,6 +60,16 @@ import numpy as np
 import xarray as xr
 import geopandas as gpd
 import yaml
+from ruamel.yaml import YAML
+
+# Round-trip YAML (comment/order-preserving) for --update-config specifically --
+# plain yaml.safe_load/yaml.dump (used everywhere else in this file for
+# read-only config loading) silently drops comments on every write, which
+# wiped configs/regions/{New_York,New_Mexico}.yaml's header documentation
+# across Step 4's six --update-config calls before this was caught.
+_yaml_rt = YAML()
+_yaml_rt.indent(mapping=2, sequence=2, offset=0)  # matches this repo's existing yaml.dump style
+_yaml_rt.width = 4096  # don't line-wrap long paths
 
 DEFAULT_GADM_FILE = (
     "/network/rit/lab/basulab/Harish/ResearchOS/Projects/Active/"
@@ -184,7 +194,8 @@ def crop_from_bbox(grid: Grid, bbox: tuple[float, float, float, float], padding:
 # ---------------------------------------------------------------------------
 def update_region_config(region_config: str, product: str, crop: dict, mask_out_dir: Path | None):
     region_path = Path(region_config)
-    cfg = yaml.safe_load(region_path.read_text())
+    with open(region_path) as f:
+        cfg = _yaml_rt.load(f)
     cfg.setdefault("grid", {})
 
     if crop["kind"] == "unstructured":
@@ -208,7 +219,8 @@ def update_region_config(region_config: str, product: str, crop: dict, mask_out_
             "crop": {f"{d0}_start": int(crop["dim0_start"]), f"{d1}_start": int(crop["dim1_start"])},
         }
 
-    region_path.write_text(yaml.dump(cfg, default_flow_style=False, sort_keys=False))
+    with open(region_path, "w") as f:
+        _yaml_rt.dump(cfg, f)
     print(f"  Config updated -> {region_path}  (grid.{product})")
 
 
