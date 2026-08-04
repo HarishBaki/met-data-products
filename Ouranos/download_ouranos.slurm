@@ -26,6 +26,10 @@ echo "Job start: $(date)  array_task=${SLURM_ARRAY_TASK_ID}"
 # read off CATALOG/--catalog, which already defaults to catalog_with_vars.csv)
 # if a job needs a different set.
 #
+# REGION (default: New_York) selects configs/regions/{region}.yaml, which
+# supplies the download bbox (grid.Ouranos.bbox) and, unless DEST_ROOT is set
+# explicitly, the output location too.
+#
 # Examples:
 #   # fx (static) variables - orog, areacella, sftlf, etc. - are rejected by
 #   # download_ouranos.py; use download_fx.py instead, e.g.:
@@ -39,9 +43,13 @@ echo "Job start: $(date)  array_task=${SLURM_ARRAY_TASK_ID}"
 #
 #   # Download exactly what discover_vars.py found available, per row
 #   VARS_FROM_CATALOG=1 sbatch --array=0-26 download_ouranos.slurm
+#
+#   # Download for New Mexico instead of the default New York
+#   REGION=New_Mexico sbatch --array=0-26 download_ouranos.slurm
 # ---------------------------------------------------------------------------
 
-dest_root="${DEST_ROOT:-/network/rit/lab/basulab/RAW_DATA/Ouranos/1hr}"
+region="${REGION:-New_York}"
+dest_root="${DEST_ROOT:-}"
 # DFS downscaling pipeline's variable set (matches process_and_write_to_zarr.py's
 # VAR_GROUPS source_vars: tas->t2m ps->sp huss->sh2 pr->tp hurs->rh2 uas->u10 vas->v10)
 vars="${VARS:-tas,hurs,huss,uas,vas,pr,ps}"
@@ -73,12 +81,13 @@ opt_args=""
 [[ -n "${start_date}"  ]] && opt_args+=" --start-date ${start_date}"
 [[ -n "${end_date}"    ]] && opt_args+=" --end-date   ${end_date}"
 [[ -n "${full_domain}" ]] && opt_args+=" --full-domain"
+[[ -n "${dest_root}"   ]] && opt_args+=" --dest-root  ${dest_root}"
 
-echo "Config: index=${SLURM_ARRAY_TASK_ID} dest=${dest_root} ${var_args} chunk=${time_chunk}${opt_args}"
+echo "Config: index=${SLURM_ARRAY_TASK_ID} region=${region} dest=${dest_root:-<region-derived>} ${var_args} chunk=${time_chunk}${opt_args}"
 
 python download_ouranos.py \
     --index       "${SLURM_ARRAY_TASK_ID}" \
-    --dest-root   "${dest_root}" \
+    --region      "${region}" \
     ${var_args} \
     --time-chunk  "${time_chunk}" \
     --num-workers "${num_workers}" \

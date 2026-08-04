@@ -31,6 +31,9 @@ END_YEARMONTH="202512"
 # canonical variables. 0 (default) = keep raw regardless.
 REMOVE_RAW="${REMOVE_RAW:-0}"
 
+# Region to process (e.g. New_York, New_Mexico).
+REGION="${REGION:-New_York}"
+
 throttle() {
     while [ "$(squeue -u "$USER" -h -n "$JOBNAME" | wc -l)" -ge "$MAX_PARALLEL" ]; do
         echo "Reached $MAX_PARALLEL queued/running $JOBNAME jobs. Waiting..."
@@ -54,7 +57,7 @@ cur="$START_YEARMONTH"
 while [ "$cur" -le "$END_YEARMONTH" ]; do
     throttle
     echo "Submitting: $cur (REMOVE_RAW=$REMOVE_RAW)"
-    REMOVE_RAW="$REMOVE_RAW" sbatch jobsub_download_process_cleanup.slurm "$cur"
+    REMOVE_RAW="$REMOVE_RAW" REGION="$REGION" sbatch jobsub_download_process_cleanup.slurm "$cur"
     sleep 1
     cur="$(next_month "$cur")"
 done

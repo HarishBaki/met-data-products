@@ -25,8 +25,11 @@ if [ -z "$RUN_TYPE" ] || [ -z "$SOURCE_VAR" ] || [ -z "$YEAR" ]; then
     echo "Env: REMOVE_RAW=1 to delete raw inputs for this var/year once processing"
     echo "     reports the full year is NaN-free for the corresponding zarr var"
     echo "     (default: keep raw)."
+    echo "     REGION (default: New_York) selects configs/regions/{region}.yaml."
     exit 1
 fi
+
+REGION="${REGION:-New_York}"
 
 ############################################################
 # ACTIVATE ENVIRONMENT
@@ -75,6 +78,7 @@ echo "EDDEv2 download -> process -> conditional cleanup"
 echo "Run type:    $RUN_TYPE"
 echo "Source var:  $SOURCE_VAR  (-> $RENAMED_VAR)"
 echo "Year:        $YEAR"
+echo "Region:      $REGION"
 echo "REMOVE_RAW:  ${REMOVE_RAW:-0}"
 echo "=========================================================="
 
@@ -96,7 +100,8 @@ python process_and_write_to_zarr.py \
     --run-type "$RUN_TYPE" \
     --var-name "$RENAMED_VAR" \
     --process-start "${YEAR}-01" \
-    --process-end "${YEAR}-12"
+    --process-end "${YEAR}-12" \
+    --region "$REGION"
 PROCESS_STATUS=$?
 
 ############################################################

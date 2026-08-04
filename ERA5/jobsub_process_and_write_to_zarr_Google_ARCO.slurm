@@ -26,6 +26,11 @@ mkdir -p slurmout
 #   - pass \"all\" for all pressure levels
 #   - pass single value (e.g. 850)
 #   - or comma list (e.g. 137,136,135 for model levels)
+#
+# [output_zarr] defaults to empty, letting the Python script derive it from
+# REGION (env var, default New_York -- configs/regions/{region}.yaml) --
+# pass it explicitly only to override that, e.g.:
+#   REGION=New_Mexico sbatch jobsub_process_and_write_to_zarr_Google_ARCO.slurm t2m sl none none 2025-01-01T00 2025-12-31T23
 ############################################################
 VAR_NAME="${1:-z}"
 GROUP="${2:-pl}"
@@ -35,10 +40,11 @@ PROCESS_START="${5:-2015-01-01T00}"
 PROCESS_END="${6:-2015-01-31T23}"
 SOURCE_VAR="${7:-none}"
 TARGET_VAR="${8:-none}"
-OUTPUT_ZARR="${9:-/network/rit/lab/basulab/Projects/DFS/DATA/ERA5_NYS/ERA5_analysis_ARCO_NYS.zarr}"
+OUTPUT_ZARR="${9:-}"
 FULL_START_YEAR="${10:-1940}"
 FULL_END_YEAR="${11:-2050}"
 N_JOBS_ARG="${12:-31}"
+REGION="${REGION:-New_York}"
 
 if [ -z "${VAR_NAME}" ] || [ -z "${PROCESS_START}" ] || [ -z "${PROCESS_END}" ]; then
   echo "ERROR: Missing required args."
@@ -69,10 +75,11 @@ echo "process_start  : ${PROCESS_START}"
 echo "process_end    : ${PROCESS_END}"
 echo "source_var     : ${SOURCE_VAR}"
 echo "target_var     : ${TARGET_VAR}"
-echo "output_zarr    : ${OUTPUT_ZARR}"
+echo "output_zarr    : ${OUTPUT_ZARR:-<region-derived>}"
 echo "full_start_year: ${FULL_START_YEAR}"
 echo "full_end_year  : ${FULL_END_YEAR}"
 echo "n_jobs         : ${N_JOBS}"
+echo "region         : ${REGION}"
 echo "=========================================================="
 
 CMD=(
@@ -81,13 +88,16 @@ CMD=(
   --group "${GROUP}"
   --process-start "${PROCESS_START}"
   --process-end "${PROCESS_END}"
-  --output-zarr "${OUTPUT_ZARR}"
   --full-start-year "${FULL_START_YEAR}"
   --full-end-year "${FULL_END_YEAR}"
   --n-jobs "${N_JOBS}"
+  --region "${REGION}"
   --consolidate-metadata
 )
 
+if [ -n "${OUTPUT_ZARR}" ]; then
+  CMD+=(--output-zarr "${OUTPUT_ZARR}")
+fi
 if [ "${PRESSURE_LEVELS}" != "none" ]; then
   CMD+=(--pressure-levels "${PRESSURE_LEVELS}")
 fi

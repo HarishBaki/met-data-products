@@ -12,11 +12,15 @@ mkdir -p slurmout
 
 ############################################################
 # READ ARGUMENTS PASSED TO SBATCH
+#
+# Override REGION via env var before sbatch (default: New_York), e.g.:
+#   REGION=New_Mexico sbatch jobsub_process_and_write_to_zarr.slurm t2m 2025-01-01 2025-12-31
 ############################################################
 var_name="$1"
 PROCESS_START="$2"
 PROCESS_END="$3"
 RUN_TYPE="${4:-SSP2-4.5}"
+REGION="${REGION:-New_York}"
 
 if [ -z "$var_name" ] || [ -z "$PROCESS_START" ] || [ -z "$PROCESS_END" ]; then
     echo "ERROR: Usage: sbatch jobsub_process_and_write_to_zarr.slurm <var_name> <process_start> <process_end> [run_type]"
@@ -35,6 +39,7 @@ echo "Variable: $var_name"
 echo "Process start: $PROCESS_START"
 echo "Process end: $PROCESS_END"
 echo "Run type: $RUN_TYPE"
+echo "Region: $REGION"
 echo "CPUs requested: $SLURM_CPUS_PER_TASK"
 echo "=========================================================="
 
@@ -42,4 +47,5 @@ python process_and_write_to_zarr.py \
     --run-type "$RUN_TYPE" \
     --var-name "$var_name" \
     --process-start "$PROCESS_START" \
-    --process-end "$PROCESS_END"
+    --process-end "$PROCESS_END" \
+    --region "$REGION"

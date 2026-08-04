@@ -7,6 +7,11 @@ MAX_PARALLEL=7  # freetier QOS allows 8 jobs/user; stay one below the limit
 PROCESS_START="2018-01-01T00"
 PROCESS_END="2025-12-31T23"
 
+# Region to process (e.g. New_York, New_Mexico). Export before running, e.g.:
+#   REGION=New_Mexico ./run_all_process_and_write_to_zarr_HRRRzarr.sh
+REGION="${REGION:-New_York}"
+export REGION
+
 # Hard-define the variables you want to submit here.
 VARS=(
   u10

@@ -12,10 +12,14 @@ mkdir -p slurmout
 
 ############################################################
 # READ ARGUMENTS PASSED TO SBATCH
+#
+# Override REGION via env var before sbatch (default: New_York), e.g.:
+#   REGION=New_Mexico sbatch jobsub_process_and_write_to_zarr.slurm t2m 202501 202501
 ############################################################
 var_name="$1"
 START_YEARMONTH="$2"
 END_YEARMONTH="$3"
+REGION="${REGION:-New_York}"
 
 if [ -z "$var_name" ] || [ -z "$START_YEARMONTH" ] || [ -z "$END_YEARMONTH" ]; then
     echo "ERROR: Usage: sbatch jobsub_process_and_write_to_zarr.slurm <var_name> <start_yearmonth> <end_yearmonth>"
@@ -33,10 +37,12 @@ echo "Running ICON-DREAM-Global processing"
 echo "Variable: $var_name"
 echo "Start: $START_YEARMONTH"
 echo "End: $END_YEARMONTH"
+echo "Region: $REGION"
 echo "CPUs requested: $SLURM_CPUS_PER_TASK"
 echo "=========================================================="
 
 python process_and_write_to_zarr.py \
     --var_name "$var_name" \
     --start-yearmonth "$START_YEARMONTH" \
-    --end-yearmonth "$END_YEARMONTH"
+    --end-yearmonth "$END_YEARMONTH" \
+    --region "$REGION"

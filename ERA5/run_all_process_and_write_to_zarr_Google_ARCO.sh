@@ -9,7 +9,14 @@ MAX_PARALLEL=1
 JOBSCRIPT="jobsub_process_and_write_to_zarr_Google_ARCO.slurm"
 DRY_RUN=0
 
-OUTPUT_ZARR="/network/rit/lab/basulab/Projects/DFS/DATA/ERA5_NYS/ERA5_analysis_ARCO_NYS.zarr"
+# Region to process (e.g. New_York, New_Mexico). Export before running, e.g.:
+#   REGION=New_Mexico ./run_all_process_and_write_to_zarr_Google_ARCO.sh
+REGION="${REGION:-New_York}"
+export REGION
+
+# Empty by default -- lets the Python script derive it from REGION. Set to
+# override explicitly.
+OUTPUT_ZARR="${OUTPUT_ZARR:-}"
 FULL_START_YEAR=1940
 FULL_END_YEAR=2050
 SURFACE_N_JOBS=32

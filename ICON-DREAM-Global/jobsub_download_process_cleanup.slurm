@@ -23,8 +23,11 @@ if [ -z "$YYYYMM" ]; then
     echo "     FULL_START_YEAR / FULL_END_YEAR optionally pass through to"
     echo "     process_and_write_to_zarr.py's --full-start-year/--full-end-year"
     echo "     (must match whatever the existing zarr store was created with)."
+    echo "     REGION (default: New_York) selects configs/regions/{region}.yaml."
     exit 1
 fi
+
+REGION="${REGION:-New_York}"
 
 ############################################################
 # ACTIVATE ENVIRONMENT
@@ -49,6 +52,7 @@ EXTRA_ARGS=()
 echo "=========================================================="
 echo "ICON-DREAM-Global download -> process -> conditional cleanup"
 echo "Month:       $YYYYMM"
+echo "Region:      $REGION"
 echo "REMOVE_RAW:  ${REMOVE_RAW:-0}"
 echo "=========================================================="
 
@@ -70,6 +74,7 @@ for VAR in "${ALL_VARS[@]}"; do
         --var_name "$VAR" \
         --start-yearmonth "$YYYYMM" \
         --end-yearmonth "$YYYYMM" \
+        --region "$REGION" \
         "${EXTRA_ARGS[@]}"
     if [ $? -ne 0 ]; then
         ALL_OK=0

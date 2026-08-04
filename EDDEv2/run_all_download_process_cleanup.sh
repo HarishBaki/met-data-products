@@ -50,6 +50,9 @@ declare -A YEARS=(
 # 0 (default) = keep raw regardless.
 REMOVE_RAW="${REMOVE_RAW:-0}"
 
+# Region to process (e.g. New_York, New_Mexico).
+REGION="${REGION:-New_York}"
+
 throttle() {
     while [ "$(squeue -u "$USER" -h -n "$JOBNAME" | wc -l)" -ge "$MAX_PARALLEL" ]; do
         echo "Reached $MAX_PARALLEL queued/running $JOBNAME jobs. Waiting..."
@@ -91,7 +94,7 @@ for RUN_TYPE in "${RUN_TYPES[@]}"; do
         for VAR in "${VARS[@]}"; do
             throttle
             echo "Submitting: $RUN_TYPE $VAR $YEAR (REMOVE_RAW=$REMOVE_RAW)"
-            REMOVE_RAW="$REMOVE_RAW" sbatch jobsub_download_process_cleanup.slurm \
+            REMOVE_RAW="$REMOVE_RAW" REGION="$REGION" sbatch jobsub_download_process_cleanup.slurm \
                 "$RUN_TYPE" "$VAR" "$YEAR"
             sleep 1
         done

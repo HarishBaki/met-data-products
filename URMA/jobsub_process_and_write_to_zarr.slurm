@@ -12,9 +12,13 @@ mkdir -p slurmout
 
 ############################################################
 # READ ARGUMENTS PASSED TO SBATCH
+#
+# Override REGION via env var before sbatch (default: New_York), e.g.:
+#   REGION=New_Mexico sbatch jobsub_process_and_write_to_zarr.slurm t2m 2025
 ############################################################
 var_name="$1"
 year="$2"
+region="${REGION:-New_York}"
 
 if [ -z "$var_name" ] || [ -z "$year" ]; then
     echo "ERROR: Usage: sbatch run_urma.sh <var_name> <year>"
@@ -31,9 +35,11 @@ echo "=========================================================="
 echo "Running URMA yearly processing"
 echo "Variable: $var_name"
 echo "Year: $year"
+echo "Region: $region"
 echo "CPUs requested: $SLURM_CPUS_PER_TASK"
 echo "=========================================================="
 
 python process_and_write_to_zarr.py \
     --var_name "$var_name" \
-    --year "$year"
+    --year "$year" \
+    --region "$region"

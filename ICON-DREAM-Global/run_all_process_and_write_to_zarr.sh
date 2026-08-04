@@ -5,6 +5,11 @@
 # ==============================
 MAX_PARALLEL=7
 
+# Region to process (e.g. New_York, New_Mexico). Export before running, e.g.:
+#   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
+REGION="${REGION:-New_York}"
+export REGION
+
 VARS=(
     si10
     tp
