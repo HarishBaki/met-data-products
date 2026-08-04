@@ -18,6 +18,10 @@ Geomorpho90m/*/geomorpho90m_**.nc
 !GFS0p25/processed_sample_gfs.nc
 !ICON-DREAM-EU/*.nc
 !MRMS/*.nc
+!URMA/*_full_*.nc
+!HRRR/*_full_*.nc
+!ICON-DREAM-Global/*_full_*.nc
+!Ouranos/*_full_*.nc
 *.zarr
 *.zarr/
 .ipynb_checkpoints/
