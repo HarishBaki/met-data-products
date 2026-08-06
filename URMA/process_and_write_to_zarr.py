@@ -247,6 +247,15 @@ if __name__ == "__main__":
     # Region-specific crop and output location -- see configs/regions/{region}.yaml.
     region_grid = load_region_grid(args.region, "URMA")
     region_vars = load_region_vars(args.region)
+    # grid.URMA is {type, dims, inner, outer} when compute_region_crop.py was run with a
+    # halo (URMA's own wide-context crop for e.g. paper 4's "coarsened URMA" LR source --
+    # see update_region_config's crop_outer docstring), or flat {type, dims, n0, n1, crop,
+    # bbox} otherwise (New York's entry, and any region derived without a halo). Production
+    # processing always uses the tight inner crop -- URMA_{region_tag}.zarr's shape must
+    # stay the training/output footprint, never the wider halo-inclusive one. dims lives at
+    # the top level either way (shared between inner/outer -- same grid, same dim names).
+    if "inner" in region_grid:
+        region_grid = {"dims": region_grid["dims"], **region_grid["inner"]}
     assert region_grid["dims"] == ["y", "x"]
     y_start = region_grid["crop"]["y_start"]
     x_start = region_grid["crop"]["x_start"]
