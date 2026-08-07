@@ -9,7 +9,7 @@ PROCESS_END="2025-12-31T23"
 
 # Region to process (e.g. New_York, New_Mexico). Export before running, e.g.:
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr_HRRRzarr.sh
-REGION="${REGION:-New_York}"
+REGION="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 export REGION
 
 # Hard-define the variables you want to submit here.

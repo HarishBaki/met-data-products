@@ -19,7 +19,7 @@ mkdir -p slurmout
 var_name="$1"
 START_YEARMONTH="$2"
 END_YEARMONTH="$3"
-REGION="${REGION:-New_York}"
+REGION="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 
 if [ -z "$var_name" ] || [ -z "$START_YEARMONTH" ] || [ -z "$END_YEARMONTH" ]; then
     echo "ERROR: Usage: sbatch jobsub_process_and_write_to_zarr.slurm <var_name> <start_yearmonth> <end_yearmonth>"

@@ -44,7 +44,7 @@ OUTPUT_ZARR="${9:-}"
 FULL_START_YEAR="${10:-1940}"
 FULL_END_YEAR="${11:-2050}"
 N_JOBS_ARG="${12:-31}"
-REGION="${REGION:-New_York}"
+REGION="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 
 if [ -z "${VAR_NAME}" ] || [ -z "${PROCESS_START}" ] || [ -z "${PROCESS_END}" ]; then
   echo "ERROR: Missing required args."

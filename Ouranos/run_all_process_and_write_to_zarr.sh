@@ -36,7 +36,7 @@ declare -A YEARS=(
 # (and CATALOG/REGION, if set) propagate to process_and_write_to_zarr.slurm.
 FREQUENCY="${FREQUENCY:-1hr}"
 export FREQUENCY
-REGION="${REGION:-New_York}"
+REGION="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 export REGION
 [[ -n "${CATALOG:-}" ]] && export CATALOG
 

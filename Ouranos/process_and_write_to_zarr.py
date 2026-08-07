@@ -369,10 +369,12 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--year", type=int, default=None, help="Year to process (required unless --var init)")
     p.add_argument(
-        "--region", type=str, default="New_York",
+        "--region", type=str, required=True,
         help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
              "supplies the download bbox (grid.Ouranos.bbox) and, when --output-root/"
-             "--raw-root are not given explicitly, those locations too."
+             "--raw-root are not given explicitly, those locations too. REQUIRED, no "
+             "default -- an implicit New_York default previously risked silently running "
+             "against the wrong region's data if omitted."
     )
     p.add_argument(
         "--output-root", default=None,

@@ -36,7 +36,7 @@ if [[ -z "${index}" || -z "${var}" ]]; then
     exit 1
 fi
 
-region="${REGION:-New_York}"
+region="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 output_root="${OUTPUT_ROOT:-}"
 raw_root="${RAW_ROOT:-}"
 keep_raw="${KEEP_RAW:-}"   # set to any non-empty value to keep downloaded yearly NetCDF files

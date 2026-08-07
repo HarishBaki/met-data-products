@@ -7,7 +7,7 @@ MAX_PARALLEL=7        # Limit: 7 jobs running at once
 
 # Region to process (e.g. New_York, New_Mexico). Export before running, e.g.:
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
-REGION="${REGION:-New_York}"
+REGION="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 export REGION
 
 # URMA variable list

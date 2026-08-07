@@ -810,11 +810,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--process-start", help="Inclusive start time, e.g. 2025-01-01T00")
     parser.add_argument("--process-end", help="Inclusive end time, e.g. 2025-01-31T23")
     parser.add_argument(
-        "--region", type=str, default="New_York",
+        "--region", type=str, default=None,
         help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
              "supplies the crop (grid.HRRR) and, when --output-zarr/--orog-path are not "
              "given explicitly, the output location (data_root/region_tag) and template "
-             "orography too."
+             "orography too. REQUIRED, no default -- an implicit New_York default "
+             "previously risked silently running against the wrong region's data if "
+             "omitted (MANUAL_DEFAULTS below is unaffected -- it's a separate, explicit, "
+             "zero-CLI-args-only interactive/notebook shortcut, not a production path)."
     )
     parser.add_argument("--output-zarr", default=DEFAULT_OUTPUT_ZARR)
     parser.add_argument("--orog-path", default=DEFAULT_OROG_PATH)
@@ -863,6 +866,8 @@ def parse_args() -> argparse.Namespace:
         missing.append("--process-start")
     if args.process_end is None:
         missing.append("--process-end")
+    if args.region is None:
+        missing.append("--region")
     if missing:
         parser.error(f"the following arguments are required: {', '.join(missing)}")
     if args.mode == "source" and args.var_name not in source_cli_vars:

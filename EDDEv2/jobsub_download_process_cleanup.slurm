@@ -29,7 +29,7 @@ if [ -z "$RUN_TYPE" ] || [ -z "$SOURCE_VAR" ] || [ -z "$YEAR" ]; then
     exit 1
 fi
 
-REGION="${REGION:-New_York}"
+REGION="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 
 ############################################################
 # ACTIVATE ENVIRONMENT

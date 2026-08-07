@@ -48,7 +48,7 @@ echo "Job start: $(date)  array_task=${SLURM_ARRAY_TASK_ID}"
 #   REGION=New_Mexico sbatch --array=0-26 download_ouranos.slurm
 # ---------------------------------------------------------------------------
 
-region="${REGION:-New_York}"
+region="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 dest_root="${DEST_ROOT:-}"
 # DFS downscaling pipeline's variable set (matches process_and_write_to_zarr.py's
 # VAR_GROUPS source_vars: tas->t2m ps->sp huss->sh2 pr->tp hurs->rh2 uas->u10 vas->v10)

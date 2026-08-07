@@ -13,7 +13,7 @@ DRY_RUN="${DRY_RUN:-0}"
 
 # Region to process (e.g. New_York, New_Mexico). Export before running, e.g.:
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr_Google_ARCO.sh
-REGION="${REGION:-New_York}"
+REGION="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 export REGION
 
 # Empty by default -- lets the Python script derive it from REGION. Set to

@@ -190,9 +190,11 @@ if __name__ == "__main__":
     parser.add_argument("--process-end", default="2030-12",
                         help="End month (inclusive), e.g., 2030-12")
     parser.add_argument(
-        "--region", type=str, default="New_York",
+        "--region", type=str, required=True,
         help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
-             "supplies the crop (grid.EDDEv2) and output location (data_root/region_tag)."
+             "supplies the crop (grid.EDDEv2) and output location (data_root/region_tag). "
+             "REQUIRED, no default -- an implicit New_York default previously risked "
+             "silently running against the wrong region's data if omitted."
     )
     parser.add_argument(
         "--init-only", action="store_true",

@@ -228,9 +228,11 @@ if __name__ == "__main__":
     parser.add_argument("--full-start-year", type=int, default=2010)
     parser.add_argument("--full-end-year", type=int, default=2040)
     parser.add_argument(
-        "--region", type=str, default="New_York",
+        "--region", type=str, default=None,
         help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
-             "supplies the crop (grid.URMA) and output location (data_root/region_tag)."
+             "supplies the crop (grid.URMA) and output location (data_root/region_tag). "
+             "REQUIRED, no default -- an implicit New_York default previously risked "
+             "silently running against the wrong region's data if omitted."
     )
     parser.add_argument(
         "--init-only", action="store_true",
@@ -247,6 +249,9 @@ if __name__ == "__main__":
         args, unknown = parser.parse_known_args()
     else:
         args = parser.parse_args()
+
+    if args.region is None:
+        parser.error("--region is required (e.g. --region New_Mexico) -- no default, to avoid silently running against the wrong region's data.")
 
     var_name = args.var_name
     YEAR = args.year

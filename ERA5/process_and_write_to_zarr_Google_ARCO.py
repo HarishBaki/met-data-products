@@ -831,10 +831,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--full-start-year", type=int, default=1940, help="Global full time axis start year.")
     parser.add_argument("--full-end-year", type=int, default=2050, help="Global full time axis end year.")
     parser.add_argument(
-        "--region", type=str, default="New_York",
+        "--region", type=str, required=True,
         help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
              "supplies the crop (grid.ERA5) and, when --output-zarr is not given "
-             "explicitly, the output location (data_root/region_tag) too."
+             "explicitly, the output location (data_root/region_tag) too. REQUIRED, no "
+             "default -- an implicit New_York default previously risked silently running "
+             "against the wrong region's data if omitted."
     )
     parser.add_argument("--output-zarr", default=DEFAULT_OUTPUT_ZARR, help="Output root Zarr path.")
     parser.add_argument("--sync-path", default=None, help="Path for ProcessSynchronizer lock file.")

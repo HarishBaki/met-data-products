@@ -32,7 +32,7 @@ END_YEARMONTH="202512"
 REMOVE_RAW="${REMOVE_RAW:-0}"
 
 # Region to process (e.g. New_York, New_Mexico).
-REGION="${REGION:-New_York}"
+REGION="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 
 throttle() {
     while [ "$(squeue -u "$USER" -h -n "$JOBNAME" | wc -l)" -ge "$MAX_PARALLEL" ]; do

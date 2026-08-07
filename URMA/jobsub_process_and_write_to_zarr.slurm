@@ -18,7 +18,7 @@ mkdir -p slurmout
 ############################################################
 var_name="$1"
 year="$2"
-region="${REGION:-New_York}"
+region="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 
 if [ -z "$var_name" ] || [ -z "$year" ]; then
     echo "ERROR: Usage: sbatch run_urma.sh <var_name> <year>"

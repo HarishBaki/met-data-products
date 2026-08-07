@@ -20,7 +20,7 @@ var_name="$1"
 PROCESS_START="$2"
 PROCESS_END="$3"
 RUN_TYPE="${4:-SSP2-4.5}"
-REGION="${REGION:-New_York}"
+REGION="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 
 if [ -z "$var_name" ] || [ -z "$PROCESS_START" ] || [ -z "$PROCESS_END" ]; then
     echo "ERROR: Usage: sbatch jobsub_process_and_write_to_zarr.slurm <var_name> <process_start> <process_end> [run_type]"

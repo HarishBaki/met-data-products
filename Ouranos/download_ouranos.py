@@ -397,11 +397,13 @@ def parse_args():
 
     # Spatial
     p.add_argument(
-        "--region", type=str, default="New_York",
+        "--region", type=str, default=None,
         help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
              "supplies the bbox (grid.Ouranos.bbox) and, when --dest-root is not given "
              "explicitly, the output location (data_root/region_tag) too. Ignored if "
-             "--full-domain is passed."
+             "--full-domain is passed. REQUIRED otherwise, no default -- an implicit "
+             "New_York default previously risked silently running against the wrong "
+             "region's data if omitted."
     )
     p.add_argument("--full-domain", action="store_true",
                    help="No spatial subsetting — full North American CORDEX domain")
@@ -415,7 +417,10 @@ def parse_args():
                    help="Parallel download threads (default: 4)")
     p.add_argument("--dry-run",     action="store_true",
                    help="Print tasks without downloading")
-    return p.parse_args()
+    args = p.parse_args()
+    if not args.full_domain and args.region is None:
+        p.error("--region is required unless --full-domain is passed -- no default, to avoid silently running against the wrong region's data.")
+    return args
 
 
 def resolve_vars(spec: str) -> list[str]:
