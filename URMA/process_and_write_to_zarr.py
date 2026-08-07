@@ -255,14 +255,16 @@ if __name__ == "__main__":
     region_grid_raw = load_region_grid(args.region, "URMA")
     region_vars = load_region_vars(args.region)
     # grid.URMA is {type, dims, inner, outer} when compute_and_write_region_crop.py was run with a
-    # halo (URMA's own wide-context crop for e.g. paper 4's "coarsened URMA" LR source --
-    # see update_region_config's crop_outer docstring), or flat {type, dims, n0, n1, crop,
-    # bbox} otherwise (New York's entry, and any region derived without a halo). Production
-    # processing always uses the tight inner crop -- URMA_{region_tag}.zarr's shape must
-    # stay the training/output footprint, never the wider halo-inclusive one. dims lives at
-    # the top level either way (shared between inner/outer -- same grid, same dim names).
+    # halo (URMA's own wide-context crop -- see update_region_config's crop_outer docstring),
+    # or flat {type, dims, n0, n1, crop, bbox} otherwise (New York's entry, and any region
+    # derived without a halo). Production processing uses the OUTER crop: met-data-products'
+    # job is to fully contain the domain every downstream project will ever need from this
+    # region in one store, so no project has to come back here again -- per-project narrowing
+    # to the tight training footprint happens downstream, using the inner_mask/inner_* attrs
+    # cropped_orography.nc carries (see write_cropped_orography), not here. dims lives at the
+    # top level either way (shared between inner/outer -- same grid, same dim names).
     if "inner" in region_grid_raw:
-        region_grid = {"dims": region_grid_raw["dims"], **region_grid_raw["inner"]}
+        region_grid = {"dims": region_grid_raw["dims"], **region_grid_raw["outer"]}
     else:
         region_grid = region_grid_raw
     assert region_grid["dims"] == ["y", "x"]
@@ -284,8 +286,13 @@ if __name__ == "__main__":
     dates = pd.date_range(start=f'{YEAR}-01-01T00', end=f'{YEAR}-12-31T23', freq='h')
     yyyymmdd = pd.Series(dates.year * 10000 + dates.month * 100 + dates.day).unique()
     time_chunk = 6
-    y_chunk = 256
-    x_chunk = 288
+    # Spatial chunk = the full cropped domain, taken from the orography-derived region_grid
+    # (ny/nx above), not an arbitrary constant -- every real write already covers the full
+    # cropped extent per day (see daily_processing's y_start:y_end/x_start:x_end), so a
+    # single spatial chunk matches the actual write pattern exactly, with no partial-chunk
+    # misalignment regardless of which region/footprint (inner vs outer) is in use.
+    y_chunk = ny
+    x_chunk = nx
 
     # %%
     cpus = get_slurm_cpus()
@@ -295,11 +302,12 @@ if __name__ == "__main__":
     # structure -- read from cropped_orography.nc, written once ahead of time by
     # compute_and_write_region_crop.py --update-config, not re-derived in-memory here
     # (that duplicated the crop logic in two places; the crop tool is now the single
-    # place that persists it). URMA_{region_tag}.zarr must stay the tight INNER footprint
-    # -- when the persisted file carries inner_y_start/inner_x_start/inner_ny/inner_nx
-    # attrs (written at the wider OUTER extent, e.g. paper 4's coarsened-URMA source),
-    # slice down to just that inner window; a flat crop (New York, or any region derived
-    # without a halo) has no such attrs and the whole file already IS the inner footprint.
+    # place that persists it). URMA_{region_tag}.zarr uses the wider OUTER footprint (when
+    # this region has a halo split) so met-data-products fully contains the domain every
+    # downstream project needs from this region in one store -- per-project narrowing to the
+    # tight training window happens downstream, via inner_mask/inner_* attrs on
+    # cropped_orography.nc, not here. A flat crop (New York, or any region derived without a
+    # halo) has no inner/outer split -- the whole file already IS the region's one footprint.
     def _get_template():
         if not orog_path.exists():
             raise FileNotFoundError(
@@ -307,12 +315,11 @@ if __name__ == "__main__":
                 f"--mode boundary --region-config configs/regions/{args.region}.yaml "
                 f"--update-config first (it writes this file as a side effect)."
             )
-        orog = xr.open_dataset(orog_path)
-        if "inner_y_start" in orog.attrs:
-            iy0, ix0 = orog.attrs["inner_y_start"], orog.attrs["inner_x_start"]
-            iny, inx = orog.attrs["inner_ny"], orog.attrs["inner_nx"]
-            orog = orog.isel(y=slice(iy0, iy0 + iny), x=slice(ix0, ix0 + inx))
-        return orog
+        # Already at the OUTER extent when this region has a halo split (see
+        # write_cropped_orography) -- used as-is, no slicing. init_zarr() only reads this
+        # dataset's dims/coords for shape, so its inner_mask var / inner_* attrs are NOT
+        # copied into the zarr store -- consult cropped_orography.nc directly for those.
+        return xr.open_dataset(orog_path)
 
     chunks = {"time": time_chunk, "y": y_chunk, "x": x_chunk}
     zarr_sync = zarr.ProcessSynchronizer(f"{zarr_store}.sync")

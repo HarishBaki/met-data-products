@@ -182,7 +182,18 @@ def init_zarr(
         for d in all_dims
     )
     shape = (len(full_times),) + tuple(spatial_sizes[d] for d in spatial_dims)
-    data = da.full(shape, np.nan, chunks=chunk_tuple, dtype=np.float32)
+
+    # `data` only describes shape/dtype for this metadata-only (compute=False)
+    # write -- no values are ever computed from it. Chunking it at the real
+    # on-disk chunk size (chunk_tuple, e.g. time=6) forces dask/xarray to build
+    # one graph node per on-disk chunk purely to write empty metadata -- for
+    # URMA's full 2010-2040 time axis that's ~45k nodes, and graph construction
+    # is single-threaded Python object overhead (confirmed: unaffected by cpus,
+    # 2 -> 128 made no difference; a fine-chunked skeleton took >2min, a
+    # single-chunk one took <1s for the same array). A single whole-array chunk
+    # keeps graph construction O(1); the real on-disk chunk grid is pinned
+    # explicitly via `encoding` below regardless of this in-memory chunking.
+    data = da.full(shape, np.nan, chunks=shape, dtype=np.float32)
 
     coords: Dict = {"time": full_times}
     for k, v in ref_ds.coords.items():
@@ -208,7 +219,10 @@ def init_zarr(
     var_attrs["missing_value"] = np.nan
     ds_init[var_name].attrs = var_attrs
 
-    kwargs: Dict = {"mode": mode, "compute": False, "zarr_format": 2, "consolidated": False}
+    kwargs: Dict = {
+        "mode": mode, "compute": False, "zarr_format": 2, "consolidated": False,
+        "encoding": {var_name: {"chunks": chunk_tuple}},
+    }
     if synchronizer is not None:
         kwargs["synchronizer"] = synchronizer
     ds_init.to_zarr(output_zarr, **kwargs)

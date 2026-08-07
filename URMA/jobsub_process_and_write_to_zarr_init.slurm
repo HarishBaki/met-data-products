@@ -12,8 +12,14 @@
 # passed below, one process at a time, inside a single SLURM job -- this is the
 # step run_all_process_and_write_to_zarr.sh submits and waits on before fanning
 # out the real parallel per-var/year jobs, so multiple jobs never race to create
-# the same store (see process_and_write_to_zarr.py --init-only). Low mem/cpu is
-# enough: --init-only never reads GRIB data, just writes zarr metadata.
+# the same store (see process_and_write_to_zarr.py --init-only). --init-only
+# never reads GRIB data, just writes zarr metadata, and is a single-process,
+# single-threaded operation -- 2 cpus is plenty. (A prior slowdown here -- a new
+# variable across the full 2010-2040 hourly range taking minutes -- was
+# misdiagnosed as CPU-bound; the real cause was data_utils/zarr_io.py's
+# init_zarr() building a ~45k-node dask graph purely to write empty metadata,
+# fixed there. Cpus were briefly bumped to 128 to test that hypothesis, which
+# it disproved -- graph construction time was unaffected by cpu count.)
 #
 # Usage: sbatch jobsub_process_and_write_to_zarr_init.slurm <region> <var1> [var2 ...]
 

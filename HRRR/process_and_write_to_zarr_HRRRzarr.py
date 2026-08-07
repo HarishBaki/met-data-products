@@ -459,7 +459,18 @@ def init_zarr_store(
     synchronizer: Optional[zarr.ProcessSynchronizer] = None,
 ) -> None:
     shape = (len(dates),) + template_orog.shape
-    data = da.full(shape, np.nan, chunks=(time_chunk, y_chunk, x_chunk), dtype="float32")
+    # `data` only describes shape/dtype for this metadata-only (compute=False) write --
+    # no values are ever computed from it. Chunking it at the real on-disk chunk size
+    # (time_chunk, y_chunk, x_chunk) forces dask/xarray to build one graph node per
+    # on-disk chunk purely to write empty metadata -- for HRRR's source vars (128x144
+    # spatial sub-chunks over a much larger domain, on top of ~11k time chunks) that's
+    # tens of thousands of nodes, and graph construction is single-threaded Python
+    # object overhead (confirmed: an 8+ minute stall on the first source var, identical
+    # to the bug already fixed in data_utils/zarr_io.py's init_zarr() -- this is HRRR's
+    # own separate copy of the same pattern, missed by that fix). A single whole-array
+    # chunk keeps graph construction O(1); the real on-disk chunk grid is pinned
+    # explicitly via `encoding` in the to_zarr() call below regardless of this chunking.
+    data = da.full(shape, np.nan, chunks=shape, dtype="float32")
     base = xr.DataArray(
         data,
         dims=("time", "y", "x"),
@@ -495,6 +506,7 @@ def init_zarr_store(
     ds_init.to_zarr(
         zarr_store, mode=mode, compute=False, consolidated=False, zarr_format=2,
         synchronizer=synchronizer,
+        encoding={var_name: {"chunks": (time_chunk, y_chunk, x_chunk)}},
     )
 
 
@@ -633,12 +645,10 @@ def init_derived_var(
 
     y_size = ds_meta.sizes["y"]
     x_size = ds_meta.sizes["x"]
-    data = da.full(
-        (ds_meta.sizes["time"], y_size, x_size),
-        np.nan,
-        chunks=(time_chunk, y_chunk, x_chunk),
-        dtype="float32",
-    )
+    shape = (ds_meta.sizes["time"], y_size, x_size)
+    # Single whole-array chunk for graph construction only -- see init_zarr_store's
+    # comment above. The real on-disk chunk grid is pinned via `encoding` below.
+    data = da.full(shape, np.nan, chunks=shape, dtype="float32")
     ds_init = xr.Dataset(
         {
             var_name: xr.DataArray(
@@ -658,6 +668,7 @@ def init_derived_var(
     ds_init.to_zarr(
         zarr_store, mode="a", compute=False, consolidated=False, zarr_format=2,
         synchronizer=synchronizer,
+        encoding={var_name: {"chunks": (time_chunk, y_chunk, x_chunk)}},
     )
     print(f"[var] created: {var_name}")
 
