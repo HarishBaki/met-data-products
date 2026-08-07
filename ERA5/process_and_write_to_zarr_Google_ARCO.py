@@ -744,7 +744,10 @@ def build_config(args: argparse.Namespace) -> JobConfig:
     )
 
 
-def run(cfg: JobConfig, full_start_year: int, full_end_year: int, n_jobs: int, consolidate: bool) -> None:
+def run(
+    cfg: JobConfig, full_start_year: int, full_end_year: int, n_jobs: int, consolidate: bool,
+    init_only: bool = False,
+) -> None:
     full_times = full_time_axis(full_start_year, full_end_year)
     steps = pd.date_range(
         cfg.process_start.normalize(),
@@ -765,6 +768,10 @@ def run(cfg: JobConfig, full_start_year: int, full_end_year: int, n_jobs: int, c
     print("[run] ensuring output group/variable", flush=True)
     ensure_group_and_variable(cfg, full_times)
     print("[run] initialization check complete", flush=True)
+
+    if init_only:
+        print(f"[init-only] {cfg.output_zarr} ready for '{cfg.target_variable}' (group={cfg.group})", flush=True)
+        return
 
     workers = max(1, min(int(n_jobs), len(steps)))
     print(f"[run] daily workers={workers}", flush=True)
@@ -825,6 +832,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--n-jobs", type=int, default=0, help="Daily parallel workers (0=>SLURM_CPUS_ON_NODE or cpu_count).")
     parser.add_argument("--overwrite-steps", action="store_true", help="Overwrite daily slices even if already complete.")
     parser.add_argument("--consolidate-metadata", action="store_true", help="Consolidate metadata after run.")
+    parser.add_argument(
+        "--init-only", action="store_true",
+        help="Only ensure the output zarr group/variable skeleton exists, then exit -- no "
+             "ARCO reads, no data written. Run this once per (group, var), serially (one "
+             "process at a time, not via sbatch), before fanning out the real parallel jobs "
+             "-- otherwise multiple jobs can simultaneously see the store doesn't exist yet "
+             "and race to create it."
+    )
     return parser.parse_args()
 
 
@@ -856,4 +871,5 @@ if __name__ == "__main__":
         full_end_year=args.full_end_year,
         n_jobs=jobs,
         consolidate=args.consolidate_metadata,
+        init_only=args.init_only,
     )

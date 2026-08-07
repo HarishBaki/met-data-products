@@ -68,6 +68,7 @@ MANUAL_DEFAULTS = {
     "n_jobs": max(1, os.cpu_count() or 1),
     "skip_complete_months": True,
     "consolidate_metadata": True,
+    "init_only": False,
 }
 
 
@@ -455,6 +456,7 @@ def init_zarr_store(
     mode: str,
     write_global_attrs: bool,
     region_tag: str = "region",
+    synchronizer: Optional[zarr.ProcessSynchronizer] = None,
 ) -> None:
     shape = (len(dates),) + template_orog.shape
     data = da.full(shape, np.nan, chunks=(time_chunk, y_chunk, x_chunk), dtype="float32")
@@ -490,7 +492,10 @@ def init_zarr_store(
     ensure_parent_dir(zarr_store)
     action = "creating store" if mode == "w" else "adding variable"
     print(f"[init] {action}: {zarr_store} ({var_name})")
-    ds_init.to_zarr(zarr_store, mode=mode, compute=False, consolidated=False, zarr_format=2)
+    ds_init.to_zarr(
+        zarr_store, mode=mode, compute=False, consolidated=False, zarr_format=2,
+        synchronizer=synchronizer,
+    )
 
 
 def ensure_initialized(
@@ -502,6 +507,7 @@ def ensure_initialized(
     y_chunk: int,
     x_chunk: int,
     region_tag: str = "region",
+    synchronizer: Optional[zarr.ProcessSynchronizer] = None,
 ) -> None:
     if not os.path.exists(zarr_store):
         print(f"[init] store missing; initializing {zarr_store}")
@@ -516,6 +522,7 @@ def ensure_initialized(
             mode="w",
             write_global_attrs=True,
             region_tag=region_tag,
+            synchronizer=synchronizer,
         )
         print(f"[var] created: {var_name}")
         return
@@ -539,6 +546,7 @@ def ensure_initialized(
                 x_chunk,
                 mode="a",
                 write_global_attrs=False,
+                synchronizer=synchronizer,
             )
             print(f"[var] created: {var_name}")
         else:
@@ -617,6 +625,7 @@ def init_derived_var(
     time_chunk: int,
     y_chunk: int,
     x_chunk: int,
+    synchronizer: Optional[zarr.ProcessSynchronizer] = None,
 ) -> None:
     if var_name in ds_meta.data_vars:
         print(f"[var] exists; creation skipped for {var_name}")
@@ -646,7 +655,10 @@ def init_derived_var(
     source_attrs = derive_source_attrs(ds_meta, spec.dependencies)
     ds_init[var_name].attrs = derived_attrs(spec, source_attrs)
     print(f"[init] store exists; adding missing derived variable {var_name}")
-    ds_init.to_zarr(zarr_store, mode="a", compute=False, consolidated=False, zarr_format=2)
+    ds_init.to_zarr(
+        zarr_store, mode="a", compute=False, consolidated=False, zarr_format=2,
+        synchronizer=synchronizer,
+    )
     print(f"[var] created: {var_name}")
 
 
@@ -882,6 +894,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--n-jobs", type=int, default=max(1, os.cpu_count() or 1))
     parser.add_argument("--skip-complete-months", action="store_true")
     parser.add_argument("--consolidate-metadata", action="store_true")
+    parser.add_argument(
+        "--init-only", action="store_true",
+        help="Only ensure the output zarr store/variable skeleton exists, then exit -- no "
+             "source read, no data written. Run this once per var, serially (one process at "
+             "a time, not via sbatch), before fanning out the real per-var jobs in parallel "
+             "-- otherwise multiple jobs can simultaneously see the store doesn't exist yet "
+             "and race to create it (zarr.errors.GroupNotFoundError / 'Time coordinate "
+             "mismatch' / stale-handle failures -- observed in production from this exact "
+             "race for a brand-new region)."
+    )
     raw_argv = sys.argv[1:]
     cleaned_argv = []
     i = 0
@@ -949,6 +971,7 @@ def run_source_pipeline(args: argparse.Namespace) -> None:
         freq="1h",
     )
 
+    zarr_sync = zarr.ProcessSynchronizer(f"{args.output_zarr}.sync")
     ensure_initialized(
         args.output_zarr,
         full_dates,
@@ -958,7 +981,12 @@ def run_source_pipeline(args: argparse.Namespace) -> None:
         y_chunk,
         x_chunk,
         region_tag=region_tag,
+        synchronizer=zarr_sync,
     )
+
+    if args.init_only:
+        print(f"[init-only] {args.output_zarr} ready for '{args.var_name}'")
+        return
 
     for month in iter_month_starts(args.process_start, args.process_end):
         process_one_month(
@@ -1004,6 +1032,7 @@ def run_derived_pipeline(args: argparse.Namespace) -> None:
     template_orog = load_template_orography(orog_path)
 
     spec = DERIVED_SPECS[args.var_name]
+    zarr_sync = zarr.ProcessSynchronizer(f"{args.output_zarr}.sync")
     ds_meta = open_local_zarr_with_retry(args.output_zarr)
     ds_src: Optional[xr.Dataset] = None
     try:
@@ -1035,7 +1064,14 @@ def run_derived_pipeline(args: argparse.Namespace) -> None:
 
         full_dates = pd.DatetimeIndex(ds_meta.time.values)
         report_physical_chunk_size(args.var_name, template_orog, time_chunk, y_chunk, x_chunk)
-        init_derived_var(args.output_zarr, args.var_name, spec, ds_meta, template_orog, time_chunk, y_chunk, x_chunk)
+        init_derived_var(
+            args.output_zarr, args.var_name, spec, ds_meta, template_orog, time_chunk, y_chunk, x_chunk,
+            synchronizer=zarr_sync,
+        )
+
+        if args.init_only:
+            print(f"[init-only] {args.output_zarr} ready for '{args.var_name}'")
+            return
 
         ds_src = open_local_zarr_with_retry(args.output_zarr)[list(spec.dependencies)]
         for month in iter_month_starts(args.process_start, args.process_end):

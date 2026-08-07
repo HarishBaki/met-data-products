@@ -194,6 +194,14 @@ if __name__ == "__main__":
         help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
              "supplies the crop (grid.EDDEv2) and output location (data_root/region_tag)."
     )
+    parser.add_argument(
+        "--init-only", action="store_true",
+        help="Only ensure the output zarr store/variable skeleton exists, then exit -- no "
+             "source read, no data written. Run this once per (run-type, var), serially "
+             "(one process at a time, not via sbatch), before fanning out the real parallel "
+             "jobs -- otherwise multiple jobs can simultaneously see the store doesn't exist "
+             "yet and race to create it."
+    )
     args, _ = parser.parse_known_args()
 
     region_vars, y_slice, x_slice = resolve_region_crop(args.region)
@@ -235,6 +243,10 @@ if __name__ == "__main__":
         global_title=f"EDDEv2 hourly {args.region} subset",
         synchronizer=ZARR_SYNC,
     )
+
+    if args.init_only:
+        print(f"[init-only] {OUTPUT_ZARR} ready for '{var_name}'")
+        sys.exit(0)
 
     cpus = get_slurm_cpus()
     for i in tqdm(range(0, len(dates), BATCH_SIZE), desc="EDDEv2->Zarr"):

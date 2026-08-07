@@ -232,6 +232,16 @@ if __name__ == "__main__":
         help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
              "supplies the crop (grid.URMA) and output location (data_root/region_tag)."
     )
+    parser.add_argument(
+        "--init-only", action="store_true",
+        help="Only ensure the output zarr store/variable skeleton exists, then exit -- no "
+             "GRIB reads, no data written. Run this once per var, serially (one process at a "
+             "time, not via sbatch), before fanning out the real per-var/year jobs in "
+             "parallel -- otherwise multiple jobs can simultaneously see the store doesn't "
+             "exist yet and race to create it (zarr.errors.GroupNotFoundError / 'Time "
+             "coordinate mismatch' / stale-handle failures -- observed in production from "
+             "this exact race for a brand-new region)."
+    )
 
     if is_interactive():
         args, unknown = parser.parse_known_args()
@@ -305,10 +315,16 @@ if __name__ == "__main__":
         return orog
 
     chunks = {"time": time_chunk, "y": y_chunk, "x": x_chunk}
+    zarr_sync = zarr.ProcessSynchronizer(f"{zarr_store}.sync")
     ensure_store(
         zarr_store, full_dates, var_name, _get_template, chunks,
         global_title=f"{region_tag} Remapped Meteorological Dataset",
+        synchronizer=zarr_sync,
     )
+
+    if args.init_only:
+        print(f"[init-only] {zarr_store} ready for '{var_name}'")
+        sys.exit(0)
 
     # 2. Process each day in parallel batches.
     batch_size = 30

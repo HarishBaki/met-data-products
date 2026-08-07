@@ -27,6 +27,7 @@ Geomorpho90m/*/geomorpho90m_**.nc
 *.zarr/
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
+*.log
 
 # Static reference data, not project code -- 2.6 GB, not meant for git history
 # (matches Sparse_to_dense_meteorological_variables' own data/* gitignore).

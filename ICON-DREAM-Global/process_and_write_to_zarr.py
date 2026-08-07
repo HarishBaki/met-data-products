@@ -351,6 +351,14 @@ if __name__ == "__main__":
         help="Region config name under configs/regions/ (e.g. New_York, New_Mexico) -- "
              "supplies the cell mask (grid.ICON) and output location (data_root/region_tag)."
     )
+    parser.add_argument(
+        "--init-only", action="store_true",
+        help="Only ensure the output zarr store/variable skeleton exists, then exit -- no "
+             "GRIB reads, no data written. Run this once per var, serially (one process at a "
+             "time, not via sbatch), before fanning out the real parallel jobs -- otherwise "
+             "multiple jobs can simultaneously see the store doesn't exist yet and race to "
+             "create it."
+    )
 
     # %%
     if is_interactive():
@@ -387,6 +395,10 @@ if __name__ == "__main__":
         extra_var_attrs=source_attrs_for_var(var_name),
         synchronizer=zarr_sync,
     )
+
+    if args.init_only:
+        print(f"[init-only] {output_zarr} ready for '{var_name}'")
+        sys.exit(0)
 
     start_month = pd.to_datetime(start_yearmonth, format="%Y%m")
     end_month = pd.to_datetime(end_yearmonth, format="%Y%m")
