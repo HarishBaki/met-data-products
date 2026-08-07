@@ -18,7 +18,6 @@
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
 
 MAX_PARALLEL=7
-JOBNAME=process_ouranos
 SLURM_SCRIPT=process_and_write_to_zarr.slurm
 
 # Catalog row indices to process.
@@ -58,8 +57,13 @@ DOWNLOAD_VARS=(${DOWNLOAD_VARS_BY_FREQUENCY[$FREQUENCY]})
 DERIVED_VARS=(${DERIVED_VARS_BY_FREQUENCY[$FREQUENCY]})
 
 throttle() {
-    while [ "$(squeue -u "$USER" -h -n "$JOBNAME" | wc -l)" -ge "$MAX_PARALLEL" ]; do
-        echo "Reached $MAX_PARALLEL queued/running $JOBNAME jobs. Waiting..."
+    # Throttle against the GLOBAL freetier QOS job count (MaxSubmitPU=8), not just jobs
+    # named process_ouranos -- the QOS cap is shared across every product/job name this
+    # user submits (confirmed in production: two products submitting concurrently, each
+    # blind to the other, blew straight through the shared cap even though neither
+    # exceeded its own per-name MAX_PARALLEL).
+    while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+        echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
         sleep 30
     done
 }

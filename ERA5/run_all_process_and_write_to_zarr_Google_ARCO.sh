@@ -64,8 +64,13 @@ SUBMIT_MODEL=0
 # HELPERS
 # ==========================================================
 wait_for_slot() {
-  while [ "$(squeue -u "$USER" -h -n ERA5_ARCO | wc -l)" -ge "$MAX_PARALLEL" ]; do
-    echo "Reached MAX_PARALLEL=${MAX_PARALLEL} ERA5_ARCO jobs. Waiting..."
+  # Throttle against the GLOBAL freetier QOS job count (MaxSubmitPU=8), not just jobs
+  # named ERA5_ARCO -- the QOS cap is shared across every product/job name this user
+  # submits (confirmed in production: two products submitting concurrently, each blind
+  # to the other, blew straight through the shared cap even though neither exceeded its
+  # own per-name MAX_PARALLEL).
+  while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+    echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
     sleep 30
   done
 }

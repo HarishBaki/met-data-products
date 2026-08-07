@@ -67,8 +67,13 @@ for VAR in "${VARS[@]}"; do
     for year in {2018..2025}; do
         PROCESS_START="${year}01"
         PROCESS_END="${year}12"
-        while [ "$(squeue -u "$USER" -n ICON-DREAM -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
-            echo "Reached $MAX_PARALLEL jobs running. Waiting..."
+        # Throttle against the GLOBAL freetier QOS job count (MaxSubmitPU=8), not just
+        # jobs named ICON-DREAM -- the QOS cap is shared across every product/job name
+        # this user submits (confirmed in production: two products submitting
+        # concurrently, each blind to the other, blew straight through the shared cap
+        # even though neither exceeded its own per-name MAX_PARALLEL).
+        while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+            echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
             sleep 30
         done
 

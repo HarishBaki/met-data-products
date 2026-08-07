@@ -70,9 +70,13 @@ echo "Pre-init complete -- safe to fan out in parallel now."
 for VAR in "${VARS[@]}"; do
     for YEAR in $(seq $START_YEAR $END_YEAR); do
 
-        # Throttle submissions if too many active jobs
-        while [ $(squeue -u $USER | grep -c URMA) -ge $MAX_PARALLEL ]; do
-            echo "Reached $MAX_PARALLEL jobs running. Waiting..."
+        # Throttle submissions against the GLOBAL freetier QOS job count (MaxSubmitPU=8),
+        # not just jobs named URMA -- the QOS cap is shared across every product/job name
+        # this user submits (confirmed in production: two products submitting
+        # concurrently, each blind to the other, blew straight through the shared cap
+        # even though neither exceeded its own per-name MAX_PARALLEL).
+        while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+            echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
             sleep 30
         done
 

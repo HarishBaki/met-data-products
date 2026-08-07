@@ -84,9 +84,13 @@ for RUN_TYPE in "${RUN_TYPES[@]}"; do
 
     for VAR in "${VARS[@]}"; do
 
-        # Throttle submissions if too many active jobs
-        while [ "$(squeue -u "$USER" -h -n EDDEv2 | wc -l)" -ge "$MAX_PARALLEL" ]; do
-            echo "Reached $MAX_PARALLEL jobs running. Waiting..."
+        # Throttle submissions against the GLOBAL freetier QOS job count (MaxSubmitPU=8),
+        # not just jobs named EDDEv2 -- the QOS cap is shared across every product/job
+        # name this user submits (confirmed in production: two products submitting
+        # concurrently, each blind to the other, blew straight through the shared cap
+        # even though neither exceeded its own per-name MAX_PARALLEL).
+        while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+            echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
             sleep 30
         done
 
