@@ -487,7 +487,18 @@ def ensure_group_and_variable(cfg: JobConfig, full_times: pd.DatetimeIndex) -> N
         dims = ("time", cfg.level_dim_out, "latitude", "longitude")
         chunks = (cfg.time_chunk, min(cfg.level_chunk, len(cfg.level_values_all)), lat.size, lon.size)
 
-    data = da.full(shape, np.nan, chunks=chunks, dtype=np.float32)
+    # `data` only describes shape/dtype for this metadata-only (compute=False) write --
+    # no values are ever computed from it. Chunking it at the real on-disk chunk size
+    # (chunks, e.g. time=24 over a 1940-2050 full time axis) forces dask/xarray to build
+    # one graph node per on-disk chunk purely to write empty metadata -- ~40k nodes here,
+    # and graph construction is single-threaded Python object overhead (identical bug
+    # already found and fixed in data_utils/zarr_io.py's init_zarr() and HRRR's own
+    # separate init_zarr_store() -- this is ERA5-ARCO's own third independent copy of the
+    # same pattern, confirmed in production: a 13+ minute stall on the 3rd variable of a
+    # 10-variable init that used to complete in under 2 minutes). A single whole-array
+    # chunk keeps graph construction O(1); the real on-disk chunk grid is pinned
+    # explicitly via `encoding` in the to_zarr() call below regardless of this chunking.
+    data = da.full(shape, np.nan, chunks=shape, dtype=np.float32)
     if create_group:
         coords = {
             "time": full_times,
@@ -526,6 +537,7 @@ def ensure_group_and_variable(cfg: JobConfig, full_times: pd.DatetimeIndex) -> N
         consolidated=False,
         zarr_format=2,
         synchronizer=sync,
+        encoding={cfg.target_variable: {"chunks": chunks}},
     )
     print(f"[init] metadata ready for group={cfg.group} var={cfg.target_variable}", flush=True)
 

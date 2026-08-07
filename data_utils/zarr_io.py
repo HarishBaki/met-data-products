@@ -161,7 +161,6 @@ def init_zarr(
     var_name: str,
     chunks: Dict,
     mode: str = "w",
-    write_global_attrs: bool = False,
     global_title: str = "",
     extra_var_attrs: Optional[Dict] = None,
     synchronizer=None,
@@ -204,12 +203,17 @@ def init_zarr(
         {var_name: xr.DataArray(data, dims=all_dims)},
         coords=coords,
     )
-    if write_global_attrs:
-        ds_init.attrs = {
-            "title": global_title or "NYS Meteorological Dataset",
-            "Conventions": "CF-1.8",
-            "history": "Initialized empty Zarr store",
-        }
+    # Written on every call, not just mode='w' (store creation): to_zarr() overwrites the
+    # group's .zattrs with ds_init.attrs unconditionally on mode='a' too, so gating this to
+    # only the first variable meant every later variable silently wiped it back to {} --
+    # confirmed empirically (title/Conventions/history were consistently empty on-disk
+    # across multiple already-created stores). Writing the same values every time is
+    # idempotent -- whichever variable ends up last doesn't matter.
+    ds_init.attrs = {
+        "title": global_title or "NYS Meteorological Dataset",
+        "Conventions": "CF-1.8",
+        "history": "Initialized empty Zarr store",
+    }
 
     # extra_var_attrs as base; canonical long_name/units/_FillValue always win.
     var_attrs: Dict = dict(extra_var_attrs or {})
@@ -255,7 +259,7 @@ def ensure_store(
             ref_ds = get_template_fn()
             init_zarr(
                 output_zarr, full_times, ref_ds, var_name, chunks,
-                mode="a", write_global_attrs=False,
+                mode="a", global_title=global_title,
                 extra_var_attrs=extra_var_attrs, synchronizer=synchronizer,
             )
         return ds
@@ -263,7 +267,7 @@ def ensure_store(
     ref_ds = get_template_fn()
     init_zarr(
         output_zarr, full_times, ref_ds, var_name, chunks,
-        mode="w", write_global_attrs=True, global_title=global_title,
+        mode="w", global_title=global_title,
         extra_var_attrs=extra_var_attrs, synchronizer=synchronizer,
     )
     return open_zarr_safe(output_zarr, synchronizer)

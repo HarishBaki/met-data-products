@@ -24,7 +24,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Tuple
 
-import dask.array as da
 import numpy as np
 import pandas as pd
 import s3fs
@@ -38,6 +37,8 @@ if str(_BOOTSTRAP_ROOT) not in sys.path:
 
 from data_utils.zarr_io import (
     convert_units_numpy,
+    ensure_store,
+    init_zarr,
     target_long_name,
     target_units,
 )
@@ -289,10 +290,6 @@ def resolve_var_spec(var_name: str) -> Tuple[VarSpec, RegistryEntry]:
     return var_spec, registry_entry
 
 
-def ensure_parent_dir(path: str) -> None:
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-
-
 def month_start_end(ts: pd.Timestamp) -> Tuple[pd.Timestamp, pd.Timestamp]:
     start = pd.Timestamp(year=ts.year, month=ts.month, day=1, hour=0)
     end_day = calendar.monthrange(ts.year, ts.month)[1]
@@ -445,71 +442,6 @@ def report_physical_chunk_size(
     )
 
 
-def init_zarr_store(
-    zarr_store: str,
-    dates: pd.DatetimeIndex,
-    var_name: str,
-    template_orog: xr.DataArray,
-    time_chunk: int,
-    y_chunk: int,
-    x_chunk: int,
-    mode: str,
-    write_global_attrs: bool,
-    region_tag: str = "region",
-    synchronizer: Optional[zarr.ProcessSynchronizer] = None,
-) -> None:
-    shape = (len(dates),) + template_orog.shape
-    # `data` only describes shape/dtype for this metadata-only (compute=False) write --
-    # no values are ever computed from it. Chunking it at the real on-disk chunk size
-    # (time_chunk, y_chunk, x_chunk) forces dask/xarray to build one graph node per
-    # on-disk chunk purely to write empty metadata -- for HRRR's source vars (128x144
-    # spatial sub-chunks over a much larger domain, on top of ~11k time chunks) that's
-    # tens of thousands of nodes, and graph construction is single-threaded Python
-    # object overhead (confirmed: an 8+ minute stall on the first source var, identical
-    # to the bug already fixed in data_utils/zarr_io.py's init_zarr() -- this is HRRR's
-    # own separate copy of the same pattern, missed by that fix). A single whole-array
-    # chunk keeps graph construction O(1); the real on-disk chunk grid is pinned
-    # explicitly via `encoding` in the to_zarr() call below regardless of this chunking.
-    data = da.full(shape, np.nan, chunks=shape, dtype="float32")
-    base = xr.DataArray(
-        data,
-        dims=("time", "y", "x"),
-        coords={
-            "time": dates,
-            "latitude": template_orog.latitude,
-            "longitude": template_orog.longitude,
-        },
-        name=var_name,
-    )
-    ds_init = base.to_dataset()
-    if write_global_attrs:
-        ds_init.attrs = {
-            "title": f"{region_tag} Cropped HRRR Dataset",
-            "Conventions": "CF-1.8",
-            "history": "Initialized empty Zarr store from Utah HRRR Zarr",
-        }
-    var_spec, registry_entry = resolve_var_spec(var_name)
-    ds_init[var_name].attrs = {
-        "long_name": target_long_name(var_name),
-        "units": target_units(var_name),
-        "family": registry_entry.family,
-        "target_var": registry_entry.target_var,
-        "level": registry_entry.level,
-        "run_type": registry_entry.mode,
-        "source_attribute_note": "family, target_var, level, and run_type correspond to source HRRR attributes",
-        "_FillValue": np.nan,
-        "missing_value": np.nan,
-    }
-    ensure_parent_dir(zarr_store)
-    action = "creating store" if mode == "w" else "adding variable"
-    print(f"[init] {action}: {zarr_store} ({var_name})")
-    ds_init.to_zarr(
-        zarr_store, mode=mode, compute=False, consolidated=False, zarr_format=2,
-        synchronizer=synchronizer,
-        encoding={var_name: {"chunks": (time_chunk, y_chunk, x_chunk)}},
-    )
-
-
 def ensure_initialized(
     zarr_store: str,
     full_dates: pd.DatetimeIndex,
@@ -521,51 +453,51 @@ def ensure_initialized(
     region_tag: str = "region",
     synchronizer: Optional[zarr.ProcessSynchronizer] = None,
 ) -> None:
-    if not os.path.exists(zarr_store):
+    # Delegates to the shared ensure_store()/init_zarr() (data_utils/zarr_io.py) -- same
+    # store-exists/var-exists branching, same graph-construction-safe single-chunk +
+    # explicit `encoding` write this file used to duplicate (and had independently
+    # developed the same >2min-stall bug in, before being fixed here to match). HRRR's
+    # own per-var registry attrs (family/target_var/level/run_type) and title ride along
+    # via extra_var_attrs/global_title -- canonical long_name/units/_FillValue/
+    # missing_value are computed identically either way (same target_long_name/
+    # target_units calls), so final attrs are unchanged.
+    var_spec, registry_entry = resolve_var_spec(var_name)
+    extra_attrs = {
+        "family": registry_entry.family,
+        "target_var": registry_entry.target_var,
+        "level": registry_entry.level,
+        "run_type": registry_entry.mode,
+        "source_attribute_note": "family, target_var, level, and run_type correspond to source HRRR attributes",
+    }
+
+    store_existed = os.path.exists(zarr_store)
+    var_existed = False
+    if store_existed:
+        ds_check = open_local_zarr_with_retry(zarr_store)
+        try:
+            same_len = ds_check.sizes.get("time", -1) == full_dates.size
+            same_vals = np.array_equal(pd.to_datetime(ds_check.time.values), pd.to_datetime(full_dates.values))
+            if not (same_len and same_vals):
+                raise ValueError("Time coordinate mismatch. Rebuild HRRR Zarr store.")
+            var_existed = var_name in ds_check.data_vars
+        finally:
+            ds_check.close()
+
+    if not store_existed:
         print(f"[init] store missing; initializing {zarr_store}")
-        init_zarr_store(
-            zarr_store,
-            full_dates,
-            var_name,
-            template_orog,
-            time_chunk,
-            y_chunk,
-            x_chunk,
-            mode="w",
-            write_global_attrs=True,
-            region_tag=region_tag,
-            synchronizer=synchronizer,
-        )
-        print(f"[var] created: {var_name}")
-        return
+    elif not var_existed:
+        print(f"[init] store exists; adding missing variable {var_name}")
+    else:
+        print(f"[init] store exists; initialization skipped for {zarr_store}")
 
-    ds_meta = open_local_zarr_with_retry(zarr_store)
-    try:
-        same_len = ds_meta.sizes.get("time", -1) == full_dates.size
-        same_vals = np.array_equal(pd.to_datetime(ds_meta.time.values), pd.to_datetime(full_dates.values))
-        if not (same_len and same_vals):
-            raise ValueError("Time coordinate mismatch. Rebuild HRRR Zarr store.")
-
-        if var_name not in ds_meta.data_vars:
-            print(f"[init] store exists; adding missing variable {var_name}")
-            init_zarr_store(
-                zarr_store,
-                full_dates,
-                var_name,
-                template_orog,
-                time_chunk,
-                y_chunk,
-                x_chunk,
-                mode="a",
-                write_global_attrs=False,
-                synchronizer=synchronizer,
-            )
-            print(f"[var] created: {var_name}")
-        else:
-            print(f"[init] store exists; initialization skipped for {zarr_store}")
-            print(f"[var] exists; creation skipped for {var_name}")
-    finally:
-        ds_meta.close()
+    ensure_store(
+        zarr_store, full_dates, var_name, lambda: template_orog,
+        {"time": time_chunk, "y": y_chunk, "x": x_chunk},
+        global_title=f"{region_tag} Cropped HRRR Dataset",
+        extra_var_attrs=extra_attrs,
+        synchronizer=synchronizer,
+    )
+    print(f"[var] exists; creation skipped for {var_name}" if var_existed else f"[var] created: {var_name}")
 
 
 def infer_existing_chunk_size(ds: xr.Dataset, var_name: str, dim_name: str, fallback: int) -> int:
@@ -643,32 +575,21 @@ def init_derived_var(
         print(f"[var] exists; creation skipped for {var_name}")
         return
 
-    y_size = ds_meta.sizes["y"]
-    x_size = ds_meta.sizes["x"]
-    shape = (ds_meta.sizes["time"], y_size, x_size)
-    # Single whole-array chunk for graph construction only -- see init_zarr_store's
-    # comment above. The real on-disk chunk grid is pinned via `encoding` below.
-    data = da.full(shape, np.nan, chunks=shape, dtype="float32")
-    ds_init = xr.Dataset(
-        {
-            var_name: xr.DataArray(
-                data,
-                dims=("time", "y", "x"),
-                coords={
-                    "time": ds_meta.time,
-                    "latitude": template_orog.latitude,
-                    "longitude": template_orog.longitude,
-                },
-            )
-        }
-    )
+    # Delegates to the shared init_zarr() (data_utils/zarr_io.py) -- template_orog already
+    # has the right (y,x) shape/coords (validated against ds_meta by the caller), and
+    # ds_meta's own time axis is passed through as full_times so the new var's time
+    # coordinate matches exactly. derived_attrs()'s long_name/units are computed via the
+    # same target_long_name/target_units calls init_zarr() itself uses for the canonical
+    # override, so final attrs are unchanged from this function's previous hand-rolled version.
     source_attrs = derive_source_attrs(ds_meta, spec.dependencies)
-    ds_init[var_name].attrs = derived_attrs(spec, source_attrs)
+    full_times = pd.DatetimeIndex(ds_meta.time.values)
     print(f"[init] store exists; adding missing derived variable {var_name}")
-    ds_init.to_zarr(
-        zarr_store, mode="a", compute=False, consolidated=False, zarr_format=2,
+    init_zarr(
+        zarr_store, full_times, template_orog, var_name,
+        {"time": time_chunk, "y": y_chunk, "x": x_chunk},
+        mode="a", global_title=ds_meta.attrs.get("title", ""),
+        extra_var_attrs=derived_attrs(spec, source_attrs),
         synchronizer=synchronizer,
-        encoding={var_name: {"chunks": (time_chunk, y_chunk, x_chunk)}},
     )
     print(f"[var] created: {var_name}")
 
