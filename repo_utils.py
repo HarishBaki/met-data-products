@@ -51,13 +51,13 @@ def load_region_grid(region: str, product: str, repo_root: Path | None = None) -
     """Load configs/regions/{region}.yaml's grid.<product> entry -- either a
     structured crop ({type, dims, n0, n1, crop: {dim0_start, dim1_start}}) or
     an unstructured cell mask ({type: unstructured, cell_mask_file, ...}).
-    See compute_region_crop.py for how these are produced."""
+    See compute_and_write_region_crop.py for how these are produced."""
     cfg = _load_region_config(region, repo_root)
     grid = cfg.get("grid", {})
     if product not in grid:
         raise KeyError(
             f"configs/regions/{region}.yaml has no grid.{product} entry -- "
-            f"run compute_region_crop.py --product {product} ... --update-config first."
+            f"run compute_and_write_region_crop.py --product {product} ... --update-config first."
         )
     return grid[product]
 

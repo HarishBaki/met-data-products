@@ -104,6 +104,7 @@ class JobConfig:
     registry_units: Optional[str]
     lat_slice: slice
     lon_slice: slice
+    orog_path: str
 
 
 @dataclass(frozen=True)
@@ -432,15 +433,7 @@ def build_day_dataset(cfg: JobConfig, day_ts: pd.Timestamp) -> Optional[xr.Datas
     return out
 
 
-def find_template_step(cfg: JobConfig, steps: Sequence[pd.Timestamp]) -> xr.Dataset:
-    for ts in steps:
-        out = build_day_dataset(cfg, ts)
-        if out is not None and out.sizes.get("time", 0) > 0:
-            return out
-    raise RuntimeError("Could not build a template step for initialization. Check var/level/date range.")
-
-
-def ensure_group_and_variable(cfg: JobConfig, full_times: pd.DatetimeIndex, steps: Sequence[pd.Timestamp]) -> None:
+def ensure_group_and_variable(cfg: JobConfig, full_times: pd.DatetimeIndex) -> None:
     output = Path(cfg.output_zarr)
     create_group = False
     lat = None
@@ -470,8 +463,14 @@ def ensure_group_and_variable(cfg: JobConfig, full_times: pd.DatetimeIndex, step
                 return
         mode = "a"
     except Exception:
-        print(f"[init] group '{cfg.group}' missing or incompatible; building template from source", flush=True)
-        template = find_template_step(cfg, steps)
+        print(f"[init] group '{cfg.group}' missing or incompatible; building template from region's cropped_orography.nc", flush=True)
+        if not os.path.exists(cfg.orog_path):
+            raise FileNotFoundError(
+                f"Orography template not found: {cfg.orog_path} -- run compute_and_write_region_crop.py "
+                f"--product ERA5 --grid-source ERA5/era5_full_orography.nc --mode reference ... "
+                f"--update-config first (it writes this file as a side effect)."
+            )
+        template = xr.open_dataset(cfg.orog_path)
         lat = template.latitude
         lon = template.longitude
         mode = "a" if output.exists() else "w"
@@ -715,7 +714,8 @@ def build_config(args: argparse.Namespace) -> JobConfig:
     target_variable = args.target_var if args.target_var else args.var_name
 
     level_dim_out, level_values_all, level_values_write, level_indices_write = resolve_level_config(args, group)
-    _, lat_slice, lon_slice = resolve_region_crop(args.region)
+    region_vars, lat_slice, lon_slice = resolve_region_crop(args.region)
+    orog_path = f"{region_vars['data_root']}/ERA5_{region_vars['region_tag']}/cropped_orography.nc"
 
     return JobConfig(
         variable=args.var_name,
@@ -740,6 +740,7 @@ def build_config(args: argparse.Namespace) -> JobConfig:
         registry_units=registry_entry.units if registry_entry else None,
         lat_slice=lat_slice,
         lon_slice=lon_slice,
+        orog_path=orog_path,
     )
 
 
@@ -762,7 +763,7 @@ def run(cfg: JobConfig, full_start_year: int, full_end_year: int, n_jobs: int, c
         flush=True,
     )
     print("[run] ensuring output group/variable", flush=True)
-    ensure_group_and_variable(cfg, full_times, steps)
+    ensure_group_and_variable(cfg, full_times)
     print("[run] initialization check complete", flush=True)
 
     workers = max(1, min(int(n_jobs), len(steps)))

@@ -135,7 +135,7 @@ def resolve_region_bbox(region: str) -> dict:
 
     Ouranos has no local crop step -- process_and_write_to_zarr.py does no
     spatial subsetting, so this download-time bbox param IS the actual crop
-    mechanism (see compute_region_crop.py and New_York.yaml's header for how
+    mechanism (see compute_and_write_region_crop.py and New_York.yaml's header for how
     grid.Ouranos.bbox is derived per region, and why New York's deliberately
     preserves the historical BBOX_NY instead of the DL-compatible derivation
     New Mexico uses)."""

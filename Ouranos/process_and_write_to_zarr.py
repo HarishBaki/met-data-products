@@ -71,11 +71,12 @@ DEFAULT_CATALOG = Path(__file__).parent / "catalog_with_vars.csv"
 
 # --output-root/--raw-root are region-derived when not explicitly overridden --
 # see resolve_region_raw_root() below and resolve_region_output_root() (imported)
-# and main()'s output_root resolution. OROG_PATH is set from the resolved
-# output_root in main(): get_template() reads it as a module global, which is
+# and main()'s output_root resolution. OROG_PATH/REGION are set from the resolved
+# output_root in main(): get_template() reads them as module globals, which is
 # safe here since this script has no parallelism/subprocess forking (one
 # (row, var, year) per invocation).
 OROG_PATH = None
+REGION = None
 
 
 def resolve_region_raw_root(region: str) -> Path:
@@ -164,6 +165,11 @@ ALL_VARS_UNION = sorted({v for g in VAR_GROUPS_BY_FREQUENCY.values() for v in g}
 
 def get_template() -> xr.Dataset:
     """Spatial template (rlat/rlon dims, 2D lat/lon coords) shared by all runs."""
+    if not OROG_PATH.exists():
+        raise FileNotFoundError(
+            f"Orography template not found: {OROG_PATH} -- run download_fx.py --region {REGION} "
+            f"--vars orog first (it writes this file as a side effect)."
+        )
     ds = xr.open_dataset(OROG_PATH)
     promote = [v for v in ("lat", "lon") if v in ds.data_vars]
     if promote:
@@ -171,8 +177,8 @@ def get_template() -> xr.Dataset:
     return ds
 
 
-def output_zarr_path(output_root: Path, row: dict, frequency: str) -> str:
-    return str(output_root / row["dest_subdir"] / f"{row['realization']}_{frequency}_NYS.zarr")
+def output_zarr_path(output_root: Path, row: dict, frequency: str, region_tag: str) -> str:
+    return str(output_root / row["dest_subdir"] / f"{row['realization']}_{frequency}_{region_tag}.zarr")
 
 
 # ---------------------------------------------------------------------------
@@ -400,11 +406,12 @@ def main() -> None:
     raw_root = Path(args.raw_root) if args.raw_root else resolve_region_raw_root(args.region)
     region_tag = load_region_vars(args.region)["region_tag"]
 
-    global OROG_PATH
+    global OROG_PATH, REGION
     OROG_PATH = resolve_region_orog_path(args.region, output_root)
+    REGION = args.region
 
     full_times = full_time_axis(row, args.frequency)
-    output_zarr = output_zarr_path(output_root, row, args.frequency)
+    output_zarr = output_zarr_path(output_root, row, args.frequency, region_tag)
     chunks = {"time": TIME_CHUNK_BY_FREQUENCY[args.frequency]}
 
     Path(output_zarr).parent.mkdir(parents=True, exist_ok=True)

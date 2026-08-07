@@ -102,20 +102,6 @@ def resolve_region_output(region: str) -> Path:
     return Path(data_root) / f"EDDEv2_{region_tag}" / "hourly" / "WRF-MPI"
 
 
-def find_reference_file_for_var(var_name: str, run_type: str) -> Path:
-    source_var = VAR_NAME_TO_SOURCE[var_name]
-    if source_var not in SOURCE_TO_FILE:
-        raise KeyError(f"Missing file prefix for source var: {source_var}")
-    file_prefix = SOURCE_TO_FILE[source_var]
-    run_root = run_folder(run_type)
-    candidates = sorted(
-        glob.glob(str(run_root / "*" / f"{file_prefix}*.nc"))
-    )
-    if not candidates:
-        raise FileNotFoundError(f"No nc files found for {var_name} under {RAW_ROOT}")
-    return Path(candidates[0])
-
-
 def crop_region(ds: xr.Dataset, y_slice: slice, x_slice: slice) -> xr.Dataset:
     return ds.isel(y=y_slice, x=x_slice)
 
@@ -123,10 +109,6 @@ def crop_region(ds: xr.Dataset, y_slice: slice, x_slice: slice) -> xr.Dataset:
 def run_folder(run_type: str) -> Path:
     years = full_years_range[run_type]
     return RAW_ROOT / run_type / f"{years[0]}-{years[1]}"
-
-
-def month_from_filename(path: Path) -> pd.Timestamp:
-    return pd.to_datetime(path.name.split(".")[-3], format="%Y-%m")
 
 
 def files_for_month(run_type: str, target_month: pd.Timestamp, var_name: str) -> List[str]:
@@ -214,7 +196,7 @@ if __name__ == "__main__":
     )
     args, _ = parser.parse_known_args()
 
-    _, y_slice, x_slice = resolve_region_crop(args.region)
+    region_vars, y_slice, x_slice = resolve_region_crop(args.region)
     OUTPUT_ROOT = resolve_region_output(args.region)
     OUTPUT_ZARR = str(OUTPUT_ROOT / f"{args.run_type}.zarr")
     ZARR_SYNC_PATH = f"{OUTPUT_ZARR}.sync"
@@ -229,13 +211,23 @@ if __name__ == "__main__":
     var_name = args.var_name
 
     # %%
+    # Zarr-init template: shape/coords only (init_zarr() discards actual values,
+    # replacing them with a NaN-filled array -- see data_utils/zarr_io.py), so the
+    # region's persisted cropped_orography.nc (written once by
+    # compute_and_write_region_crop.py --update-config) works just as well as -- and
+    # is cheaper/more consistent than -- opening a real reference month's data just
+    # to read its shape.
+    orog_path = f"{region_vars['data_root']}/EDDEv2_{region_vars['region_tag']}/cropped_orography.nc"
+
     def _get_template():
-        ref_file = find_reference_file_for_var(var_name, args.run_type)
-        ref_month = month_from_filename(ref_file)
-        tmpl = process_single_month(ref_month, var_name, args.run_type, y_slice, x_slice)
-        if tmpl is None:
-            raise RuntimeError("Failed to build template dataset for initialization.")
-        return apply_var_attrs(tmpl, var_name)
+        if not os.path.exists(orog_path):
+            raise FileNotFoundError(
+                f"Orography template not found: {orog_path} -- run compute_and_write_region_crop.py "
+                f"--product EDDEv2 --grid-source EDDEv2/eddev2_full_orography.nc --mode reference ... "
+                f"--region-config configs/regions/{args.region}.yaml --update-config first (it writes "
+                f"this file as a side effect)."
+            )
+        return xr.open_dataset(orog_path)[["orog"]].rename({"orog": var_name})
 
     chunks = {"time": TIME_CHUNK}
     ensure_store(

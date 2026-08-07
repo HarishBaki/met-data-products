@@ -1,14 +1,14 @@
 # New York region config for met-data-products' crop step (URMA/HRRR/ERA5/ICON/
 # EDDEv2/Ouranos process_and_write_to_zarr.py scripts).
 #
-# Maintained via compute_region_crop.py --update-config, which round-trips
+# Maintained via compute_and_write_region_crop.py --update-config, which round-trips
 # this file through ruamel.yaml specifically so this header (and any future
 # comments) survive future updates -- plain yaml.safe_load/dump silently
 # stripped it across Step 4's six updates the first time, which is why this
 # note exists at all.
 #
 # grid.<product> is a per-product crop against that product's own native
-# grid (see compute_region_crop.py --mode boundary for URMA, --mode
+# grid (see compute_and_write_region_crop.py --mode boundary for URMA, --mode
 # reference or --mode bbox for everything else, which gets xESMF-regridded
 # onto URMA's grid regardless of its own crop). ICON's entry is a saved
 # boolean cell mask (configs/regions/masks/), not an index window -- its

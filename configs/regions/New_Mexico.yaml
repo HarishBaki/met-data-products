@@ -1,6 +1,6 @@
 # New Mexico region config for met-data-products' crop step.
 #
-# Maintained via compute_region_crop.py --update-config, which round-trips
+# Maintained via compute_and_write_region_crop.py --update-config, which round-trips
 # this file through ruamel.yaml specifically so this header (and any future
 # comments) survive future updates -- see New_York.yaml's header for why
 # that note exists.
@@ -12,7 +12,7 @@
 #
 # grid.URMA computed via --mode boundary (real GADM boundary, not
 # hand-picked):
-#   python compute_region_crop.py --product URMA --grid-source URMA/urma_full_orography.nc \
+#   python compute_and_write_region_crop.py --product URMA --grid-source URMA/urma_full_orography.nc \
 #       --mode boundary --state "New Mexico" --padding 10 \
 #       --region-config configs/regions/New_Mexico.yaml --update-config
 #

@@ -1,7 +1,7 @@
 # %%
 #!/usr/bin/env python3
 """
-Process public Utah HRRR Zarr into an NYS-cropped local Zarr store.
+Process public Utah HRRR Zarr into a region-cropped local Zarr store.
 
 Design:
 - One variable per invocation.
@@ -49,7 +49,6 @@ GRID_INDEX_STORE = f"s3://{HRRRZARR_BUCKET}/grid/HRRR_chunk_index.zarr"
 # Region-derived when not explicitly overridden -- see resolve_region_crop().
 DEFAULT_OUTPUT_ZARR = None
 DEFAULT_OROG_PATH = None
-FULL_OROG_PATH = Path(__file__).with_name("hrrr_full_orography.nc")
 REGISTRY_PATH = Path(__file__).with_name("hrrr_variable_registry.csv")
 VAR_SPECS_PATH = Path(__file__).with_name("hrrr_var_specs.csv")
 
@@ -368,17 +367,18 @@ def resolve_region_crop(region: str) -> Tuple[dict, dict, slice, slice]:
     return region_grid, region_vars, y_slice, x_slice
 
 
-def region_cropped_template_orog(region_grid: dict) -> xr.DataArray:
-    """In-memory cropped orography template for a region, derived from
-    hrrr_full_orography.nc rather than requiring a pre-existing per-region
-    cropped file on disk -- mirrors URMA's _get_template() approach so new
-    regions don't need a manually-created cropped orography file first."""
-    y_start = region_grid["crop"]["y_start"]
-    x_start = region_grid["crop"]["x_start"]
-    ny = region_grid["n0"]
-    nx = region_grid["n1"]
-    full = xr.open_dataset(FULL_OROG_PATH)
-    return full.orog.isel(y=slice(y_start, y_start + ny), x=slice(x_start, x_start + nx)).load()
+def resolve_orog_path(explicit_orog_path: Optional[str], region: str, data_root: Optional[str], region_tag: str) -> str:
+    """--orog-path if given explicitly; otherwise the region's persisted
+    cropped_orography.nc, written by compute_and_write_region_crop.py
+    --update-config (see that script's write_cropped_orography) -- replacing
+    the old in-memory region_cropped_template_orog() fallback, which
+    re-derived the same crop from hrrr_full_orography.nc on every run
+    instead of reading what the crop tool already computed and persisted."""
+    if explicit_orog_path is not None:
+        return explicit_orog_path
+    if not data_root:
+        raise ValueError(f"configs/regions/{region}.yaml has no data_root set yet.")
+    return f"{data_root}/HRRR_{region_tag}/cropped_orography.nc"
 
 
 def cropped_latlon(grid: xr.Dataset, y_slice: slice, x_slice: slice) -> Tuple[xr.DataArray, xr.DataArray]:
@@ -454,6 +454,7 @@ def init_zarr_store(
     x_chunk: int,
     mode: str,
     write_global_attrs: bool,
+    region_tag: str = "region",
 ) -> None:
     shape = (len(dates),) + template_orog.shape
     data = da.full(shape, np.nan, chunks=(time_chunk, y_chunk, x_chunk), dtype="float32")
@@ -470,7 +471,7 @@ def init_zarr_store(
     ds_init = base.to_dataset()
     if write_global_attrs:
         ds_init.attrs = {
-            "title": "NYS Cropped HRRR Dataset",
+            "title": f"{region_tag} Cropped HRRR Dataset",
             "Conventions": "CF-1.8",
             "history": "Initialized empty Zarr store from Utah HRRR Zarr",
         }
@@ -500,6 +501,7 @@ def ensure_initialized(
     time_chunk: int,
     y_chunk: int,
     x_chunk: int,
+    region_tag: str = "region",
 ) -> None:
     if not os.path.exists(zarr_store):
         print(f"[init] store missing; initializing {zarr_store}")
@@ -513,6 +515,7 @@ def ensure_initialized(
             x_chunk,
             mode="w",
             write_global_attrs=True,
+            region_tag=region_tag,
         )
         print(f"[var] created: {var_name}")
         return
@@ -854,7 +857,7 @@ def process_one_month(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Process Utah HRRR Zarr into a NYS-cropped Zarr store.")
+    parser = argparse.ArgumentParser(description="Process Utah HRRR Zarr into a region-cropped Zarr store.")
     source_cli_vars = sorted(name for name, spec in VAR_SPECS.items() if spec.include_in_cli)
     derived_cli_vars = sorted(DERIVED_SPECS)
     cli_vars = sorted(set(source_cli_vars).union(derived_cli_vars))
@@ -921,19 +924,22 @@ def run_source_pipeline(args: argparse.Namespace) -> None:
     grid = open_grid_index()
     lat, lon = cropped_latlon(grid, y_slice, x_slice)
 
+    data_root = region_vars["data_root"]
+    region_tag = region_vars["region_tag"]
     if args.output_zarr is None:
-        data_root = region_vars["data_root"]
-        region_tag = region_vars["region_tag"]
         if not data_root:
             raise ValueError(f"configs/regions/{args.region}.yaml has no data_root set yet.")
         args.output_zarr = f"{data_root}/HRRR_{region_tag}/HRRR_{region_tag}.zarr"
 
-    if args.orog_path is not None:
-        if not os.path.exists(args.orog_path):
-            raise FileNotFoundError(f"Orography template not found: {args.orog_path}")
-        template_orog = load_template_orography(args.orog_path)
-    else:
-        template_orog = region_cropped_template_orog(region_grid)
+    orog_path = resolve_orog_path(args.orog_path, args.region, data_root, region_tag)
+    if not os.path.exists(orog_path):
+        raise FileNotFoundError(
+            f"Orography template not found: {orog_path} -- run compute_and_write_region_crop.py "
+            f"--product HRRR --grid-source HRRR/hrrr_full_orography.nc --mode reference ... "
+            f"--region-config configs/regions/{args.region}.yaml --update-config first (it writes "
+            f"this file as a side effect), or pass --orog-path explicitly."
+        )
+    template_orog = load_template_orography(orog_path)
     y_chunk = resolve_chunk_size(args.y_chunk, int(template_orog.sizes["y"]), "y")
     x_chunk = resolve_chunk_size(args.x_chunk, int(template_orog.sizes["x"]), "x")
     report_physical_chunk_size(args.var_name, template_orog, args.time_chunk, y_chunk, x_chunk)
@@ -951,6 +957,7 @@ def run_source_pipeline(args: argparse.Namespace) -> None:
         args.time_chunk,
         y_chunk,
         x_chunk,
+        region_tag=region_tag,
     )
 
     for month in iter_month_starts(args.process_start, args.process_end):
@@ -976,9 +983,9 @@ def run_derived_pipeline(args: argparse.Namespace) -> None:
     region_vars = load_region_vars(args.region)
     assert region_grid["dims"] == ["y", "x"], region_grid["dims"]
 
+    data_root = region_vars["data_root"]
+    region_tag = region_vars["region_tag"]
     if args.output_zarr is None:
-        data_root = region_vars["data_root"]
-        region_tag = region_vars["region_tag"]
         if not data_root:
             raise ValueError(f"configs/regions/{args.region}.yaml has no data_root set yet.")
         args.output_zarr = f"{data_root}/HRRR_{region_tag}/HRRR_{region_tag}.zarr"
@@ -986,12 +993,15 @@ def run_derived_pipeline(args: argparse.Namespace) -> None:
     if not os.path.exists(args.output_zarr):
         raise FileNotFoundError(f"Target HRRR Zarr store not found: {args.output_zarr}")
 
-    if args.orog_path is not None:
-        if not os.path.exists(args.orog_path):
-            raise FileNotFoundError(f"Orography template not found: {args.orog_path}")
-        template_orog = load_template_orography(args.orog_path)
-    else:
-        template_orog = region_cropped_template_orog(region_grid)
+    orog_path = resolve_orog_path(args.orog_path, args.region, data_root, region_tag)
+    if not os.path.exists(orog_path):
+        raise FileNotFoundError(
+            f"Orography template not found: {orog_path} -- run compute_and_write_region_crop.py "
+            f"--product HRRR --grid-source HRRR/hrrr_full_orography.nc --mode reference ... "
+            f"--region-config configs/regions/{args.region}.yaml --update-config first (it writes "
+            f"this file as a side effect), or pass --orog-path explicitly."
+        )
+    template_orog = load_template_orography(orog_path)
 
     spec = DERIVED_SPECS[args.var_name]
     ds_meta = open_local_zarr_with_retry(args.output_zarr)

@@ -19,7 +19,7 @@ BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
 if str(BOOTSTRAP_ROOT) not in sys.path:
     sys.path.insert(0, str(BOOTSTRAP_ROOT))
 
-from repo_utils import find_repo_root, load_region_grid, load_region_vars
+from repo_utils import load_region_grid, load_region_vars
 from data_utils.zarr_io import (
     apply_var_attrs,
     ensure_store,
@@ -28,9 +28,6 @@ from data_utils.zarr_io import (
     open_zarr_safe,
     write_region,
 )
-
-PROJECT_DIR = find_repo_root(__file__)
-FULL_OROG_PATH = PROJECT_DIR / "URMA" / "urma_full_orography.nc"
 
 # Not region-specific -- the raw URMA archive covers the whole native grid
 # regardless of which region's crop is being processed.
@@ -245,17 +242,19 @@ if __name__ == "__main__":
     YEAR = args.year
 
     # Region-specific crop and output location -- see configs/regions/{region}.yaml.
-    region_grid = load_region_grid(args.region, "URMA")
+    region_grid_raw = load_region_grid(args.region, "URMA")
     region_vars = load_region_vars(args.region)
-    # grid.URMA is {type, dims, inner, outer} when compute_region_crop.py was run with a
+    # grid.URMA is {type, dims, inner, outer} when compute_and_write_region_crop.py was run with a
     # halo (URMA's own wide-context crop for e.g. paper 4's "coarsened URMA" LR source --
     # see update_region_config's crop_outer docstring), or flat {type, dims, n0, n1, crop,
     # bbox} otherwise (New York's entry, and any region derived without a halo). Production
     # processing always uses the tight inner crop -- URMA_{region_tag}.zarr's shape must
     # stay the training/output footprint, never the wider halo-inclusive one. dims lives at
     # the top level either way (shared between inner/outer -- same grid, same dim names).
-    if "inner" in region_grid:
-        region_grid = {"dims": region_grid["dims"], **region_grid["inner"]}
+    if "inner" in region_grid_raw:
+        region_grid = {"dims": region_grid_raw["dims"], **region_grid_raw["inner"]}
+    else:
+        region_grid = region_grid_raw
     assert region_grid["dims"] == ["y", "x"]
     y_start = region_grid["crop"]["y_start"]
     x_start = region_grid["crop"]["x_start"]
@@ -266,6 +265,7 @@ if __name__ == "__main__":
     if not data_root:
         raise ValueError(f"configs/regions/{args.region}.yaml has no data_root set yet.")
     zarr_store = f"{data_root}/URMA_{region_tag}/URMA_{region_tag}.zarr"
+    orog_path = Path(f"{data_root}/URMA_{region_tag}/cropped_orography.nc")
 
     # %%
     full_dates = pd.date_range(
@@ -281,14 +281,28 @@ if __name__ == "__main__":
     cpus = get_slurm_cpus()
     print(cpus)
 
-    # Initialize zarr for this variable using the region's cropped orography for
-    # spatial structure -- cropped in-memory from the full native grid using the
-    # region's own crop, rather than depending on a pre-existing per-region
-    # cropped orography file, so this works for any region already present in
-    # configs/regions/, not just ones that happen to already have one on disk.
+    # Initialize zarr for this variable using the region's cropped orography for spatial
+    # structure -- read from cropped_orography.nc, written once ahead of time by
+    # compute_and_write_region_crop.py --update-config, not re-derived in-memory here
+    # (that duplicated the crop logic in two places; the crop tool is now the single
+    # place that persists it). URMA_{region_tag}.zarr must stay the tight INNER footprint
+    # -- when the persisted file carries inner_y_start/inner_x_start/inner_ny/inner_nx
+    # attrs (written at the wider OUTER extent, e.g. paper 4's coarsened-URMA source),
+    # slice down to just that inner window; a flat crop (New York, or any region derived
+    # without a halo) has no such attrs and the whole file already IS the inner footprint.
     def _get_template():
-        full = xr.open_dataset(FULL_OROG_PATH)
-        return full.isel(y=slice(y_start, y_start + ny), x=slice(x_start, x_start + nx))
+        if not orog_path.exists():
+            raise FileNotFoundError(
+                f"{orog_path} not found -- run compute_and_write_region_crop.py --product URMA "
+                f"--mode boundary --region-config configs/regions/{args.region}.yaml "
+                f"--update-config first (it writes this file as a side effect)."
+            )
+        orog = xr.open_dataset(orog_path)
+        if "inner_y_start" in orog.attrs:
+            iy0, ix0 = orog.attrs["inner_y_start"], orog.attrs["inner_x_start"]
+            iny, inx = orog.attrs["inner_ny"], orog.attrs["inner_nx"]
+            orog = orog.isel(y=slice(iy0, iy0 + iny), x=slice(ix0, ix0 + inx))
+        return orog
 
     chunks = {"time": time_chunk, "y": y_chunk, "x": x_chunk}
     ensure_store(

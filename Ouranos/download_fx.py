@@ -169,9 +169,17 @@ def build_fileserver_url(url_path: str) -> str:
 
 
 def build_fx_dest(dest_root: Path, row: dict, var: str, domain_tag: str) -> Path:
+    # var=="orog" -> "orography" in the filename: matches the established convention
+    # both process_and_write_to_zarr.py's resolve_region_orog_path() and
+    # climate-dl-downscaling's paths.ouranos_orog already expect (v1-r1_nys_orography.nc4
+    # is the real, already-production New York file) -- not just this var's own CORDEX
+    # short name, which would silently produce a different, unmatched filename
+    # (confirmed: a real New Mexico download landed as v1-r1_nms_orog.nc4, which neither
+    # of those two consumers ever looked for).
+    label = "orography" if var == "orog" else var
     out_dir = dest_root / row["dest_subdir"]
     out_dir.mkdir(parents=True, exist_ok=True)
-    fname = f"{row['realization']}_{domain_tag.lower()}_{var}.nc4"
+    fname = f"{row['realization']}_{domain_tag.lower()}_{label}.nc4"
     return out_dir / fname
 
 

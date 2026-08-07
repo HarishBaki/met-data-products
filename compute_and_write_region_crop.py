@@ -50,6 +50,18 @@ compute that product's own index crop. Three ways to get the target extent:
                already-validated crops run through the same tool/config
                instead of staying bespoke per-product code.
 
+Note on Ouranos specifically: its real crop mechanism is download_fx.py's
+server-side THREDDS NCSS bbox subsetting, not any local index-slice -- this
+tool's grid.Ouranos output is only ever a PLANNING bbox to hand to that
+download, never a usable crop itself (Ouranos's rotated-pole grid means a
+local index-window is a parallelogram in real lat/lon space, so its
+axis-aligned bbox always requests more than it covers, and the real download
+comes back a different shape/extent than predicted -- confirmed empirically,
+not just theorized: 128x128 predicted locally vs 161x164 actually returned
+for New Mexico). This is a known, accepted limitation, not something this
+tool tries to correct -- see download_fx.py/download_ouranos.py's own
+resolve_region_bbox() docs for how the bbox actually gets used.
+
 Recommended workflow for a new region (see also each mode's docs above):
   1. --mode boundary --product URMA (or RTMA), optionally with --halo-km to
      also produce an outer/inner split (URMA-as-its-own-wide-context-source,
@@ -83,7 +95,7 @@ falls into one of three kinds, auto-detected here:
 
 Usage:
   # Mode 1: URMA's own crop, from a real state boundary (as before).
-  python compute_region_crop.py --product URMA --grid-source URMA/urma_full_orography.nc \\
+  python compute_and_write_region_crop.py --product URMA --grid-source URMA/urma_full_orography.nc \\
       --mode boundary --state "New Mexico" \\
       --region-config configs/regions/New_Mexico.yaml --update-config
 
@@ -92,13 +104,13 @@ Usage:
   # --halo-km 0: no extra real-world buffer: exactly matches URMA's outer
   # bbox. --padding 2: the empirically-validated interpolation-safety
   # margin, in HRRR's OWN grid cells.
-  python compute_region_crop.py --product HRRR --grid-source HRRR/hrrr_full_orography.nc \\
+  python compute_and_write_region_crop.py --product HRRR --grid-source HRRR/hrrr_full_orography.nc \\
       --mode reference --reference-region-config configs/regions/New_Mexico.yaml \\
       --reference-product URMA --reference-tier outer --halo-km 0 --padding 2 \\
       --region-config configs/regions/New_Mexico.yaml --update-config
 
   # Mode 3: reuse an already-known bbox (e.g. HRRR's existing hardcoded NYS box).
-  python compute_region_crop.py --product HRRR --grid-source HRRR/hrrr_full_orography.nc \\
+  python compute_and_write_region_crop.py --product HRRR --grid-source HRRR/hrrr_full_orography.nc \\
       --mode bbox --lat-min 38 --lat-max 48 --lon-min -82 --lon-max -68 \\
       --region-config configs/regions/New_York.yaml --update-config
 """
@@ -457,6 +469,61 @@ def load_state_boundary(gadm_file: str, country: str, state: str) -> gpd.GeoData
     return gpd.read_file(str(gadm_file), where=f"NAME_0 = '{country}' AND NAME_1 = '{state}'")
 
 
+def write_cropped_orography(
+    grid: Grid, crop: dict, orog: xr.DataArray, out_path: Path, crop_outer: dict | None = None,
+) -> None:
+    """Persist a product's region-cropped orography to disk. climate-dl-downscaling's
+    regridding layer (RegridderRegistry) reads ONLY a file's shape/coords as ground
+    truth, never a config number -- paths.<product>_orog is opened and its .orog.shape
+    IS the regridder's grid, full stop -- so this file, not met-data-products' region
+    config, is what downstream actually treats as authoritative. Previously this exact
+    crop was computed in-memory here (for --plot) and separately, redundantly, in each
+    product's own process_and_write_to_zarr.py (for its own zarr template), discarded
+    both times. This persists it once, so every downstream consumer reads the same file
+    instead of each re-deriving the same slice from the full native grid.
+
+    When crop_outer is given (URMA/RTMA's own wide-context halo -- see
+    update_region_config's crop_outer docstring), the file is written at the OUTER
+    extent, with the INNER tight-boundary window embedded as both a boolean 'inner_mask'
+    variable and global attrs (inner_y_start/inner_x_start/inner_ny/inner_nx, relative to
+    THIS FILE's own 0-based indexing, not the native full-grid indices) -- so a
+    non-cropped (whole-array) training mode can still recover exactly which sub-window
+    is the true state target without reaching back into met-data-products' region config
+    at all. Flat crops (every other product; URMA/RTMA regions derived without a halo)
+    get no mask/attrs -- the whole array IS that product's reference footprint, nothing
+    to disambiguate.
+
+    Skipped (not overwritten) if out_path already exists -- orography is static, and a
+    region's crop doesn't change between runs unless deliberately re-derived (in which
+    case delete the file first).
+    """
+    if out_path.exists():
+        print(f"  Orography already present -> {out_path}")
+        return
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    map_crop = crop_outer if crop_outer is not None else crop
+
+    if map_crop["kind"] == "unstructured":
+        mask = map_crop["mask"]
+        ds = orog.isel({map_crop["dims"][0]: mask}).to_dataset(name="orog")
+    else:
+        d0, d1 = map_crop["dims"]
+        d0s, d1s = map_crop["dim0_start"], map_crop["dim1_start"]
+        n0, n1 = map_crop["n0"], map_crop["n1"]
+        ds = orog.isel({d0: slice(d0s, d0s + n0), d1: slice(d1s, d1s + n1)}).to_dataset(name="orog")
+        if crop_outer is not None:
+            iy0, ix0 = crop["dim0_start"] - d0s, crop["dim1_start"] - d1s
+            iny, inx = crop["n0"], crop["n1"]
+            mask = np.zeros((n0, n1), dtype=bool)
+            mask[iy0:iy0 + iny, ix0:ix0 + inx] = True
+            ds["inner_mask"] = ((d0, d1), mask)
+            ds.attrs.update(inner_y_start=iy0, inner_x_start=ix0, inner_ny=iny, inner_nx=inx)
+
+    ds.load().to_netcdf(out_path)
+    print(f"  Orography written -> {out_path}")
+
+
 def _crop_extent_and_map_data(grid: Grid, crop: dict, orog: xr.DataArray):
     """(lat_min, lat_max, lon_min, lon_max, lon_for_plot, lat_for_plot, orog_values)
     for one crop -- shared by the unstructured/separable/curvilinear branches
@@ -811,6 +878,20 @@ def main():
             raise ValueError("--update-config requires --region-config")
         mask_dir = Path(args.mask_out_dir) if args.mask_out_dir else Path(args.region_config).parent
         update_region_config(args.region_config, args.product, crop, mask_dir, crop_outer=crop_outer)
+
+        with open(args.region_config) as f:
+            region_cfg_for_orog = yaml.safe_load(f)
+        data_root = region_cfg_for_orog.get("data_root")
+        region_tag = region_cfg_for_orog.get("region_tag")
+        if data_root and region_tag:
+            orog_out_path = Path(data_root) / f"{args.product}_{region_tag}" / "cropped_orography.nc"
+            orog = load_orography(args.grid_source)
+            write_cropped_orography(grid, crop, orog, orog_out_path, crop_outer=crop_outer)
+        else:
+            print(
+                f"  Skipping cropped orography write -- {args.region_config} has no "
+                f"data_root/region_tag set yet."
+            )
 
     if args.plot:
         if not args.plot_out_dir and not args.region_config:

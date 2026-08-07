@@ -95,7 +95,13 @@ def load_region_mask(region: str) -> xr.Dataset:
     repo_root = find_repo_root(__file__)
     mask_path = repo_root / region_grid["cell_mask_file"]
     if not mask_path.is_file():
-        raise FileNotFoundError(f"Mask not found: {mask_path}")
+        raise FileNotFoundError(
+            f"Mask not found: {mask_path} -- run compute_and_write_region_crop.py --product ICON "
+            f"--grid-source ICON-DREAM-Global/icon_full_orography.nc --mode reference ... "
+            f"--mesh-hops 2 --mesh-topology ICON-DREAM-Global/ICON-DREAM-Global_grid.nc "
+            f"--region-config configs/regions/{region}.yaml --update-config first (it writes "
+            f"this file as a side effect)."
+        )
     cell_mask = xr.open_dataset(mask_path)
     full = xr.open_dataset(FULL_OROG_PATH)
     return xr.Dataset(
