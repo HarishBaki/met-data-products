@@ -593,6 +593,21 @@ def write_step(cfg: JobConfig, full_times: pd.DatetimeIndex, step_ts: pd.Timesta
         if drop_vars:
             ds_write = ds_write.drop_vars(drop_vars)
 
+        # Region-mode appends target an already-initialized zarr array, whose _FillValue
+        # is fixed once by ensure_group_and_variable(). xarray derives encoding["_FillValue"]
+        # from that existing array, which then collides with attrs["_FillValue"]/
+        # attrs["missing_value"] (set by apply_var_attrs) during to_zarr's CF encoding --
+        # confirmed in production: every real write failed with "failed to prevent
+        # overwriting existing key _FillValue in attrs" (same bug independently found and
+        # fixed in URMA's write path -- see data_utils/zarr_io.py's write_region(), not
+        # reused directly here since this function also needs group=/level-dim region
+        # support write_region() doesn't have).
+        ds_write[cfg.target_variable].encoding = {}
+        ds_write[cfg.target_variable].attrs = {
+            k: v for k, v in ds_write[cfg.target_variable].attrs.items()
+            if k not in ("_FillValue", "missing_value")
+        }
+
         print(f"[day] {step_label} write start time[{start_idx}:{end_idx}]", flush=True)
         ds_write.to_zarr(
             cfg.output_zarr,
@@ -626,6 +641,14 @@ def write_step(cfg: JobConfig, full_times: pd.DatetimeIndex, step_ts: pd.Timesta
         ]
         if drop_vars:
             block_ds = block_ds.drop_vars(drop_vars)
+
+        # Same _FillValue/encoding collision as the surface write path above -- see that
+        # comment for the full explanation.
+        block_ds[cfg.target_variable].encoding = {}
+        block_ds[cfg.target_variable].attrs = {
+            k: v for k, v in block_ds[cfg.target_variable].attrs.items()
+            if k not in ("_FillValue", "missing_value")
+        }
 
         block_ds.to_zarr(
             cfg.output_zarr,

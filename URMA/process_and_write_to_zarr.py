@@ -190,17 +190,20 @@ def process_and_write_single_day(
             ds[var_name].attrs["units"] = _GRIB_SOURCE_UNITS[var_name]
         ds = apply_var_attrs(ds, var_name)
 
-        time_indices = np.searchsorted(full_dates.values, ds.time.values)
-        region = {"time": slice(time_indices[0], time_indices[-1] + 1)}
-
-        drop_list = [
-            "time", "valid_time", "surface", "heightAboveGround",
-            "step", "latitude", "longitude"
-        ]
-        drop_existing = [v for v in drop_list if v in ds.variables]
-        ds_chunk = ds.drop_vars(drop_existing)
-        ds_chunk.to_zarr(zarr_store, region=region, mode="a", zarr_format=2)
-        print(f"[write] {date}: wrote {var_name} → Zarr region {region}")
+        # write_region() (data_utils/zarr_io.py) handles region computation, dropping
+        # non-dim coords, and -- critically -- stripping _FillValue/missing_value from
+        # attrs/encoding before the region-mode to_zarr call. Without that stripping,
+        # apply_var_attrs()'s explicit attrs["_FillValue"] collides with the encoding
+        # xarray auto-derives from the already-initialized zarr array, and every single
+        # write fails with "failed to prevent overwriting existing key _FillValue in
+        # attrs" (confirmed in production: every write attempt across every day/var/year
+        # failed this way, silently, since the exception is caught below and printed,
+        # not raised -- jobs showed SLURM-level COMPLETED having written zero real data).
+        write_region(
+            ds[[var_name]], zarr_store, full_dates,
+            {"time": time_chunk, "y": y_chunk, "x": x_chunk},
+        )
+        print(f"[write] {date}: wrote {var_name} to {zarr_store}")
 
     except Exception as e:
         print(f"[error] Failed on {date} for {var_name}: {e}")
