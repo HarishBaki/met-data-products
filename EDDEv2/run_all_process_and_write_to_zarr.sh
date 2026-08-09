@@ -3,7 +3,7 @@
 # ==============================
 # CONFIGURATION
 # ==============================
-MAX_PARALLEL=7        # Limit: 7 jobs running at once
+MAX_PARALLEL=3        # its-head: 3 concurrent jobs
 
 # Region to process (e.g. New_York, New_Mexico). Export before running, e.g.:
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
@@ -84,13 +84,13 @@ for RUN_TYPE in "${RUN_TYPES[@]}"; do
 
     for VAR in "${VARS[@]}"; do
 
-        # Throttle submissions against the GLOBAL freetier QOS job count (MaxSubmitPU=8),
-        # not just jobs named EDDEv2 -- the QOS cap is shared across every product/job
-        # name this user submits (confirmed in production: two products submitting
-        # concurrently, each blind to the other, blew straight through the shared cap
-        # even though neither exceeded its own per-name MAX_PARALLEL).
-        while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
-            echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
+        # Throttle against this user's TOTAL job count on whichever cluster this runs on --
+        # not just jobs named EDDEv2 (the submit cap is shared across every product/job
+        # name this user submits) and deliberately not QOS-filtered (--qos=freetier is
+        # dgx-specific; a QOS name that doesn't exist on another cluster, e.g. its-head,
+        # would silently match zero jobs and never throttle at all).
+        while [ "$(squeue -u "$USER" -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+            echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs. Waiting..."
             sleep 30
         done
 

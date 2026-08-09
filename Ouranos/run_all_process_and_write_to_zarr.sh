@@ -17,7 +17,7 @@
 #   FREQUENCY=day ./run_all_process_and_write_to_zarr.sh
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
 
-MAX_PARALLEL=7
+MAX_PARALLEL=3  # its-head: 3 concurrent jobs
 SLURM_SCRIPT=process_and_write_to_zarr.slurm
 
 # Catalog row indices to process.
@@ -57,13 +57,13 @@ DOWNLOAD_VARS=(${DOWNLOAD_VARS_BY_FREQUENCY[$FREQUENCY]})
 DERIVED_VARS=(${DERIVED_VARS_BY_FREQUENCY[$FREQUENCY]})
 
 throttle() {
-    # Throttle against the GLOBAL freetier QOS job count (MaxSubmitPU=8), not just jobs
-    # named process_ouranos -- the QOS cap is shared across every product/job name this
-    # user submits (confirmed in production: two products submitting concurrently, each
-    # blind to the other, blew straight through the shared cap even though neither
-    # exceeded its own per-name MAX_PARALLEL).
-    while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
-        echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
+    # Throttle against this user's TOTAL job count on whichever cluster this runs on --
+    # not just jobs named process_ouranos (the submit cap is shared across every product/
+    # job name this user submits) and deliberately not QOS-filtered (--qos=freetier is
+    # dgx-specific; a QOS name that doesn't exist on another cluster, e.g. its-head, would
+    # silently match zero jobs and never throttle at all).
+    while [ "$(squeue -u "$USER" -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+        echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs. Waiting..."
         sleep 30
     done
 }
