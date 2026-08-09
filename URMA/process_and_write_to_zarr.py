@@ -91,7 +91,13 @@ def is_interactive():
 # ============================================================
 
 def check_existing_data_in_zarr(zarr_store, day, var_name, freq="1h"):
-    ds = xr.open_zarr(zarr_store, consolidated=False)
+    # open_zarr_safe() retries on NFS stale-file-handle errors (errno 116) -- this call runs
+    # once per day (365x/job), and running multiple clusters concurrently against the same
+    # store (dgx + its-head) makes a transient stale handle a real, observed failure mode
+    # here (confirmed in production: tp/2023 crashed twice on its-head with exactly this
+    # error, from this exact unprotected call -- every other zarr-open path in this codebase
+    # already goes through this wrapper).
+    ds = open_zarr_safe(zarr_store)
     if var_name not in ds.data_vars:
         return False
     day_dt = pd.to_datetime(day, format="%Y%m%d")
