@@ -7,6 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --array=0-26        # one task per catalog row; override with --array=N or N-M
+#SBATCH --propagate=NONE
 
 mkdir -p slurmout
 

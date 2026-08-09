@@ -7,6 +7,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
+#SBATCH --propagate=NONE
 
 # Serially pre-initializes the output zarr group/variable skeleton for every
 # (group, var) pair passed below, one process at a time, inside a single

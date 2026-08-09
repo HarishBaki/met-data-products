@@ -8,6 +8,7 @@
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=80G
 #SBATCH --qos=freetier
+#SBATCH --propagate=NONE
 
 set -euo pipefail
 umask 0002

@@ -7,6 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=16G
+#SBATCH --propagate=NONE
 
 mkdir -p slurmout
 

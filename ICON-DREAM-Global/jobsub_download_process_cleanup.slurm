@@ -7,6 +7,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=200G
+#SBATCH --propagate=NONE
 
 mkdir -p slurmout
 
