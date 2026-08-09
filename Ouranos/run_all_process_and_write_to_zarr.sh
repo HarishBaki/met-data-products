@@ -17,7 +17,7 @@
 #   FREQUENCY=day ./run_all_process_and_write_to_zarr.sh
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
 
-MAX_PARALLEL=3  # its-head: 3 concurrent jobs
+MAX_PARALLEL=5  # its-head: 5 concurrent jobs
 SLURM_SCRIPT=process_and_write_to_zarr.slurm
 
 # Catalog row indices to process.

@@ -3,7 +3,7 @@
 # ==============================
 # CONFIGURATION
 # ==============================
-MAX_PARALLEL=3        # its-head: 3 concurrent jobs
+MAX_PARALLEL=5        # its-head: 5 concurrent jobs
 
 # Region to process (e.g. New_York, New_Mexico). Export before running, e.g.:
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
