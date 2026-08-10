@@ -8,6 +8,7 @@
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=200G
 #SBATCH --propagate=NONE
+#SBATCH --exclude=dgx17,dgx18
 
 mkdir -p slurmout
 

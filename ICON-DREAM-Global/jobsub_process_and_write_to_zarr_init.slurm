@@ -8,6 +8,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
 #SBATCH --propagate=NONE
+#SBATCH --exclude=dgx17,dgx18
 
 # Serially pre-initializes the output zarr store/variable skeleton for every
 # var passed below, one process at a time, inside a single SLURM job -- this
