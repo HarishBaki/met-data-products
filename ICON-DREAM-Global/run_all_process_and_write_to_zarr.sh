@@ -3,7 +3,10 @@
 # ==============================
 # CONFIGURATION
 # ==============================
-MAX_PARALLEL=8  # freetier QOS cap; unfiltered count below absorbs any non-freetier jobs (e.g. vscode-dgx) automatically
+# freetier QOS cap; unfiltered count below absorbs any non-freetier jobs (e.g.
+# vscode-dgx) automatically. Override without editing the file, e.g.:
+#   MAX_PARALLEL=4 REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
+MAX_PARALLEL="${MAX_PARALLEL:-8}"
 
 # Region to process (e.g. New_York, New_Mexico). Export before running, e.g.:
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh

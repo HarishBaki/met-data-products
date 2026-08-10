@@ -3,7 +3,9 @@
 # ==============================
 # CONFIGURATION
 # ==============================
-MAX_PARALLEL=5        # its-head: 5 concurrent jobs
+# its-head: 5 concurrent jobs. Override without editing the file, e.g.:
+#   MAX_PARALLEL=3 REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
+MAX_PARALLEL="${MAX_PARALLEL:-5}"
 
 # Region to process (e.g. New_York, New_Mexico). Export before running, e.g.:
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh

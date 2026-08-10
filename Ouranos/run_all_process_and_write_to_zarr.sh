@@ -17,7 +17,9 @@
 #   FREQUENCY=day ./run_all_process_and_write_to_zarr.sh
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
 
-MAX_PARALLEL=5  # its-head: 5 concurrent jobs
+# its-head: 5 concurrent jobs. Override without editing the file, e.g.:
+#   MAX_PARALLEL=3 REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
+MAX_PARALLEL="${MAX_PARALLEL:-5}"
 SLURM_SCRIPT=process_and_write_to_zarr.slurm
 
 # Catalog row indices to process.

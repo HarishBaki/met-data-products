@@ -3,7 +3,10 @@
 set -euo pipefail
 
 JOBSCRIPT="jobsub_process_and_write_to_zarr_HRRRzarr.slurm"
-MAX_PARALLEL=8  # freetier QOS cap; unfiltered count below absorbs any non-freetier jobs (e.g. vscode-dgx) automatically
+# freetier QOS cap; unfiltered count below absorbs any non-freetier jobs (e.g.
+# vscode-dgx) automatically. Override without editing the file, e.g.:
+#   MAX_PARALLEL=4 REGION=New_Mexico ./run_all_process_and_write_to_zarr_HRRRzarr.sh
+MAX_PARALLEL="${MAX_PARALLEL:-8}"
 PROCESS_START="2018-01-01T00"
 PROCESS_END="2025-12-31T23"
 

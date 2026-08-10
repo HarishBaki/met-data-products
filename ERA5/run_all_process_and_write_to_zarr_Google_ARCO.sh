@@ -5,7 +5,10 @@ set -euo pipefail
 # ==========================================================
 # CONFIGURATION
 # ==========================================================
-MAX_PARALLEL=8  # freetier QOS cap; unfiltered count below absorbs any non-freetier jobs (e.g. vscode-dgx) automatically
+# freetier QOS cap; unfiltered count below absorbs any non-freetier jobs (e.g.
+# vscode-dgx) automatically. Override without editing the file, e.g.:
+#   MAX_PARALLEL=4 REGION=New_Mexico ./run_all_process_and_write_to_zarr_Google_ARCO.sh
+MAX_PARALLEL="${MAX_PARALLEL:-8}"
 JOBSCRIPT="jobsub_process_and_write_to_zarr_Google_ARCO.slurm"
 # Set to 1 to print submissions without actually calling sbatch, e.g.:
 #   DRY_RUN=1 ./run_all_process_and_write_to_zarr_Google_ARCO.sh
