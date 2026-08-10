@@ -61,6 +61,16 @@ for RUN_TYPE in "${RUN_TYPES[@]}"; do
         INIT_ENTRIES+=("${RUN_TYPE}:${VAR}")
     done
 done
+# Same throttle as the main loop below -- without it, the init submission assumes a
+# free slot always exists, which is only true if nothing else is using the shared quota.
+# In a sequential product chain, the previous product's own jobs can still be running
+# right when this fires, causing a submit-limit rejection on the init call itself
+# (confirmed in production: HRRR finishing its submission loop while its own jobs were
+# still running left no room for the next products' init jobs immediately after).
+while [ "$(squeue -u "$USER" -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+    echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs. Waiting..."
+    sleep 30
+done
 init_id=$(sbatch --parsable jobsub_process_and_write_to_zarr_init.slurm "$REGION" "${INIT_ENTRIES[@]}")
 echo "Submitted: init job=$init_id"
 echo "Waiting for init job=$init_id to complete..."

@@ -55,6 +55,16 @@ wait_for_jobs() {
     [ "$bad" -eq 0 ]
 }
 
+# Same throttle as the main loop below -- without it, the init submission assumes a
+# free slot always exists, which is only true if nothing else is using the shared quota.
+# In a sequential product chain, the previous product's own jobs can still be running
+# right when this fires, causing QOSMaxSubmitJobPerUserLimit on the init call itself
+# (confirmed in production: HRRR finishing its submission loop while its own jobs were
+# still running left no room for ERA5-ARCO's and ICON's init jobs immediately after).
+while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+    echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
+    sleep 30
+done
 init_id=$(sbatch --parsable jobsub_process_and_write_to_zarr_init.slurm "$REGION" "${VARS[@]}")
 echo "Submitted: init job=$init_id"
 echo "Waiting for init job=$init_id to complete..."

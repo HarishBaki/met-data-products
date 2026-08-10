@@ -70,6 +70,12 @@ done
 for VAR in "${DERIVED_VARS[@]}"; do
   INIT_ENTRIES+=("derived:${VAR}")
 done
+# Same throttle wait_for_slot() applies below -- without it here, the init submission
+# assumes a free slot always exists, which only holds if nothing else is using the
+# shared quota. In a sequential product chain, the previous product's own jobs can
+# still be running right when this fires, causing QOSMaxSubmitJobPerUserLimit on the
+# init call itself.
+wait_for_slot
 init_id=$(sbatch --parsable jobsub_process_and_write_to_zarr_HRRRzarr_init.slurm "$REGION" "$PROCESS_START" "$PROCESS_END" "${INIT_ENTRIES[@]}")
 echo "Submitted: init job=$init_id"
 echo "Waiting for init job=$init_id to complete..."
