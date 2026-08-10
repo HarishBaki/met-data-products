@@ -5,7 +5,7 @@ set -euo pipefail
 # ==========================================================
 # CONFIGURATION
 # ==========================================================
-MAX_PARALLEL=7
+MAX_PARALLEL=8  # freetier QOS cap; unfiltered count below absorbs any non-freetier jobs (e.g. vscode-dgx) automatically
 JOBSCRIPT="jobsub_process_and_write_to_zarr_Google_ARCO.slurm"
 # Set to 1 to print submissions without actually calling sbatch, e.g.:
 #   DRY_RUN=1 ./run_all_process_and_write_to_zarr_Google_ARCO.sh
@@ -64,13 +64,16 @@ SUBMIT_MODEL=0
 # HELPERS
 # ==========================================================
 wait_for_slot() {
-  # Throttle against the GLOBAL freetier QOS job count (MaxSubmitPU=8), not just jobs
-  # named ERA5_ARCO -- the QOS cap is shared across every product/job name this user
-  # submits (confirmed in production: two products submitting concurrently, each blind
-  # to the other, blew straight through the shared cap even though neither exceeded its
-  # own per-name MAX_PARALLEL).
-  while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
-    echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
+  # Throttle against this user's TOTAL job count, not just jobs named ERA5_ARCO -- the
+  # submit cap is shared across every product/job name this user submits (confirmed in
+  # production: two products submitting concurrently, each blind to the other, blew
+  # straight through the shared cap even though neither exceeded its own per-name
+  # MAX_PARALLEL). Deliberately not QOS-filtered: an unfiltered count is always >= any
+  # single QOS's count, so it can never let a submission through that SLURM would
+  # reject, and it automatically absorbs non-freetier jobs (e.g. vscode-dgx) without
+  # needing MAX_PARALLEL manually tuned down to leave room.
+  while [ "$(squeue -u "$USER" -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+    echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs. Waiting..."
     sleep 30
   done
 }

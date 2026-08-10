@@ -3,7 +3,7 @@
 # ==============================
 # CONFIGURATION
 # ==============================
-MAX_PARALLEL=7        # Limit: 7 jobs running at once
+MAX_PARALLEL=8        # freetier QOS cap; unfiltered count below absorbs any non-freetier jobs (e.g. vscode-dgx) automatically
 
 # Region to process (e.g. New_York, New_Mexico). Export before running, e.g.:
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
@@ -61,8 +61,8 @@ wait_for_jobs() {
 # right when this fires, causing QOSMaxSubmitJobPerUserLimit on the init call itself
 # (confirmed in production: HRRR finishing its submission loop while its own jobs were
 # still running left no room for ERA5-ARCO's and ICON's init jobs immediately after).
-while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
-    echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
+while [ "$(squeue -u "$USER" -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+    echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs. Waiting..."
     sleep 30
 done
 init_id=$(sbatch --parsable jobsub_process_and_write_to_zarr_init.slurm "$REGION" "${VARS[@]}")
@@ -80,13 +80,14 @@ echo "Pre-init complete -- safe to fan out in parallel now."
 for VAR in "${VARS[@]}"; do
     for YEAR in $(seq $START_YEAR $END_YEAR); do
 
-        # Throttle submissions against the GLOBAL freetier QOS job count (MaxSubmitPU=8),
-        # not just jobs named URMA -- the QOS cap is shared across every product/job name
-        # this user submits (confirmed in production: two products submitting
-        # concurrently, each blind to the other, blew straight through the shared cap
-        # even though neither exceeded its own per-name MAX_PARALLEL).
-        while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
-            echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
+        # Throttle against this user's TOTAL job count on whichever cluster this runs on --
+        # not just jobs named URMA (the submit cap is shared across every product/job name
+        # this user submits) and deliberately not QOS-filtered: an unfiltered count is
+        # always >= any single QOS's count, so it can never let a submission through that
+        # SLURM would reject, and it automatically absorbs non-freetier jobs (e.g.
+        # vscode-dgx) without needing MAX_PARALLEL manually tuned down to leave room.
+        while [ "$(squeue -u "$USER" -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+            echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs. Waiting..."
             sleep 30
         done
 

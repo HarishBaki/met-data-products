@@ -3,7 +3,7 @@
 set -euo pipefail
 
 JOBSCRIPT="jobsub_process_and_write_to_zarr_HRRRzarr.slurm"
-MAX_PARALLEL=7  # freetier QOS allows 8 jobs/user; stay one below the limit
+MAX_PARALLEL=8  # freetier QOS cap; unfiltered count below absorbs any non-freetier jobs (e.g. vscode-dgx) automatically
 PROCESS_START="2018-01-01T00"
 PROCESS_END="2025-12-31T23"
 
@@ -31,8 +31,12 @@ DERIVED_VARS=(
 declare -A JOB_IDS
 
 wait_for_slot() {
-  while [ "$(squeue -u "$USER" --qos=freetier -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
-    echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs under QOS freetier. Waiting..."
+  # Deliberately not QOS-filtered: an unfiltered count is always >= any single QOS's
+  # count, so it can never let a submission through that SLURM would reject, and it
+  # automatically absorbs non-freetier jobs (e.g. vscode-dgx) without needing
+  # MAX_PARALLEL manually tuned down to leave room.
+  while [ "$(squeue -u "$USER" -h | wc -l)" -ge "$MAX_PARALLEL" ]; do
+    echo "Reached MAX_PARALLEL=${MAX_PARALLEL} jobs. Waiting..."
     sleep 30
   done
 }
