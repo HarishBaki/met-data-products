@@ -32,6 +32,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 from collections import Counter
 from pathlib import Path
 from typing import Optional
@@ -70,11 +71,32 @@ def discover_stores(product: str, region: str) -> list[Path]:
         raise FileNotFoundError(
             f"{root} does not exist -- has {product} been processed for region {region!r} yet?"
         )
-    # rglob catches EDDEv2's per-run-type stores and Ouranos's per (catalog
+    # Walks to find EDDEv2's per-run-type stores and Ouranos's per (catalog
     # row, frequency) stores, wherever they land, without knowing the layout
-    # in advance. ".zarr.sync" lock directories don't end in ".zarr" so they
-    # never match.
-    stores = sorted(p for p in root.rglob("*.zarr") if p.is_dir())
+    # in advance -- but pruned with os.walk() rather than Path.rglob("*.zarr"):
+    # rglob doesn't stop at a match, it keeps recursing *inside* every
+    # matched .zarr directory too, walking its entire internal chunk-file
+    # tree (a store can be tens of thousands of tiny files) looking for
+    # further nested ".zarr" matches that can never exist. For New Mexico's
+    # 1-3 stores/product that overhead was too small to notice; against New
+    # York's 7-19 stores/product it hung for 6+ minutes on what should be an
+    # instant directory listing (confirmed via `stat`/`ls`/`df` on the same
+    # mount all returning immediately while the unpruned walk was still
+    # stuck). Pruning at each ".zarr" boundary -- treating it as a leaf, not
+    # descending further -- avoids ever touching a store's internals here.
+    # ".zarr.sync" lock directories don't end in ".zarr" so they're never
+    # matched or pruned into either way. "_to_<target>_<method>.zarr" stores
+    # (e.g. "URMA_NYS_to_EDDE_LR_bilinear.zarr") are downstream regridded
+    # outputs, not this product's own raw processing output -- excluded from
+    # the result, still pruned from traversal like any other ".zarr" match.
+    stores = []
+    for dirpath, dirnames, _ in os.walk(root):
+        matched = [d for d in dirnames if d.endswith(".zarr")]
+        for d in matched:
+            if "_to_" not in Path(d).stem:
+                stores.append(Path(dirpath) / d)
+        dirnames[:] = [d for d in dirnames if d not in matched]
+    stores.sort()
     if not stores:
         raise FileNotFoundError(f"No *.zarr stores found under {root}")
     return stores
