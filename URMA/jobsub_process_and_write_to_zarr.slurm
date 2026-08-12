@@ -44,3 +44,14 @@ python process_and_write_to_zarr.py \
     --var_name "$var_name" \
     --year "$year" \
     --region "$region"
+exit_code=$?
+
+# Plain-file failure log, independent of sacct -- its-head has no sacct access at all
+# (dgx's is unusable cross-cluster too), so this is the only way to detect a failed job
+# there. Appends one line per failure; safe under concurrent jobs since each open+write
+# is small and append-only. Check with: tail -f failed_jobs.log
+if [ "$exit_code" -ne 0 ]; then
+    echo "$(date -Iseconds) job=${SLURM_JOB_ID:-unknown} node=${SLURMD_NODENAME:-unknown} var=$var_name year=$year region=$region exit=$exit_code" >> failed_jobs.log
+fi
+
+exit "$exit_code"

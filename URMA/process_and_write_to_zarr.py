@@ -344,4 +344,12 @@ if __name__ == "__main__":
             for date in batch_dates
         )
 
+    # Exit 0 only if YEAR is now fully written for var_name -- previously this script
+    # always exited 0 regardless of outcome, since process_and_write_single_day catches
+    # and prints (never raises) per-day exceptions. That made SLURM/sacct's job state
+    # meaningless for detecting real per-day failures (a job could show COMPLETED with
+    # every single day silently failed), and gave nothing to check at all on clusters
+    # without sacct access (its-head). Same pattern as ICON/EDDEv2/Ouranos's exit check.
+    sys.exit(0 if not has_missing_data(zarr_store, dates, var_name, zarr_sync) else 1)
+
 # %%
