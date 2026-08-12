@@ -117,10 +117,20 @@ def daily_processing(var_name, date, time_chunk, x_chunk, y_chunk, x_start, y_st
 
         sorted_files = sorted(files, key=extract_hour)
     else:
-        files = glob.glob(f'{data_source_dir}/{date}/*pcp_01h*')
+        # NOAA switched the URMA precipitation product's filename convention on
+        # 2018-11-26 (confirmed against their own S3 archive): before that date, files
+        # are named "pcpurma_g184.{YYYYMMDDHH}.01h.grb2"; from that date on, they're
+        # "urma2p5.{YYYYMMDDHH}.pcp_01h.wexp.grb2". The old convention was never
+        # included in download_URMA_through_aws.sh's S3 filter, so every pre-2018-11-26
+        # day was silently never downloaded at all -- confirmed via NOAA's own bucket
+        # still having the old-convention files present, not a source-side deletion.
+        files = (
+            glob.glob(f'{data_source_dir}/{date}/*pcp_01h*')
+            + glob.glob(f'{data_source_dir}/{date}/*pcpurma_g184*.01h*')
+        )
 
         def extract_hour(file):
-            m = re.search(r'\.(\d{10})\.pcp_01h', file)
+            m = re.search(r'\.(\d{10})\.(?:pcp_01h|01h)', file)
             if m:
                 datetime_str = m.group(1)
                 hour = int(datetime_str[-2:])
