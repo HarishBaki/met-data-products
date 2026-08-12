@@ -33,7 +33,7 @@ _BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
 if str(_BOOTSTRAP_ROOT) not in sys.path:
     sys.path.insert(0, str(_BOOTSTRAP_ROOT))
 
-from data_utils.zarr_io import apply_var_attrs, target_long_name, target_units
+from data_utils.zarr_io import apply_var_attrs, open_zarr_safe, target_long_name, target_units
 from repo_utils import load_region_grid, load_region_vars
 
 ARCO_SURFACE_PRESSURE_STORE = "gs://gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3"
@@ -440,7 +440,11 @@ def ensure_group_and_variable(cfg: JobConfig, full_times: pd.DatetimeIndex) -> N
     lon = None
 
     try:
-        ds_g = xr.open_zarr(cfg.output_zarr, group=cfg.group, consolidated=False)
+        # open_zarr_safe() retries on NFS stale-file-handle errors (errno 116) before
+        # giving up -- also reduces (though doesn't eliminate) the risk of a transient
+        # stale handle being misread by the except-block below as "group missing/
+        # incompatible, rebuild it" instead of a retryable read glitch.
+        ds_g = open_zarr_safe(cfg.output_zarr, group=cfg.group)
         existing_times = pd.DatetimeIndex(ds_g.time.values)
         if not np.array_equal(existing_times.values, full_times.values):
             raise ValueError(f"Time axis mismatch in existing group '{cfg.group}'.")
@@ -543,7 +547,13 @@ def ensure_group_and_variable(cfg: JobConfig, full_times: pd.DatetimeIndex) -> N
 
 
 def is_step_complete(cfg: JobConfig, full_times: pd.DatetimeIndex, step_ds: xr.Dataset) -> bool:
-    ds_g = xr.open_zarr(cfg.output_zarr, group=cfg.group, consolidated=False)
+    # open_zarr_safe() retries on NFS stale-file-handle errors (errno 116) -- this call
+    # runs once per day (up to 365x/job) inside a 32-way joblib.Parallel worker pool, all
+    # hitting the same store concurrently, which is exactly the access pattern that made
+    # a transient stale handle a real, observed failure mode elsewhere in this codebase
+    # (see URMA's identical comment) -- confirmed here too: every one of this session's
+    # ERA5-ARCO job failures was an unhandled OSError [Errno 116] from this exact call.
+    ds_g = open_zarr_safe(cfg.output_zarr, group=cfg.group)
     if cfg.target_variable not in ds_g.data_vars:
         return False
 

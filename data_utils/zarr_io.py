@@ -9,7 +9,7 @@ target_long_name(var_name)→ str
 normalize_units(units)    → str | None
 apply_var_attrs(ds, var_name) → xr.Dataset
 convert_units_numpy(data, var_name, src_units) → np.ndarray
-open_zarr_safe(zarr_store, synchronizer, ...) → xr.Dataset
+open_zarr_safe(zarr_store, synchronizer, group, ...) → xr.Dataset
 init_zarr(output_zarr, full_times, ref_ds, var_name, chunks, ...) → None
 ensure_store(output_zarr, full_times, var_name, get_template_fn, chunks, ...) → xr.Dataset
 has_missing_data(zarr_store, times, var_name, synchronizer) → bool
@@ -138,13 +138,20 @@ def convert_units_numpy(
 def open_zarr_safe(
     zarr_store: str,
     synchronizer=None,
+    group: Optional[str] = None,
     attempts: int = 5,
     base_delay: float = 1.0,
 ) -> xr.Dataset:
-    """Open a zarr store, retrying on NFS stale file handle errors (errno 116)."""
+    """Open a zarr store, retrying on NFS stale file handle errors (errno 116).
+
+    group selects a zarr sub-group (e.g. ERA5-ARCO's sl/pl/ml) -- omit for a
+    flat, single-group store.
+    """
     kwargs: Dict = {"consolidated": False}
     if synchronizer is not None:
         kwargs["synchronizer"] = synchronizer
+    if group is not None:
+        kwargs["group"] = group
     for attempt in range(1, attempts + 1):
         try:
             return xr.open_zarr(zarr_store, **kwargs)
