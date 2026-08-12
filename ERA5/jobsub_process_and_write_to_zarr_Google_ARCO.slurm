@@ -8,6 +8,7 @@
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=250G
 #SBATCH --propagate=NONE
+#SBATCH --exclude=dgx17,dgx18
 
 set -euo pipefail
 
