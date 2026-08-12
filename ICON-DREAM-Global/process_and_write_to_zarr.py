@@ -32,7 +32,6 @@ from data_utils.zarr_io import (
     ensure_store,
     get_slurm_cpus,
     has_missing_data,
-    open_zarr_safe,
     write_region,
 )
 from repo_utils import find_repo_root, load_region_grid, load_region_vars
@@ -258,17 +257,6 @@ def process_single_month(
     return ds
 
 
-def month_has_data(zarr_store: str, var_name: str, month_times: pd.DatetimeIndex, zarr_sync) -> bool:
-    ds = open_zarr_safe(zarr_store, zarr_sync)
-    if var_name not in ds.data_vars:
-        return False
-    try:
-        sel = ds[var_name].sel(time=month_times)
-    except KeyError:
-        return False
-    return bool(sel.notnull().any().compute())
-
-
 def process_and_write_month(
     var_name: str,
     target_month: pd.Timestamp,
@@ -288,8 +276,8 @@ def process_and_write_month(
     if month_times.size == 0:
         return
 
-    if month_has_data(zarr_store, var_name, month_times, zarr_sync):
-        print(f"[skip] {target_month.strftime('%Y%m')} already has data for {var_name}")
+    if not has_missing_data(zarr_store, month_times, var_name, zarr_sync):
+        print(f"[skip] {target_month.strftime('%Y%m')} already complete for {var_name}")
         return
 
     ds = ds.reindex(time=month_times)

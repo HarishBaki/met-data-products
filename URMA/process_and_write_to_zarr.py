@@ -25,7 +25,6 @@ from data_utils.zarr_io import (
     ensure_store,
     get_slurm_cpus,
     has_missing_data,
-    open_zarr_safe,
     write_region,
 )
 
@@ -89,27 +88,6 @@ def is_interactive():
 # ============================================================
 # Processing logic
 # ============================================================
-
-def check_existing_data_in_zarr(zarr_store, day, var_name, freq="1h"):
-    # open_zarr_safe() retries on NFS stale-file-handle errors (errno 116) -- this call runs
-    # once per day (365x/job), and running multiple clusters concurrently against the same
-    # store (dgx + its-head) makes a transient stale handle a real, observed failure mode
-    # here (confirmed in production: tp/2023 crashed twice on its-head with exactly this
-    # error, from this exact unprotected call -- every other zarr-open path in this codebase
-    # already goes through this wrapper).
-    ds = open_zarr_safe(zarr_store)
-    if var_name not in ds.data_vars:
-        return False
-    day_dt = pd.to_datetime(day, format="%Y%m%d")
-    if freq == "1h":
-        day_times = pd.date_range(start=day_dt, end=day_dt + pd.Timedelta(hours=23), freq="1h")
-    try:
-        day_data = ds[var_name].sel(time=day_times)
-    except KeyError:
-        return False
-    has_non_nan = day_data.notnull().any().compute()
-    return bool(has_non_nan)
-
 
 # %%
 def normalize_time(ds):
@@ -184,8 +162,15 @@ def process_and_write_single_day(
     date, var_name, zarr_store, dates, full_dates, time_chunk, x_chunk, y_chunk,
     x_start, y_start, nx, ny,
 ):
-    if check_existing_data_in_zarr(zarr_store, date, var_name):
-        print(f"[skip] {date} already exists in {zarr_store} for {var_name}")
+    # has_missing_data() -> open_zarr_safe() retries on NFS stale-file-handle errors
+    # (errno 116) -- this call runs once per day (365x/job), and running multiple
+    # clusters concurrently against the same store (dgx + its-head) makes a transient
+    # stale handle a real, observed failure mode here (confirmed in production:
+    # tp/2023 crashed twice on its-head with exactly this error from this check).
+    day_dt = pd.to_datetime(date, format="%Y%m%d")
+    day_times = pd.date_range(start=day_dt, end=day_dt + pd.Timedelta(hours=23), freq="1h")
+    if not has_missing_data(zarr_store, day_times, var_name):
+        print(f"[skip] {date} already complete in {zarr_store} for {var_name}")
         return
 
     try:
