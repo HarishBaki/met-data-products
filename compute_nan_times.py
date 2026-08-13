@@ -129,23 +129,48 @@ def print_time_coverage(store: Path, group: Optional[str]) -> None:
 def scan_one_var(store: Path, group: Optional[str], var_name: str, output_dir: Path) -> str:
     """Runs in its own worker process -- opens its own handle on the store
     rather than sharing one across processes, same as every product's own
-    per-(var, month/year) worker functions."""
+    per-(var, month/year) worker functions.
+
+    Writes two separate registries per var, since they answer different
+    questions for different consumers:
+    - nan_times_<var>.nc ("any" -- at least one pixel in the domain is NaN):
+      the training-time exclusion list DL_downscaling/dataloader.py's
+      _collect_missing_times reads -- correctly conservative there, since a
+      single bad pixel still makes a sample unfit to train on.
+    - nan_times_<var>_fullynan.nc ("all" -- every pixel in the domain is
+      NaN): the genuinely-nothing-there population, for consumers that need
+      to know whether *any* usable data exists at a timestamp at all (e.g.
+      data_prep/regrid_to_urma_zarr.py's _month_is_complete -- a month
+      containing a source hour with even one valid pixel is not the same
+      problem as one with zero, and conflating the two here previously
+      caused the wrong file to get reused for that purpose).
+    """
     ds = xr.open_zarr(str(store), group=group, consolidated=False)
     da = ds[var_name]
     reduce_dims = tuple(d for d in da.dims if d != "time")
-    nan_mask = da.isnull().any(dim=reduce_dims) if reduce_dims else da.isnull()
-    nan_times = ds["time"].where(nan_mask).dropna("time").compute()
+    isnull = da.isnull()
+    any_nan_mask = isnull.any(dim=reduce_dims) if reduce_dims else isnull
+    all_nan_mask = isnull.all(dim=reduce_dims) if reduce_dims else isnull
+    any_nan_times = ds["time"].where(any_nan_mask).dropna("time").compute()
+    all_nan_times = ds["time"].where(all_nan_mask).dropna("time").compute()
 
-    lines = [f"  {var_name}: {len(nan_times)} NaN timestamps"]
-    if len(nan_times):
-        gap_year_counts = nan_times.groupby("time.year").count()
+    lines = [f"  {var_name}: {len(any_nan_times)} any-NaN timestamps, {len(all_nan_times)} fully-NaN timestamps"]
+    if len(any_nan_times):
+        gap_year_counts = any_nan_times.groupby("time.year").count()
         for year, count in zip(gap_year_counts["year"].values, gap_year_counts.values):
-            lines.append(f"    {int(year)}: {int(count)}")
+            lines.append(f"    any-NaN {int(year)}: {int(count)}")
+    if len(all_nan_times):
+        gap_year_counts = all_nan_times.groupby("time.year").count()
+        for year, count in zip(gap_year_counts["year"].values, gap_year_counts.values):
+            lines.append(f"    fully-NaN {int(year)}: {int(count)}")
 
-    out_name = f"nan_times_{var_name}.nc" if group is None else f"nan_times_{group}_{var_name}.nc"
-    out_path = output_dir / out_name
-    nan_times.to_netcdf(str(out_path))
-    lines.append(f"  [done] -> {out_path}")
+    base_name = f"nan_times_{var_name}" if group is None else f"nan_times_{group}_{var_name}"
+    any_out_path = output_dir / f"{base_name}.nc"
+    all_out_path = output_dir / f"{base_name}_fullynan.nc"
+    any_nan_times.to_netcdf(str(any_out_path))
+    all_nan_times.to_netcdf(str(all_out_path))
+    lines.append(f"  [done] -> {any_out_path}")
+    lines.append(f"  [done] -> {all_out_path}")
     return "\n".join(lines)
 
 
