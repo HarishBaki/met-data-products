@@ -76,6 +76,7 @@ echo "Pre-init complete -- safe to fan out in parallel now."
 # ==============================
 # MAIN LOOP
 # ==============================
+all_ids=()
 for VAR in "${VARS[@]}"; do
     for year in {2018..2025}; do
         PROCESS_START="${year}01"
@@ -94,10 +95,11 @@ for VAR in "${VARS[@]}"; do
         done
 
         echo "Submitting: $VAR  $PROCESS_START to $PROCESS_END"
-        sbatch jobsub_process_and_write_to_zarr.slurm \
+        jid=$(sbatch --parsable jobsub_process_and_write_to_zarr.slurm \
             "$VAR" \
             "$PROCESS_START" \
-            "$PROCESS_END"
+            "$PROCESS_END")
+        all_ids+=("$jid")
 
         sleep 1
     done
@@ -106,3 +108,23 @@ done
 echo "=============================================="
 echo "All jobs submitted!"
 echo "=============================================="
+
+# Consolidate once, after every job above has finished. Blocking poll rather than
+# --dependency=afterany: SLURM purges completed jobs from squeue/sacct after
+# MinJobAge (300s on this cluster), and a long submission loop easily exceeds that
+# gap, so a dependency string built from early job IDs would reference already-purged
+# jobs and fail at submission time (same reasoning as Ouranos's run_all script).
+# Not afterok-equivalent either: a single stray var/year failure shouldn't block
+# consolidating whatever did succeed, so failures here are only logged, not fatal --
+# see consolidate_metadata.py.
+if [ "${#all_ids[@]}" -gt 0 ]; then
+    echo "Waiting for all ${#all_ids[@]} jobs to finish before consolidating..."
+    wait_for_jobs "${all_ids[@]}" || echo "WARNING: not every job COMPLETED -- consolidating anyway."
+    mkdir -p slurmout
+    finalize_id=$(sbatch --parsable \
+        --job-name=consolidate-ICON \
+        --output=slurmout/consolidate-ICON-%j.out --error=slurmout/consolidate-ICON-%j.err \
+        --time=02:00:00 --cpus-per-task=2 --mem=32G --propagate=NONE \
+        --wrap="source /network/rit/lab/basulab/mambaforge/etc/profile.d/conda.sh && conda activate /network/rit/lab/basulab/conda_envs/hb533188/DFSAI && cd .. && python consolidate_metadata.py --product ICON-DREAM-Global --region $REGION")
+    echo "Submitted: consolidate job=$finalize_id"
+fi

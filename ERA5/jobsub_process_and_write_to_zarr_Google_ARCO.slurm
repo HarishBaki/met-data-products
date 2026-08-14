@@ -94,8 +94,11 @@ CMD=(
   --full-end-year "${FULL_END_YEAR}"
   --n-jobs "${N_JOBS}"
   --region "${REGION}"
-  --consolidate-metadata
 )
+# --consolidate-metadata deliberately NOT passed here -- consolidating after every
+# single var/year job repeats the same full-store scan once per job for no reason.
+# run_all_process_and_write_to_zarr_Google_ARCO.sh now submits one dependency-gated
+# consolidate_metadata.py job after everything above has finished instead.
 
 if [ -n "${OUTPUT_ZARR}" ]; then
   CMD+=(--output-zarr "${OUTPUT_ZARR}")

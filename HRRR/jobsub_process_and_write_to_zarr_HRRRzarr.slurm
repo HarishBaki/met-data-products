@@ -119,8 +119,11 @@ cmd=(
   --n-jobs "${N_JOBS}"
   --region "${REGION}"
   --skip-complete-months
-  --consolidate-metadata
 )
+# --consolidate-metadata deliberately NOT passed here -- consolidating after every
+# single var/month job repeats the same full-store scan once per job for no reason.
+# run_all_process_and_write_to_zarr_HRRRzarr.sh now submits one dependency-gated
+# consolidate_metadata.py job after everything above has finished instead.
 
 if [ -n "${OUTPUT_ZARR}" ]; then
   cmd+=(--output-zarr "${OUTPUT_ZARR}")

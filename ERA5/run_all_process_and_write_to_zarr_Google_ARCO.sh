@@ -94,7 +94,7 @@ submit_job() {
 
   wait_for_slot
   local CMD=(
-    sbatch "${JOBSCRIPT}"
+    sbatch --parsable "${JOBSCRIPT}"
     "${var_name}"
     "${group}"
     "${pressure_levels}"
@@ -109,10 +109,12 @@ submit_job() {
     "${n_jobs}"
   )
 
-  echo "Submitting ${group} var=${var_name} p=${pressure_levels} m=${model_levels} ${process_start} -> ${process_end}"
-  printf 'CMD:'
-  printf ' %q' "${CMD[@]}"
-  printf '\n'
+  # Debug lines go to stderr, not stdout -- stdout is reserved for the --parsable job
+  # ID alone, since call sites now capture this function's output via $(submit_job ...).
+  echo "Submitting ${group} var=${var_name} p=${pressure_levels} m=${model_levels} ${process_start} -> ${process_end}" >&2
+  printf 'CMD:' >&2
+  printf ' %q' "${CMD[@]}" >&2
+  printf '\n' >&2
 
   if [ "${DRY_RUN}" -eq 0 ]; then
     "${CMD[@]}"
@@ -186,27 +188,31 @@ fi
 # ==========================================================
 # MAIN
 # ==========================================================
+all_ids=()
 for YEAR in $(seq "$YEAR_START" "$YEAR_END"); do
   PROCESS_START="${YEAR}-01-01"
   PROCESS_END="${YEAR}-12-31T23:00:00"
 
   if [ "$SUBMIT_SURFACE" -eq 1 ]; then
     for VAR in "${SURFACE_VARS[@]}"; do
-      submit_job "${VAR}" "sl" "none" "none" "${PROCESS_START}" "${PROCESS_END}" "${SURFACE_N_JOBS}" "none" "none"
+      jid=$(submit_job "${VAR}" "sl" "none" "none" "${PROCESS_START}" "${PROCESS_END}" "${SURFACE_N_JOBS}" "none" "none")
+      if [ -n "$jid" ]; then all_ids+=("$jid"); fi
       sleep 1
     done
   fi
 
   if [ "$SUBMIT_PRESSURE" -eq 1 ]; then
     for VAR in "${PRESSURE_VARS[@]}"; do
-      submit_job "${VAR}" "pl" "${PRESSURE_LEVELS}" "none" "${PROCESS_START}" "${PROCESS_END}" "${PRESSURE_N_JOBS}" "none" "none"
+      jid=$(submit_job "${VAR}" "pl" "${PRESSURE_LEVELS}" "none" "${PROCESS_START}" "${PROCESS_END}" "${PRESSURE_N_JOBS}" "none" "none")
+      if [ -n "$jid" ]; then all_ids+=("$jid"); fi
       sleep 1
     done
   fi
 
   if [ "$SUBMIT_MODEL" -eq 1 ]; then
     for VAR in "${MODEL_VARS[@]}"; do
-      submit_job "${VAR}" "ml" "none" "${MODEL_LEVELS}" "${PROCESS_START}" "${PROCESS_END}" "${MODEL_N_JOBS}" "none" "none"
+      jid=$(submit_job "${VAR}" "ml" "none" "${MODEL_LEVELS}" "${PROCESS_START}" "${PROCESS_END}" "${MODEL_N_JOBS}" "none" "none")
+      if [ -n "$jid" ]; then all_ids+=("$jid"); fi
       sleep 1
     done
   fi
@@ -215,3 +221,25 @@ done
 echo "=============================================="
 echo "All ERA5 ARCO jobs submitted."
 echo "=============================================="
+
+# Consolidate once, after every job above has finished. Blocking poll rather than
+# --dependency=afterany: SLURM purges completed jobs from squeue/sacct after
+# MinJobAge (300s on this cluster), and a long submission loop easily exceeds that
+# gap, so a dependency string built from early job IDs would reference already-purged
+# jobs and fail at submission time (same reasoning as Ouranos's run_all script).
+# Not afterok-equivalent either: a single stray var/year failure shouldn't block
+# consolidating whatever did succeed, so failures here are only logged, not fatal --
+# see consolidate_metadata.py. Previously each job passed --consolidate-metadata
+# itself (removed from jobsub_*.slurm) -- that repeated the same full-store scan
+# once per job instead of once total.
+if [ "${DRY_RUN}" -eq 0 ] && [ "${#all_ids[@]}" -gt 0 ]; then
+  echo "Waiting for all ${#all_ids[@]} jobs to finish before consolidating..."
+  wait_for_jobs "${all_ids[@]}" || echo "WARNING: not every job COMPLETED -- consolidating anyway."
+  mkdir -p slurmout
+  finalize_id=$(sbatch --parsable \
+    --job-name=consolidate-ERA5 \
+    --output=slurmout/consolidate-ERA5-%j.out --error=slurmout/consolidate-ERA5-%j.err \
+    --time=02:00:00 --cpus-per-task=2 --mem=32G --propagate=NONE \
+    --wrap="source /network/rit/lab/basulab/mambaforge/etc/profile.d/conda.sh && conda activate /network/rit/lab/basulab/conda_envs/hb533188/DFSAI && cd .. && python consolidate_metadata.py --product ERA5 --region $REGION")
+  echo "Submitted: consolidate job=$finalize_id"
+fi

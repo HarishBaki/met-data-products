@@ -23,14 +23,14 @@ MAX_PARALLEL="${MAX_PARALLEL:-5}"
 SLURM_SCRIPT=process_and_write_to_zarr.slurm
 
 # Catalog row indices to process.
-INDICES=(5)
+INDICES=(0 5)
 
 # Per-index year-spec: comma-separated list of single years and/or "start-end"
 # ranges, e.g. "2025", "2025,2030,2100", "2018-2020", or "2018-2020,2025,2100".
 # Indices in INDICES with no entry here are skipped.
 declare -A YEARS=(
-    [0]="2018-2020"
-    [5]="2018-2024"
+    [0]="2000-2020"
+    [5]="2025"
 )
 
 # Single frequency for the whole run (1hr/3hr/day/mon). Exported so sbatch
@@ -115,6 +115,7 @@ expand_years() {
     echo "${years[@]}"
 }
 
+all_ids=()
 for idx in "${INDICES[@]}"; do
     if [[ -z "${YEARS[$idx]+x}" ]]; then
         echo "WARNING: no YEARS entry for index $idx, skipping" >&2
@@ -138,6 +139,7 @@ for idx in "${INDICES[@]}"; do
             throttle
             jid=$(sbatch --parsable "$SLURM_SCRIPT" "$idx" "$var" "$year")
             echo "Submitted: index=$idx var=$var year=$year job=$jid"
+            all_ids+=("$jid")
             [[ "$var" == "u10" ]] && u10_id=$jid
             [[ "$var" == "v10" ]] && v10_id=$jid
         done
@@ -156,6 +158,7 @@ for idx in "${INDICES[@]}"; do
             throttle
             jid=$(sbatch --parsable "$SLURM_SCRIPT" "$idx" "$var" "$year")
             echo "Submitted: index=$idx var=$var year=$year job=$jid"
+            all_ids+=("$jid")
         done
     done
 done
@@ -163,3 +166,22 @@ done
 echo "=============================================="
 echo "All jobs submitted!"
 echo "=============================================="
+
+# Consolidate once per (index, catalog-row) store, after every job above has
+# finished. Blocking poll rather than --dependency=afterany: see the header
+# comment at the top of this file (MinJobAge purge risk). Not afterok-equivalent
+# either: a single stray var/year failure shouldn't block consolidating whatever
+# did succeed, so failures here are only logged, not fatal -- see
+# ../consolidate_metadata.py, which finds and consolidates every catalog-row
+# store in one call via discover_stores.
+if [ "${#all_ids[@]}" -gt 0 ]; then
+    echo "Waiting for all ${#all_ids[@]} jobs to finish before consolidating..."
+    wait_for_jobs "${all_ids[@]}" || echo "WARNING: not every job COMPLETED -- consolidating anyway."
+    mkdir -p slurmout
+    finalize_id=$(sbatch --parsable \
+        --job-name=consolidate-Ouranos \
+        --output=slurmout/consolidate-Ouranos-%j.out --error=slurmout/consolidate-Ouranos-%j.err \
+        --time=02:00:00 --cpus-per-task=2 --mem=32G --propagate=NONE \
+        --wrap="source /network/rit/lab/basulab/mambaforge/etc/profile.d/conda.sh && conda activate /network/rit/lab/basulab/conda_envs/hb533188/DFSAI && cd .. && python consolidate_metadata.py --product Ouranos --region $REGION")
+    echo "Submitted: consolidate job=$finalize_id"
+fi
