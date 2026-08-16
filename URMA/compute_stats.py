@@ -1,5 +1,14 @@
 # %%
 #!/usr/bin/env python
+"""Compute per-variable min/max/mean/std (plus a log-transformed variant for tp)
+over a date range of a region's URMA zarr store -- used by DL_downscaling's
+input/target normalization (see dataloader.py's build_transform(), which reads
+this file from paths.urma_stats in configs/regions/{region}.yaml).
+
+Usage:
+    python compute_stats.py --region New_Mexico --start 2018-01-01 --end 2023-12-31
+"""
+import argparse
 import sys
 from pathlib import Path
 
@@ -10,19 +19,28 @@ BOOTSTRAP_ROOT = Path(__file__).resolve().parents[1]
 if str(BOOTSTRAP_ROOT) not in sys.path:
   sys.path.insert(0, str(BOOTSTRAP_ROOT))
 
-from repo_utils import find_repo_root
+from repo_utils import find_repo_root, load_region_vars
 
 PROJECT_DIR = find_repo_root(__file__)
-ZARR_STORE = "/network/rit/lab/basulab/Projects/DFS/DATA/URMA_NYS/URMA_NYS.zarr"
-START = "2018-01-01"
-END = "2023-12-31"
-OUT_PATH = PROJECT_DIR / "URMA" / f"urma_stats_{START[:4]}_{END[:4]}.nc"
+
 
 def main():
-  print(f"Opening Zarr store: {ZARR_STORE}")
-  ds = xr.open_zarr(ZARR_STORE, chunks="auto")
-  print(f"Selecting time range {START} to {END}")
-  ds_train = ds.sel(time=slice(START, END))
+  parser = argparse.ArgumentParser(description=__doc__)
+  parser.add_argument("--region", required=True, help="e.g. New_York, New_Mexico")
+  parser.add_argument("--start", default="2018-01-01")
+  parser.add_argument("--end", default="2023-12-31")
+  args = parser.parse_args()
+
+  region_vars = load_region_vars(args.region)
+  data_root = region_vars["data_root"]
+  region_tag = region_vars["region_tag"]
+  zarr_store = f"{data_root}/URMA_{region_tag}/URMA_{region_tag}.zarr"
+  out_path = PROJECT_DIR / "URMA" / f"urma_stats_{region_tag}_{args.start[:4]}_{args.end[:4]}.nc"
+
+  print(f"Opening Zarr store: {zarr_store}")
+  ds = xr.open_zarr(zarr_store, chunks="auto", consolidated=False)
+  print(f"Selecting time range {args.start} to {args.end}")
+  ds_train = ds.sel(time=slice(args.start, args.end))
 
   stats = {}
   for var in ds_train.data_vars:
@@ -43,10 +61,11 @@ def main():
 
   print("Combining and writing output")
   ds_out = xr.Dataset(stats)
-  ds_out.attrs["source"] = ZARR_STORE
-  ds_out.attrs["time_range"] = f"{START} to {END}"
-  ds_out.to_netcdf(str(OUT_PATH))
-  print(f"Wrote stats to {OUT_PATH}")
+  ds_out.attrs["source"] = zarr_store
+  ds_out.attrs["time_range"] = f"{args.start} to {args.end}"
+  ds_out.to_netcdf(str(out_path))
+  print(f"Wrote stats to {out_path}")
+
 
 # %%
 if __name__ == "__main__":
