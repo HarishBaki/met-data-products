@@ -33,3 +33,7 @@ Geomorpho90m/*/geomorpho90m_**.nc
 # Static reference data, not project code -- 2.6 GB, not meant for git history
 # (matches Sparse_to_dense_meteorological_variables' own data/* gitignore).
 data/geospatial/
+
+# macOS Finder metadata
+.DS_Store
+**/.DS_Store
