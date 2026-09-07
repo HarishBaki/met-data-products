@@ -14,25 +14,38 @@
 #
 # Edit INDICES / YEARS / FREQUENCY below, then run:
 #   ./run_all_process_and_write_to_zarr.sh
-# Or override FREQUENCY / REGION / CATALOG via env vars, e.g.:
-#   FREQUENCY=day ./run_all_process_and_write_to_zarr.sh
-#   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
+# Or override FREQUENCY / REGION / CATALOG / INDICES / YEARS_SPEC via env vars,
+# e.g. to (re)run the 4 CanESM5/CNRM-ESM2-1/MPI-ESM1-2-LR/NorESM2-MM historical
+# rows (catalog indices 2,6,11,23) for New Mexico without touching this file:
+#   FREQUENCY=day REGION=New_Mexico INDICES="2 6 11 23" YEARS_SPEC=1950-2014 \
+#       ./run_all_process_and_write_to_zarr.sh
+# INDICES overrides which catalog rows to process (space-separated). YEARS_SPEC,
+# if set, overrides the per-index YEARS entry below for every index in INDICES
+# with the same year-spec (comma-separated years/ranges, e.g. "2015-2100") --
+# use it when all selected rows share one range; fall back to editing the YEARS
+# associative array directly when they don't.
 
 # its-head: 5 concurrent jobs. Override without editing the file, e.g.:
 #   MAX_PARALLEL=3 REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
 MAX_PARALLEL="${MAX_PARALLEL:-5}"
 SLURM_SCRIPT=process_and_write_to_zarr.slurm
 
-# Catalog row indices to process.
-INDICES=(0 5)
+# Catalog row indices to process. Override via env var, e.g. INDICES="2 6 11 23".
+INDICES=(${INDICES:-0 5})
 
 # Per-index year-spec: comma-separated list of single years and/or "start-end"
 # ranges, e.g. "2025", "2025,2030,2100", "2018-2020", or "2018-2020,2025,2100".
-# Indices in INDICES with no entry here are skipped.
+# Indices in INDICES with no entry here are skipped, unless YEARS_SPEC (env var)
+# is set, in which case it's applied to every index in INDICES uniformly.
 declare -A YEARS=(
     [0]="2000-2020"
     [5]="2025"
 )
+if [[ -n "${YEARS_SPEC:-}" ]]; then
+    for idx in "${INDICES[@]}"; do
+        YEARS[$idx]="${YEARS_SPEC}"
+    done
+fi
 
 # Single frequency for the whole run (1hr/3hr/day/mon). Exported so sbatch
 # (and CATALOG/REGION, if set) propagate to process_and_write_to_zarr.slurm.
@@ -56,8 +69,15 @@ declare -A DERIVED_VARS_BY_FREQUENCY=(
     [day]=""
     [mon]="si10 wdir10"
 )
-DOWNLOAD_VARS=(${DOWNLOAD_VARS_BY_FREQUENCY[$FREQUENCY]})
-DERIVED_VARS=(${DERIVED_VARS_BY_FREQUENCY[$FREQUENCY]})
+# Override the default var groups for this run, e.g. to skip variables this
+# caller doesn't need (space-separated), without touching the defaults other
+# callers rely on. Single-dash (${VAR-default}, not ${VAR:-default}) so an
+# explicitly-empty override (DERIVED_VARS_OVERRIDE="") means "no derived vars
+# for this run" rather than falling back to the default group:
+#   DOWNLOAD_VARS_OVERRIDE="hfls mrro snw" FREQUENCY=3hr ... ./run_all_process_and_write_to_zarr.sh
+#   DOWNLOAD_VARS_OVERRIDE="t2m tp rh2 sh2 u10 v10 rsds rlds" DERIVED_VARS_OVERRIDE="" FREQUENCY=1hr ...
+DOWNLOAD_VARS=(${DOWNLOAD_VARS_OVERRIDE-${DOWNLOAD_VARS_BY_FREQUENCY[$FREQUENCY]}})
+DERIVED_VARS=(${DERIVED_VARS_OVERRIDE-${DERIVED_VARS_BY_FREQUENCY[$FREQUENCY]}})
 
 throttle() {
     # Throttle against this user's TOTAL job count on whichever cluster this runs on --
