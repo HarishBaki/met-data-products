@@ -123,8 +123,23 @@ VAR_GROUPS_BY_FREQUENCY = {
         "rh2":    {"kind": "download", "source_var": "hurs"},
         "u10":    {"kind": "download", "source_var": "uas"},
         "v10":    {"kind": "download", "source_var": "vas"},
+        "rsds":   {"kind": "download", "source_var": "rsds"},
+        "rlds":   {"kind": "download", "source_var": "rlds"},
         "si10":   {"kind": "derived", "deps": ["u10", "v10"]},
         "wdir10": {"kind": "derived", "deps": ["u10", "v10"]},
+        # Ouranos never reports dewpoint natively (only sh2/rh2), but the trained
+        # downscaling models require d2m as an input variable -- derived here,
+        # once, rather than in every downstream consumer (dataloader.py's
+        # on-the-fly Ouranos ingestion, and every Phase 2/5/6/7/8 diagnostic that
+        # needs d2m against Ouranos as a reference). See process_derived_var's
+        # d2m branch for the formula and citation.
+        # t2m is not used by the derivation formula itself, only to clip the
+        # rare (~0.04% of cells, <=0.12K in testing) near-saturation floating-
+        # point overshoot where the formula's dewpoint output slightly exceeds
+        # actual air temperature -- physically impossible by definition,
+        # clipped the same way this codebase already clips other physically-
+        # bounded variables (build_transform's clip_min_zero_vars for tp/si10).
+        "d2m":    {"kind": "derived", "deps": ["sh2", "sp", "t2m"]},
     },
     "3hr": {
         # No row has any canonical-7 overlap at 3hr (verified: intersection
@@ -287,6 +302,33 @@ def process_download_var(
     return f"[write] {row['dest_subdir']}/{row['realization']} {var_name} {year} -> {output_zarr}"
 
 
+def _dewpoint_from_specific_humidity_and_pressure(sh2: xr.DataArray, sp: xr.DataArray) -> xr.DataArray:
+    """Dewpoint temperature (K) from specific humidity (kg/kg) and surface
+    pressure (Pa).
+
+    Ouranos never reports dewpoint natively -- only specific humidity (sh2)
+    and relative humidity (rh2). This is the exact algebraic inverse (solved
+    for dewpoint instead of specific humidity) of
+    Sparse_to_dense_meteorological_variables' own
+    specific_humidity_from_dewpoint_and_pressure() (combine_ziamet_past_5_days_to_netcdf.py),
+    using the same Bolton (1980, Mon. Wea. Rev. 108, 1046-1053) saturation-
+    vapor-pressure constants (6.112 hPa, 17.67, 243.5 degC) already relied on
+    there, and the standard vapor-pressure/mixing-ratio identity
+    (q = eps*e/(p-(1-eps)*e), eps=0.622). The sh2-based route (vs. an
+    rh2-based alternative, e.g. Lawrence 2005, BAMS 86, 225-233) is preferred
+    here because it invokes the empirical saturation curve only once (this
+    inversion), not twice (rh2's route needs one evaluation at the actual air
+    temperature to get vapor pressure from RH, then a second to invert it back
+    to dewpoint) -- one fewer place for the empirical approximation to
+    compound error.
+    """
+    pressure_hpa = sp / 100.0
+    vapor_pressure_hpa = sh2 * pressure_hpa / (0.622 + 0.378 * sh2)
+    log_ratio = np.log(vapor_pressure_hpa / 6.112)
+    dewpoint_c = 243.5 * log_ratio / (17.67 - log_ratio)
+    return dewpoint_c + 273.15
+
+
 def process_derived_var(
     row: dict, var_name: str, year: int, output_zarr: str, full_times: pd.DatetimeIndex,
     chunks: dict, zarr_sync: zarr.ProcessSynchronizer, frequency: str,
@@ -304,15 +346,21 @@ def process_derived_var(
             )
 
     src = open_zarr_safe(output_zarr, synchronizer=zarr_sync)[deps].sel(time=year_times)
-    u10, v10 = src["u10"], src["v10"]
-    if var_name == "si10":
-        out = np.sqrt(u10 ** 2 + v10 ** 2).astype(np.float32)
-    else:  # wdir10
-        out = (
-            ((270 - np.rad2deg(np.arctan2(v10, u10))) % 360)
-            .where((u10 != 0) | (v10 != 0), other=0)
-            .astype(np.float32)
-        )
+    if var_name in ("si10", "wdir10"):
+        u10, v10 = src["u10"], src["v10"]
+        if var_name == "si10":
+            out = np.sqrt(u10 ** 2 + v10 ** 2).astype(np.float32)
+        else:  # wdir10
+            out = (
+                ((270 - np.rad2deg(np.arctan2(v10, u10))) % 360)
+                .where((u10 != 0) | (v10 != 0), other=0)
+                .astype(np.float32)
+            )
+    elif var_name == "d2m":
+        d2m_raw = _dewpoint_from_specific_humidity_and_pressure(src["sh2"], src["sp"])
+        out = xr.where(d2m_raw > src["t2m"], src["t2m"], d2m_raw).astype(np.float32)
+    else:
+        raise ValueError(f"process_derived_var: no derivation implemented for {var_name!r}")
     # Start from a clean slate: arithmetic on u10/v10 may carry over their attrs
     # (e.g. long_name="10 m eastward wind"), which apply_var_attrs would otherwise
     # have to overwrite piecemeal.

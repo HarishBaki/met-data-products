@@ -3,8 +3,9 @@
 #
 # For each catalog index: submits a "init" job (creates the zarr store skeleton,
 # fast/no-op if already done) and waits for it to finish, then for each year
-# submits the 7 download-var jobs (t2m sp sh2 tp rh2 u10 v10), waits for
-# u10/v10 to finish, then submits si10/wdir10.
+# submits the download-var jobs for the chosen FREQUENCY (see
+# DOWNLOAD_VARS_BY_FREQUENCY below), waits for u10/v10 to finish, then submits
+# any derived vars (si10/wdir10).
 #
 # Prerequisites are enforced by polling+waiting rather than --dependency=afterok:
 # SLURM purges completed jobs from squeue/sacct after MinJobAge (300s on this
@@ -44,13 +45,13 @@ export REGION
 # Download/derived var lists mirror VAR_GROUPS_BY_FREQUENCY in
 # process_and_write_to_zarr.py - keep these two in sync by hand.
 declare -A DOWNLOAD_VARS_BY_FREQUENCY=(
-    [1hr]="t2m sp sh2 tp rh2 u10 v10"
+    [1hr]="t2m sp sh2 tp rh2 u10 v10 rsds rlds"
     [3hr]="clwvi hfls mrro prw snw"
     [day]="t2m tasmax tasmin snw"
     [mon]="t2m sp sh2 rh2 u10 v10 tasmax tasmin snw"
 )
 declare -A DERIVED_VARS_BY_FREQUENCY=(
-    [1hr]="si10 wdir10"
+    [1hr]="si10 wdir10 d2m"
     [3hr]=""
     [day]=""
     [mon]="si10 wdir10"
