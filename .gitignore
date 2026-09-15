@@ -1,6 +1,8 @@
 slurmout
 **/slurmout
 slurm-*.out
+logs
+**/logs
 **/__pycache__
 GFS0p25/gfs_lists
 Geomorpho90m/90m
