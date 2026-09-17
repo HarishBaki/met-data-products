@@ -248,6 +248,20 @@ if __name__ == "__main__":
              "coordinate mismatch' / stale-handle failures -- observed in production from "
              "this exact race for a brand-new region)."
     )
+    parser.add_argument(
+        "--time-chunk", type=int, default=24,
+        help="On-disk time-chunk size (default: 24, matching every other product in this "
+             "repo -- ERA5/EDDEv2/ICON-DREAM-Global/CONUS404/MRMS all use 24; URMA_NMS.zarr "
+             "was originally built with an unexamined hardcoded 6, which was never "
+             "revisited and caused real slowdowns downstream -- see rechunk_urma_copy.py)."
+    )
+    parser.add_argument(
+        "--store-suffix", type=str, default="",
+        help="Appended before '.zarr' in the output store name (e.g. '_rechunk24h' -> "
+             "URMA_{region_tag}_rechunk24h.zarr) -- lets this exact code path build a "
+             "sibling store for a rechunk migration without touching the canonical one. "
+             "Default '' preserves normal production ingestion behavior unchanged."
+    )
 
     if is_interactive():
         args, unknown = parser.parse_known_args()
@@ -285,7 +299,7 @@ if __name__ == "__main__":
     region_tag = region_vars["region_tag"]
     if not data_root:
         raise ValueError(f"configs/regions/{args.region}.yaml has no data_root set yet.")
-    zarr_store = f"{data_root}/URMA_{region_tag}/URMA_{region_tag}.zarr"
+    zarr_store = f"{data_root}/URMA_{region_tag}/URMA_{region_tag}{args.store_suffix}.zarr"
     orog_path = Path(f"{data_root}/URMA_{region_tag}/cropped_orography.nc")
 
     # %%
@@ -294,7 +308,7 @@ if __name__ == "__main__":
     )
     dates = pd.date_range(start=f'{YEAR}-01-01T00', end=f'{YEAR}-12-31T23', freq='h')
     yyyymmdd = pd.Series(dates.year * 10000 + dates.month * 100 + dates.day).unique()
-    time_chunk = 6
+    time_chunk = args.time_chunk
     # Spatial chunk = the full cropped domain, taken from the orography-derived region_grid
     # (ny/nx above), not an arbitrary constant -- every real write already covers the full
     # cropped extent per day (see daily_processing's y_start:y_end/x_start:x_end), so a
