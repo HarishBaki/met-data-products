@@ -21,6 +21,16 @@ compute that product's own index crop. Three ways to get the target extent:
                an easy mistake to make since both modes take a --state-like
                notion of extent, hence the enforcement rather than just a
                docs note. Use --mode reference for every other product.
+               Also produces a real per-pixel 'state_mask' (true GADM
+               polygon, buffered by --mask-buffer-m -- see
+               build_buffered_boundary/generate_state_mask), embedded in the
+               written cropped_orography.nc alongside the rectangular
+               inner_mask index window. This replaces each downstream
+               consumer independently recomputing the same test from its own
+               copy of the GADM file (e.g.
+               Sparse_to_dense_meteorological_variables' own
+               generate_mask()) -- one real boundary computation here, not
+               one per project.
   reference -- match another product's crop to an *already-cropped*
                reference grid (typically URMA's own crop, run via
                --mode boundary first) plus a halo, given as --halo-km
@@ -122,6 +132,7 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 import geopandas as gpd
+from shapely.geometry import Point
 import yaml
 from ruamel.yaml import YAML
 import matplotlib
@@ -469,8 +480,38 @@ def load_state_boundary(gadm_file: str, country: str, state: str) -> gpd.GeoData
     return gpd.read_file(str(gadm_file), where=f"NAME_0 = '{country}' AND NAME_1 = '{state}'")
 
 
+def build_buffered_boundary(gdf: gpd.GeoDataFrame, buffer_m: float):
+    """Project to the state's own UTM zone, union, and buffer by buffer_m meters --
+    real-world buffering, not a degree-space approximation (a degree of longitude
+    shrinks by cos(latitude), so buffering in lat/lon degrees directly would be
+    asymmetric east/west vs north/south). Ported from
+    Sparse_to_dense_meteorological_variables' generate_static.py::build_buffered_boundary
+    -- same GADM file (see DEFAULT_GADM_FILE), same reasoning: coordinate/projection
+    rounding right at a state line shouldn't silently exclude a station or grid cell
+    that's genuinely inside it. Returns a single (Multi)Polygon in EPSG:4326."""
+    utm = gdf.estimate_utm_crs()
+    buffered = gdf.to_crs(utm).geometry.union_all().buffer(buffer_m)
+    return gpd.GeoSeries([buffered], crs=utm).to_crs(epsg=4326).iloc[0]
+
+
+def generate_state_mask(lat2d: np.ndarray, lon2d: np.ndarray, boundary_wgs) -> np.ndarray:
+    """Boolean array, True where (lat2d, lon2d) falls inside boundary_wgs (already
+    buffered -- see build_buffered_boundary). lon2d is expected normalized to [0, 360]
+    (this file's Grid convention throughout); converted to [-180, 180] here to match
+    boundary_wgs's CRS. Ported from
+    Sparse_to_dense_meteorological_variables' generate_static.py::generate_mask -- same
+    GADM file, same real point-in-polygon test (shapely Point.within a buffered state
+    polygon), computed once here instead of redundantly in that repo from a second copy
+    of the same 2.6 GB file."""
+    lon_flat = (lon2d.ravel() + 180) % 360 - 180
+    lat_flat = lat2d.ravel()
+    inside = np.array([boundary_wgs.contains(Point(lon, lat)) for lon, lat in zip(lon_flat, lat_flat)])
+    return inside.reshape(lat2d.shape)
+
+
 def write_cropped_orography(
     grid: Grid, crop: dict, orog: xr.DataArray, out_path: Path, crop_outer: dict | None = None,
+    boundary_wgs=None,
 ) -> None:
     """Persist a product's region-cropped orography to disk. climate-dl-downscaling's
     regridding layer (RegridderRegistry) reads ONLY a file's shape/coords as ground
@@ -493,9 +534,23 @@ def write_cropped_orography(
     get no mask/attrs -- the whole array IS that product's reference footprint, nothing
     to disambiguate.
 
+    When boundary_wgs is given (the real, buffered GADM state polygon -- see
+    build_buffered_boundary; only meaningful for --mode boundary, i.e. URMA/RTMA), a
+    boolean 'state_mask' variable is embedded at the same shape as 'orog' (the outer
+    shape, when crop_outer is given), True where that cell genuinely falls inside the
+    buffered state boundary. This is a real per-pixel polygon test, not the rectangular
+    'inner_mask' index window above -- 'state_mask' is generally a strict subset of
+    'inner_mask', since the boundary padding used to size the crop is looser than the
+    real state outline. Previously each downstream consumer (e.g.
+    Sparse_to_dense_meteorological_variables' own generate_mask()) recomputed this
+    independently from a second copy of the same 2.6 GB GADM file; computed once here
+    instead, from the exact lat/lon this file already carries.
+
     Skipped (not overwritten) if out_path already exists -- orography is static, and a
     region's crop doesn't change between runs unless deliberately re-derived (in which
-    case delete the file first).
+    case delete the file first). This also means state_mask is only added to a FRESH
+    file; adding it to an already-written cropped_orography.nc requires deleting that
+    file first and rerunning.
     """
     if out_path.exists():
         print(f"  Orography already present -> {out_path}")
@@ -519,6 +574,16 @@ def write_cropped_orography(
             mask[iy0:iy0 + iny, ix0:ix0 + inx] = True
             ds["inner_mask"] = ((d0, d1), mask)
             ds.attrs.update(inner_y_start=iy0, inner_x_start=ix0, inner_ny=iny, inner_nx=inx)
+        if boundary_wgs is not None:
+            if ds.latitude.ndim != 2:
+                raise ValueError(
+                    "state_mask requires a curvilinear (2D lat/lon) grid; "
+                    f"got ndim={ds.latitude.ndim}. --mode boundary is URMA/RTMA-only, "
+                    "which are both curvilinear -- this should not happen."
+                )
+            state_mask = generate_state_mask(ds.latitude.values, ds.longitude.values, boundary_wgs)
+            ds["state_mask"] = ((d0, d1), state_mask)
+            print(f"  state_mask: {int(state_mask.sum())} of {state_mask.size} cells inside the buffered boundary")
 
     ds.load().to_netcdf(out_path)
     print(f"  Orography written -> {out_path}")
@@ -714,6 +779,14 @@ def main():
     p.add_argument("--gadm-file", default=DEFAULT_GADM_FILE)
     p.add_argument("--country", default="United States")
     p.add_argument("--state", default=None)
+    p.add_argument(
+        "--mask-buffer-m", type=float, default=5000,
+        help="Meters to buffer the real GADM state polygon by before the per-pixel "
+             "state_mask test (--mode boundary only). Default 5000, matching "
+             "Sparse_to_dense_meteorological_variables' existing New_Mexico/New_York "
+             "convention -- not a crop-extent halo (see --halo-km for that); this only "
+             "controls state_mask's own accuracy near the border."
+    )
 
     # mode=reference (required there); also optional for --mode boundary, to additionally
     # compute an "outer" halo-inclusive crop alongside the tight "inner" one -- see
@@ -806,6 +879,7 @@ def main():
           f"lat=[{grid.lat.min():.2f},{grid.lat.max():.2f}]  lon=[{grid.lon.min():.2f},{grid.lon.max():.2f}]")
 
     outer_bbox = None
+    boundary_wgs = None
     if args.mode == "boundary":
         if not args.state:
             raise ValueError("--mode boundary requires --state")
@@ -818,6 +892,9 @@ def main():
             outer_bbox = expand_bbox_km(
                 bbox, halo_deg=args.halo_deg, halo_km=args.halo_km, label="GADM boundary",
             )
+        gdf = load_state_boundary(args.gadm_file, args.country, args.state)
+        boundary_wgs = build_buffered_boundary(gdf, args.mask_buffer_m)
+        print(f"  state_mask boundary: {args.country}/{args.state}, buffered {args.mask_buffer_m} m")
     elif args.mode == "reference":
         if (args.reference_grid is None) == (args.reference_region_config is None):
             raise ValueError(
@@ -886,7 +963,7 @@ def main():
         if data_root and region_tag:
             orog_out_path = Path(data_root) / f"{args.product}_{region_tag}" / "cropped_orography.nc"
             orog = load_orography(args.grid_source)
-            write_cropped_orography(grid, crop, orog, orog_out_path, crop_outer=crop_outer)
+            write_cropped_orography(grid, crop, orog, orog_out_path, crop_outer=crop_outer, boundary_wgs=boundary_wgs)
         else:
             print(
                 f"  Skipping cropped orography write -- {args.region_config} has no "
