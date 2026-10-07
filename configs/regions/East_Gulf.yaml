@@ -1,0 +1,23 @@
+# US East Coast + Gulf of Mexico + western Atlantic region, for Ouranos
+# hurricane screening (DFS D06.1, hurricane/). Download-only: nothing is
+# regridded onto URMA, so only grid.Ouranos.bbox is defined.
+#
+# bbox matches EXTENT in DFS/D06.1/hurricane/plot_weather_frame.py
+# (14-52N, 100-45W). The NAM-12 rotated grid ends east of ~64W at 10N,
+# ~58.6W at 20N, ~52W at 30N and ~44W at 40N, so the box's south-east corner
+# (eastern Caribbean / main development region) is outside the model domain
+# and simply not returned by NCSS (real download shape: rlat=438, rlon=377).
+region_id: east_gulf
+data_root: /network/rit/lab/basulab/Harish/Climate-Downscaling_data
+region_tag: EastGulf
+grid:
+  Ouranos:
+    type: curvilinear
+    dims:
+    - rlat
+    - rlon
+    bbox:
+      lat_min: 14.0
+      lat_max: 52.0
+      lon_min: -100.0
+      lon_max: -45.0
