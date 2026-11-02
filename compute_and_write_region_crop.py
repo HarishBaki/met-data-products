@@ -464,6 +464,72 @@ def crop_from_bbox(
     }
 
 
+def crop_from_region_config(grid: Grid, region_config: str, product: str, tier: str = "inner") -> dict:
+    """Load a previously selected crop window from a region config unchanged.
+
+    This is used when a region's existing inner grid must remain bit-for-bit
+    aligned while a wider outer crop is derived from the current boundary.
+    """
+    with open(region_config, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    grid_cfg = (cfg.get("grid") or {}).get(product)
+    if grid_cfg is None:
+        raise ValueError(f"{region_config}: no grid.{product} entry to preserve")
+    if list(grid_cfg.get("dims", [])) != list(grid.dims):
+        raise ValueError(
+            f"grid.{product} dims {grid_cfg.get('dims')} do not match source grid dims {grid.dims}"
+        )
+    crop_cfg = grid_cfg.get(tier) if "inner" in grid_cfg else grid_cfg
+    if not isinstance(crop_cfg, dict) or "crop" not in crop_cfg:
+        raise ValueError(f"{region_config}: grid.{product}.{tier} has no crop window")
+    d0, d1 = grid.dims
+    start0 = int(crop_cfg["crop"][f"{d0}_start"])
+    start1 = int(crop_cfg["crop"][f"{d1}_start"])
+    n0, n1 = int(crop_cfg["n0"]), int(crop_cfg["n1"])
+    if min(start0, start1) < 0 or min(n0, n1) <= 0:
+        raise ValueError(f"grid.{product}.{tier} has invalid crop indices or dimensions")
+    if start0 + n0 > grid.lat.shape[0] or start1 + n1 > grid.lat.shape[1]:
+        raise ValueError(
+            f"grid.{product}.{tier} crop ({start0}:{start0+n0}, {start1}:{start1+n1}) "
+            f"exceeds source grid shape {grid.lat.shape}"
+        )
+    lat_window = grid.lat[start0:start0+n0, start1:start1+n1]
+    lon_window = ((grid.lon[start0:start0+n0, start1:start1+n1] + 180) % 360) - 180
+    return {
+        "kind": grid.kind,
+        "dims": grid.dims,
+        "dim0_start": start0,
+        "dim1_start": start1,
+        "n0": n0,
+        "n1": n1,
+        "bbox_extent": {
+            "lat_min": float(np.nanmin(lat_window)),
+            "lat_max": float(np.nanmax(lat_window)),
+            "lon_min": float(np.nanmin(lon_window)),
+            "lon_max": float(np.nanmax(lon_window)),
+        },
+        "clamped": False,
+    }
+
+
+def ensure_crop_contains(outer: dict, inner: dict) -> None:
+    """Fail if an index-space outer crop would truncate the preserved inner crop."""
+    if outer["kind"] != inner["kind"] or outer["dims"] != inner["dims"]:
+        raise ValueError("inner and outer crops must use the same structured grid")
+    outer0, outer1 = outer["dim0_start"], outer["dim1_start"]
+    inner0, inner1 = inner["dim0_start"], inner["dim1_start"]
+    if (
+        inner0 < outer0 or inner1 < outer1
+        or inner0 + inner["n0"] > outer0 + outer["n0"]
+        or inner1 + inner["n1"] > outer1 + outer["n1"]
+    ):
+        raise ValueError(
+            "computed outer crop does not contain the preserved inner window: "
+            f"inner=({inner0}:{inner0+inner['n0']}, {inner1}:{inner1+inner['n1']}), "
+            f"outer=({outer0}:{outer0+outer['n0']}, {outer1}:{outer1+outer['n1']})"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Visual verification -- plot the cropped product's own orography against the
 # requested boundaries, so a crop can be checked by eye, not just by trusting
@@ -845,6 +911,12 @@ def main():
     p.add_argument("--round32", action="store_true", help="Round dimensions up to the nearest multiple of 32 (default for --mode boundary)")
     p.add_argument("--region-config", default=None)
     p.add_argument("--update-config", action="store_true")
+    p.add_argument(
+        "--preserve-inner-from-config", action="store_true",
+        help="In boundary mode, keep grid.<product>.inner (or the existing flat crop) from "
+             "--region-config exactly, while deriving only the outer crop from the GADM "
+             "boundary and halo. Requires --region-config."
+    )
     p.add_argument("--mask-out-dir", default=None, help="Directory to save unstructured (ICON-style) cell masks")
 
     p.add_argument(
@@ -862,6 +934,9 @@ def main():
              "--region-config is given; required otherwise."
     )
     args = p.parse_args()
+
+    if args.preserve_inner_from_config and (args.mode != "boundary" or not args.region_config):
+        p.error("--preserve-inner-from-config requires --mode boundary and --region-config")
 
     if args.mode == "boundary" and args.product.upper() not in BOUNDARY_MODE_PRODUCTS:
         raise SystemExit(
@@ -934,6 +1009,11 @@ def main():
         crop_from_bbox(grid, outer_bbox, args.padding, round32, mesh_neighbors=mesh_neighbors, mesh_hops=args.mesh_hops)
         if outer_bbox is not None else None
     )
+    if args.preserve_inner_from_config:
+        crop = crop_from_region_config(grid, args.region_config, args.product, tier="inner")
+        if crop_outer is None:
+            raise ValueError("--preserve-inner-from-config requires --halo-km or --halo-deg")
+        ensure_crop_contains(crop_outer, crop)
 
     print()
     if crop["kind"] == "unstructured":

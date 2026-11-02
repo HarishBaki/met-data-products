@@ -60,6 +60,11 @@ GRIB_SHORTNAME = {
     "tp": "tp",
 }
 
+# Historical analysis GRIBs may omit western columns present in the static
+# orography grid. Region indices refer to that full grid, so map each GRIB's
+# source indices and validate its coordinates before writing any values.
+_VALIDATED_GRIB_GRIDS: set[tuple[str, int, int]] = set()
+
 ALL_VARS = list(GRIB_SHORTNAME.keys())
 
 # cfgrib may not always set units attrs; provide known source units as fallback.
@@ -102,8 +107,10 @@ def normalize_time(ds):
     return ds
 
 
-def daily_processing(var_name, date, time_chunk, x_chunk, y_chunk, x_start, y_start, nx, ny):
-    x_end = x_start + nx
+def daily_processing(
+    var_name, date, time_chunk, x_chunk, y_chunk, x_start, y_start, nx, ny,
+    full_grid_nx, expected_lat, expected_lon,
+):
     y_end = y_start + ny
 
     if var_name != 'tp':
@@ -140,7 +147,43 @@ def daily_processing(var_name, date, time_chunk, x_chunk, y_chunk, x_start, y_st
         sorted_files = sorted(files, key=extract_hour)
 
     def preprocess(ds):
-        return ds.isel(y=slice(y_start, y_end), x=slice(x_start, x_end))
+        source_x_offset = full_grid_nx - ds.sizes["x"]
+        source_x_start = x_start - source_x_offset
+        source_x_end = source_x_start + nx
+        if source_x_start < 0 or source_x_end > ds.sizes["x"]:
+            raise ValueError(
+                f"Full-grid crop x={x_start}:{x_start + nx} cannot be mapped to URMA "
+                f"GRIB x dimension {ds.sizes['x']} (offset {source_x_offset})"
+            )
+        if y_end > ds.sizes["y"]:
+            raise ValueError(
+                f"Full-grid crop y={y_start}:{y_end} exceeds URMA GRIB y dimension "
+                f"{ds.sizes['y']}"
+            )
+
+        # Validate each distinct source-grid geometry once per worker process,
+        # before data can be written against the static orography coordinates.
+        signature = (var_name, ds.sizes["y"], ds.sizes["x"])
+        if signature not in _VALIDATED_GRIB_GRIDS:
+            src_lat = ds.latitude.isel(
+                y=slice(y_start, y_end), x=slice(source_x_start, source_x_end)
+            ).values
+            src_lon = (
+                ds.longitude.isel(
+                    y=slice(y_start, y_end), x=slice(source_x_start, source_x_end)
+                ).values + 360
+            ) % 360
+            if not np.allclose(src_lat, expected_lat, rtol=0, atol=5e-4, equal_nan=True):
+                raise ValueError(
+                    f"URMA GRIB latitude grid differs from cropped_orography.nc for {var_name}"
+                )
+            if not np.allclose(src_lon, expected_lon, rtol=0, atol=5e-4, equal_nan=True):
+                raise ValueError(
+                    f"URMA GRIB longitude grid differs from cropped_orography.nc for {var_name}"
+                )
+            _VALIDATED_GRIB_GRIDS.add(signature)
+
+        return ds.isel(y=slice(y_start, y_end), x=slice(source_x_start, source_x_end))
 
     ds = xr.open_mfdataset(
         sorted_files, concat_dim='time', combine='nested', parallel=True,
@@ -170,7 +213,7 @@ def daily_processing(var_name, date, time_chunk, x_chunk, y_chunk, x_start, y_st
 
 def process_and_write_single_day(
     date, var_name, zarr_store, dates, full_dates, time_chunk, x_chunk, y_chunk,
-    x_start, y_start, nx, ny,
+    x_start, y_start, nx, ny, full_grid_nx, expected_lat, expected_lon,
 ):
     # has_missing_data() -> open_zarr_safe() retries on NFS stale-file-handle errors
     # (errno 116) -- this call runs once per day (365x/job), and running multiple
@@ -184,7 +227,10 @@ def process_and_write_single_day(
         return
 
     try:
-        ds = daily_processing(var_name, date, time_chunk, x_chunk, y_chunk, x_start, y_start, nx, ny)
+        ds = daily_processing(
+            var_name, date, time_chunk, x_chunk, y_chunk, x_start, y_start, nx, ny,
+            full_grid_nx, expected_lat, expected_lon,
+        )
 
         # Ensure source units are set (cfgrib may omit them).
         if not ds[var_name].attrs.get("units") and var_name in _GRIB_SOURCE_UNITS:
@@ -279,8 +325,8 @@ if __name__ == "__main__":
     region_vars = load_region_vars(args.region)
     # grid.URMA is {type, dims, inner, outer} when compute_and_write_region_crop.py was run with a
     # halo (URMA's own wide-context crop -- see update_region_config's crop_outer docstring),
-    # or flat {type, dims, n0, n1, crop, bbox} otherwise (New York's entry, and any region
-    # derived without a halo). Production processing uses the OUTER crop: met-data-products'
+    # or flat {type, dims, n0, n1, crop, bbox} otherwise (any region derived without a halo).
+    # Production processing uses the OUTER crop: met-data-products'
     # job is to fully contain the domain every downstream project will ever need from this
     # region in one store, so no project has to come back here again -- per-project narrowing
     # to the tight training footprint happens downstream, using the inner_mask/inner_* attrs
@@ -301,6 +347,22 @@ if __name__ == "__main__":
         raise ValueError(f"configs/regions/{args.region}.yaml has no data_root set yet.")
     zarr_store = f"{data_root}/URMA_{region_tag}/URMA_{region_tag}{args.store_suffix}.zarr"
     orog_path = Path(f"{data_root}/URMA_{region_tag}/cropped_orography.nc")
+
+    # An existing store must already have the configured crop's shape. New York's
+    # URMA_NYS.zarr stays at the legacy 256x288 inner grid while its 512x544 outer crop is
+    # built in URMA_NYS_outer.zarr, so a run with the default suffix must stop here, before
+    # the synchronizer or any GRIB read touches the production store.
+    if os.path.exists(zarr_store):
+        with xr.open_zarr(zarr_store, consolidated=False) as existing:
+            store_shape = (existing.sizes["y"], existing.sizes["x"])
+        if store_shape != (ny, nx):
+            tier = "outer" if "inner" in region_grid_raw else "flat"
+            raise SystemExit(
+                f"ERROR: {zarr_store} is {store_shape[0]}x{store_shape[1]} but the {tier} "
+                f"grid.URMA crop in configs/regions/{args.region}.yaml is {ny}x{nx}. "
+                f"Pass --store-suffix (STORE_SUFFIX) for the sibling store that matches this "
+                f"crop (e.g. _outer); the existing store is left untouched."
+            )
 
     # %%
     full_dates = pd.date_range(
@@ -329,8 +391,10 @@ if __name__ == "__main__":
     # this region has a halo split) so met-data-products fully contains the domain every
     # downstream project needs from this region in one store -- per-project narrowing to the
     # tight training window happens downstream, via inner_mask/inner_* attrs on
-    # cropped_orography.nc, not here. A flat crop (New York, or any region derived without a
-    # halo) has no inner/outer split -- the whole file already IS the region's one footprint.
+    # cropped_orography.nc, not here. A flat crop (any region derived without a halo) has no
+    # inner/outer split -- the whole file already IS the region's one footprint. New York has
+    # inner/outer tiers, but its production URMA_NYS.zarr stays at the inner shape until
+    # cutover; the shape check above keeps outer-crop writes out of it.
     def _get_template():
         if not orog_path.exists():
             raise FileNotFoundError(
@@ -356,6 +420,15 @@ if __name__ == "__main__":
         print(f"[init-only] {zarr_store} ready for '{var_name}'")
         sys.exit(0)
 
+    # Region indices and output coordinates refer to the full static grid.
+    # Historical URMA GRIBs can have a narrower x extent, so retain target
+    # coordinates for source-grid alignment checks inside daily_processing.
+    with xr.open_dataset(orog_path) as cropped_orog:
+        expected_lat = cropped_orog["latitude"].values
+        expected_lon = (cropped_orog["longitude"].values + 360) % 360
+    with xr.open_dataset(Path(__file__).with_name("urma_full_orography.nc")) as full_grid:
+        full_grid_nx = full_grid.sizes["x"]
+
     # 2. Process each day in parallel batches.
     batch_size = 30
     for i in tqdm(range(0, len(yyyymmdd), batch_size), desc=f"{var_name} {YEAR}"):
@@ -364,6 +437,7 @@ if __name__ == "__main__":
             delayed(process_and_write_single_day)(
                 date, var_name, zarr_store, dates, full_dates,
                 time_chunk, x_chunk, y_chunk, x_start, y_start, nx, ny,
+                full_grid_nx, expected_lat, expected_lon,
             )
             for date in batch_dates
         )

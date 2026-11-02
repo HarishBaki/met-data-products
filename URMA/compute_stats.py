@@ -48,11 +48,11 @@ if str(BOOTSTRAP_ROOT) not in sys.path:
 from repo_utils import load_region_vars
 
 
-def _compute_worker_variable(region, start, end, var, worker_out):
+def _compute_worker_variable(region, start, end, var, worker_out, store_suffix=""):
   region_vars = load_region_vars(region)
   data_root = region_vars["data_root"]
   region_tag = region_vars["region_tag"]
-  zarr_store = f"{data_root}/URMA_{region_tag}/URMA_{region_tag}.zarr"
+  zarr_store = f"{data_root}/URMA_{region_tag}/URMA_{region_tag}{store_suffix}.zarr"
 
   ds = xr.open_zarr(zarr_store, consolidated=False)
   da = ds.sel(time=slice(start, end))[var]
@@ -83,6 +83,8 @@ def main():
   parser.add_argument("--region", required=True, help="e.g. New_York, New_Mexico")
   parser.add_argument("--start", default="2018-01-01")
   parser.add_argument("--end", default="2023-12-31")
+  parser.add_argument("--store-suffix", default="",
+                      help="Read a sibling store such as URMA_NYS_outer.zarr and append the same suffix to the stats filename.")
   parser.add_argument("--max-concurrent", type=int, default=None,
                        help="Max concurrent per-variable subprocesses (default: all at once)")
   # Internal worker mode -- see module docstring.
@@ -91,15 +93,18 @@ def main():
   args = parser.parse_args()
 
   if args.worker_var:
-    _compute_worker_variable(args.region, args.start, args.end, args.worker_var, args.worker_out)
+    _compute_worker_variable(
+      args.region, args.start, args.end, args.worker_var, args.worker_out, args.store_suffix,
+    )
     return
 
   region_vars = load_region_vars(args.region)
   data_root = region_vars["data_root"]
   region_tag = region_vars["region_tag"]
-  zarr_store = f"{data_root}/URMA_{region_tag}/URMA_{region_tag}.zarr"
+  zarr_store = f"{data_root}/URMA_{region_tag}/URMA_{region_tag}{args.store_suffix}.zarr"
   out_dir = Path(data_root) / f"URMA_{region_tag}"
-  out_path = out_dir / f"urma_stats_{region_tag}_{args.start[:4]}_{args.end[:4]}.nc"
+  suffix_token = args.store_suffix
+  out_path = out_dir / f"urma_stats_{region_tag}_{args.start[:4]}_{args.end[:4]}{suffix_token}.nc"
   tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
 
   print(f"Opening Zarr store: {zarr_store}")
@@ -109,7 +114,7 @@ def main():
 
   out_dir.mkdir(parents=True, exist_ok=True)
   worker_tmp_paths = {
-    var: out_dir / f".urma_stats_worker_{region_tag}_{args.start[:4]}_{args.end[:4]}_{var}.nc.tmp"
+    var: out_dir / f".urma_stats_worker_{region_tag}_{args.start[:4]}_{args.end[:4]}{suffix_token}_{var}.nc.tmp"
     for var in data_vars
   }
 
@@ -125,6 +130,7 @@ def main():
       running[var] = subprocess.Popen([
         sys.executable, str(Path(__file__).resolve()),
         "--region", args.region, "--start", args.start, "--end", args.end,
+        "--store-suffix", args.store_suffix,
         "--worker-var", var, "--worker-out", str(worker_tmp_paths[var]),
       ])
     for var in list(running):

@@ -20,6 +20,7 @@ mkdir -p slurmout
 var_name="$1"
 year="$2"
 region="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
+store_suffix="${STORE_SUFFIX:-}"
 
 if [ -z "$var_name" ] || [ -z "$year" ]; then
     echo "ERROR: Usage: sbatch run_urma.sh <var_name> <year>"
@@ -37,13 +38,15 @@ echo "Running URMA yearly processing"
 echo "Variable: $var_name"
 echo "Year: $year"
 echo "Region: $region"
+echo "Store suffix: $store_suffix"
 echo "CPUs requested: $SLURM_CPUS_PER_TASK"
 echo "=========================================================="
 
 python process_and_write_to_zarr.py \
     --var_name "$var_name" \
     --year "$year" \
-    --region "$region"
+    --region "$region" \
+    --store-suffix "$store_suffix"
 exit_code=$?
 
 # Plain-file failure log, independent of sacct -- its-head has no sacct access at all

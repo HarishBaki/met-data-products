@@ -7,9 +7,12 @@
 # vscode-dgx) automatically. Override without editing the file, e.g.:
 #   MAX_PARALLEL=4 REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
 MAX_PARALLEL="${MAX_PARALLEL:-8}"
+STORE_SUFFIX="${STORE_SUFFIX:-}"
+export STORE_SUFFIX
 
 # Region to process (e.g. New_York, New_Mexico). Export before running, e.g.:
 #   REGION=New_Mexico ./run_all_process_and_write_to_zarr.sh
+# Optional sibling-store migration, e.g. STORE_SUFFIX=_outer.
 REGION="${REGION:?REGION must be set (e.g. REGION=New_Mexico) -- no default, to avoid silently running against the wrong region}"
 export REGION
 
@@ -30,6 +33,7 @@ VARS=(
 # Year range
 START_YEAR=2014
 END_YEAR=2025
+TP_START_YEAR=2018
 
 # ==============================
 # PRE-INIT (serial, one job, before any parallel submissions)
@@ -53,9 +57,19 @@ wait_for_jobs() {
         elapsed=$((elapsed + 10))
         (( elapsed % 30 == 0 )) && echo "  ... waiting on init job $csv (${elapsed}s)"
     done
-    local bad
-    bad=$(sacct -j "$csv" -X --format=State --noheader 2>/dev/null | tr -d ' ' | grep -vc '^COMPLETED$')
-    [ "$bad" -eq 0 ]
+    local states
+    states=$(sacct -j "$csv" -X --format=State --noheader 2>/dev/null | tr -d ' ')
+    if [ -n "$states" ]; then
+        ! grep -qv '^COMPLETED$' <<< "$states"
+        return
+    fi
+    # No accounting rows (its-head has no sacct; elsewhere sacct can lag): an empty
+    # answer is not success -- require the marker the init job writes only when every
+    # var initialized.
+    echo "  sacct returned nothing for $csv; checking init success markers instead"
+    for id in "${ids[@]}"; do
+        [ -f "slurmout/URMA-init-${id}.ok" ] || return 1
+    done
 }
 
 # Same throttle as the main loop below -- without it, the init submission assumes a
@@ -82,7 +96,11 @@ echo "Pre-init complete -- safe to fan out in parallel now."
 # ==============================
 all_ids=()
 for VAR in "${VARS[@]}"; do
-    for YEAR in $(seq $START_YEAR $END_YEAR); do
+    VAR_START_YEAR=$START_YEAR
+    if [ "$VAR" = "tp" ]; then
+        VAR_START_YEAR=$TP_START_YEAR
+    fi
+    for YEAR in $(seq "$VAR_START_YEAR" "$END_YEAR"); do
 
         # Throttle against this user's TOTAL job count on whichever cluster this runs on --
         # not just jobs named URMA (the submit cap is shared across every product/job name
@@ -124,6 +142,6 @@ if [ "${#all_ids[@]}" -gt 0 ]; then
         --job-name=consolidate-URMA \
         --output=slurmout/consolidate-URMA-%j.out --error=slurmout/consolidate-URMA-%j.err \
         --time=02:00:00 --cpus-per-task=2 --mem=32G --propagate=NONE \
-        --wrap="source /network/rit/lab/basulab/mambaforge/etc/profile.d/conda.sh && conda activate /network/rit/lab/basulab/conda_envs/hb533188/DFSAI && cd .. && python consolidate_metadata.py --product URMA --region $REGION")
+        --wrap="source /network/rit/lab/basulab/mambaforge/etc/profile.d/conda.sh && conda activate /network/rit/lab/basulab/conda_envs/hb533188/DFSAI && cd .. && python consolidate_metadata.py --product URMA --region $REGION --store-suffix '$STORE_SUFFIX'")
     echo "Submitted: consolidate job=$finalize_id"
 fi

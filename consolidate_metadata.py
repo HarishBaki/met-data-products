@@ -32,9 +32,20 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--product", required=True, choices=sorted(PRODUCT_ROOT_PREFIX))
     parser.add_argument("--region", required=True, help="e.g. New_York, New_Mexico")
+    parser.add_argument(
+        "--store-suffix", default="",
+        help="If set, consolidate only stores whose basename ends with this suffix "
+             "(e.g. _outer for URMA_NYS_outer.zarr).",
+    )
     args = parser.parse_args()
 
     stores = discover_stores(args.product, args.region)
+    if args.store_suffix:
+        stores = [store for store in stores if store.stem.endswith(args.store_suffix)]
+        if not stores:
+            raise FileNotFoundError(
+                f"No {args.product} store ending in {args.store_suffix!r} found for {args.region}"
+            )
     print(f"Found {len(stores)} store(s) for product={args.product} region={args.region}", flush=True)
     for store in stores:
         print(f"[consolidate] starting {store}", flush=True)

@@ -68,6 +68,13 @@ def main():
     ds_old = xr.open_zarr(old_store, consolidated=False)
     if args.variable not in ds_old.data_vars:
         raise KeyError(f"{args.variable} not found in {old_store}")
+    # The new store is chunked from the configured crop; refuse a source store of another
+    # shape (e.g. New York's 256x288 URMA_NYS.zarr against its 512x544 outer crop).
+    if (ds_old.sizes["y"], ds_old.sizes["x"]) != (ny, nx):
+        raise SystemExit(
+            f"ERROR: {old_store} is {ds_old.sizes['y']}x{ds_old.sizes['x']} but the grid.URMA "
+            f"crop in configs/regions/{args.region}.yaml is {ny}x{nx}; not rechunking."
+        )
 
     time_slice = slice(f"{args.year}-01-01T00", f"{args.year}-12-31T23")
     da = ds_old[[args.variable]].sel(time=time_slice)

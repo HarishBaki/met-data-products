@@ -60,15 +60,15 @@
 #    bbox for the properly-derived one without a deliberate, separate
 #    decision to redownload/reprocess all of Ouranos_NYS.
 #
-# grid.URMA specifically: running --mode boundary --state "New York" against
-# the same GADM boundary produces a LARGER superset (y_start=811, x_start=
-# 1781, n0=288, n1=320) that fully contains this crop with margin on every
-# side -- confirms the method is sound, but deliberately NOT swapped in:
-# doing so would change URMA_NYS.zarr's shape and break compatibility with
-# every already-trained model and already-written zarr product built
-# against the current 256x288 domain (original_output_size in
-# DL_downscaling/configs/baseline.yaml). Don't regenerate NY's data to match
-# the auto-computed crop without a deliberate, separate decision to do so.
+# grid.URMA retains the existing production grid as its inner tier exactly
+# (256x288 at native y=830, x=1800). The outer tier follows the New Mexico
+# rule verified against its configured indices: expand the GADM New York
+# state boundary by 240 km, add 10 URMA grid cells of padding, then round
+# dimensions up to 32. Result: 512x544 at native y=704, x=1676. The cropped
+# orography must carry inner_mask/inner_* for the preserved legacy window and
+# the 5 km buffered-GADM state_mask. Existing URMA_NYS.zarr stays at 256x288;
+# process the outer domain into a sibling store and cut over consumers only
+# after validation.
 region_id: new_york
 data_root: /network/rit/lab/basulab/Projects/DFS/DATA
 region_tag: NYS
@@ -83,11 +83,28 @@ grid:
     dims:
     - y
     - x
-    n0: 256
-    n1: 288
-    crop:
-      y_start: 830
-      x_start: 1800
+    inner:
+      n0: 256
+      n1: 288
+      crop:
+        y_start: 830
+        x_start: 1800
+      bbox:
+        lat_min: 39.854231
+        lat_max: 46.203058
+        lon_min: -80.143969
+        lon_max: -70.639364
+    outer:
+      n0: 512
+      n1: 544
+      crop:
+        y_start: 704
+        x_start: 1676
+      bbox:
+        lat_min: 36.57348
+        lat_max: 49.178309
+        lon_min: -84.018717
+        lon_max: -65.887332
   HRRR:
     type: curvilinear
     dims:

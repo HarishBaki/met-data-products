@@ -30,13 +30,24 @@ source /network/rit/lab/basulab/mambaforge/etc/profile.d/conda.sh
 conda activate DFSAI
 
 REGION="$1"; shift
+STORE_SUFFIX="${STORE_SUFFIX:-}"
 
 if [ -z "$REGION" ] || [ "$#" -eq 0 ]; then
     echo "ERROR: Usage: sbatch jobsub_process_and_write_to_zarr_init.slurm <region> <var1> [var2 ...]"
     exit 1
 fi
 
+# Fail the job if ANY var's init fails, not just the last one, and leave a success
+# marker the run_all wrapper can check where sacct is unavailable (its-head).
+failed=()
 for VAR in "$@"; do
-    echo "[init] --var_name $VAR --region $REGION"
-    python process_and_write_to_zarr.py --var_name "$VAR" --year 2020 --region "$REGION" --init-only
+    echo "[init] --var_name $VAR --region $REGION --store-suffix $STORE_SUFFIX"
+    python process_and_write_to_zarr.py --var_name "$VAR" --year 2020 --region "$REGION" \
+        --init-only --store-suffix "$STORE_SUFFIX" || failed+=("$VAR")
 done
+
+if [ "${#failed[@]}" -gt 0 ]; then
+    echo "ERROR: init failed for: ${failed[*]}" >&2
+    exit 1
+fi
+touch "slurmout/URMA-init-${SLURM_JOB_ID:-local}.ok"
